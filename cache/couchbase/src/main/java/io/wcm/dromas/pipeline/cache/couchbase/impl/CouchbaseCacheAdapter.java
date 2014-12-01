@@ -19,19 +19,23 @@
  */
 package io.wcm.dromas.pipeline.cache.couchbase.impl;
 
+import io.wcm.dromas.commons.couchbase.CouchbaseClientProvider;
 import io.wcm.dromas.io.http.request.Request;
 import io.wcm.dromas.pipeline.cache.CacheStrategy;
-import io.wcm.dromas.pipeline.cache.couchbase.impl.provider.CouchbaseClientProvider;
 import io.wcm.dromas.pipeline.cache.spi.CacheAdapter;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 import org.apache.commons.lang3.CharEncoding;
+import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
+import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,20 +48,33 @@ import com.couchbase.client.java.document.RawJsonDocument;
 /**
  * {@link CacheAdapter} implementation for Couchbase.
  */
-@Component
+@Component(immediate = true, metatype = true,
+label = "wcm.io Dromas Pipeline Cache Adapter for Couchbase",
+description = "Configure pipeline caching in couchbase.")
 @Service(CacheAdapter.class)
 public class CouchbaseCacheAdapter implements CacheAdapter {
 
-  private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
+  @Property(label = "Cache Key Prefix", description = "Prefix for caching keys.")
+  static final String CACHE_KEY_PREFIX_PROPERTY = "cacheKeyPrefix";
+  private static final String CACHE_KEY_PREFIX_DEFAULT = "json-pipeline:";
 
   private static final int MAX_CACHE_KEY_LENGTH = 250;
+
+  private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
 
   @Reference
   private CouchbaseClientProvider couchbaseClientProvider;
 
+  private String keyPrefix;
+
+  @Activate
+  private void activate(Map<String, Object> config) {
+    keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
+  }
+
   @Override
   public String getCacheKey(String serviceName, String descriptor) {
-    String prefix = couchbaseClientProvider.getKeyPrefix() + serviceName + ":";
+    String prefix = keyPrefix + serviceName + ":";
 
     String cacheKey = prefix + descriptor;
     if (cacheKey.length() < MAX_CACHE_KEY_LENGTH) {

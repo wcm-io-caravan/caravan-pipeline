@@ -45,14 +45,13 @@
       <version>0.2.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
-    
     <dependency>
-      <groupId>com.couchbase.client</groupId>
-      <artifactId>java-client</artifactId>
-      <version>2.0.1</version>
-      <scope>provided</scope>
+      <groupId>io.wcm.dromas</groupId>
+      <artifactId>io.wcm.dromas.commons.couchbase</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+      <scope>compile</scope>
     </dependency>
-
+    
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.commons.osgi</artifactId>
@@ -77,29 +76,6 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <configuration>
-          <instructions>
-            <!-- Do not inline jars, include as jar files -->
-            <Embed-Dependency>*;scope=provided|runtime;inline=false;groupId=com.couchbase.*</Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
-            <Import-Package>
-              com.barchart.udt.*;resolution:=optional,
-              com.google.protobuf.*;resolution:=optional,
-              com.jcraft.jzlib.*;resolution:=optional,
-              com.sun.*;resolution:=optional,
-              gnu.io.*;resolution:=optional,
-              javassist.*;resolution:=optional,
-              org.apache.tomcat.*;resolution:=optional,
-              org.bouncycastle.*;resolution:=optional,
-              org.eclipse.jetty.*;resolution:=optional,
-              org.jboss.*;resolution:=optional,
-              rx.internal.*;resolution:=optional,
-              sun.misc.*;resolution:=optional,
-              sun.security.*;resolution:=optional,
-              *
-            </Import-Package>
-          </instructions>
-        </configuration>
       </plugin>
 
       <plugin>
