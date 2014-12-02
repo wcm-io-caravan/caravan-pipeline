@@ -107,7 +107,13 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       fromCache = bucket.get(cacheKey, RawJsonDocument.class);
     }
 
-    return fromCache.map(doc -> doc.content());
+    return fromCache.map(doc -> {
+      String content = doc.content();
+
+      log.trace("Succesfully retrieved document with id {}: {}", doc.id(), doc.content());
+
+      return content;
+    });
   }
 
   @Override
@@ -123,7 +129,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
       @Override
       public void onNext(RawJsonDocument insertedDoc) {
-        log.info("Document " + insertedDoc.id() + " has been succesfully put into the Couchbase cache");
+        log.trace("Document {} has been succesfully put into the Couchbase cache:\n {}", insertedDoc.id(), insertedDoc.content());
       }
 
       @Override

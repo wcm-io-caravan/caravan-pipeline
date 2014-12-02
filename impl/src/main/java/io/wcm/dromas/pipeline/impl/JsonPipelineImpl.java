@@ -88,7 +88,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.dataSource = responseObservable
         .map(response -> {
           try {
-            log.info("received " + response.status() + " response (" + response.reason() + ") with from " + request.url());
+            log.debug("received " + response.status() + " response (" + response.reason() + ") with from " + request.url());
             return response.body().asString();
           }
           catch (IOException ex) {
@@ -212,7 +212,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline merge(JsonPipeline secondarySource, String targetProperty) {
 
     Observable<JsonNode> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (jsonFromPrimary, jsonFromSecondardy) -> {
-      log.info("zipping object from secondary source into target property " + targetProperty);
+      log.debug("zipping object from secondary source into target property " + targetProperty);
 
       if (!(jsonFromPrimary instanceof ObjectNode)) {
         throw new JsonPipelineOutputException("Only pipelines with JSON *Objects* can be used as a target for a merge operation, but response data for "
@@ -291,7 +291,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         public void onNext(String jsonFromCache) {
 
           // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
-          log.info("CACHE HIT for " + cacheKey);
+            log.debug("CACHE HIT for " + cacheKey);
 
           ObjectNode envelopeFromCache = JacksonFunctions.stringToObjectNode(jsonFromCache);
           if (!envelopeFromCache.has("metadata") || !envelopeFromCache.has("content")) {
@@ -311,7 +311,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         public void onCompleted() {
           if (!cacheHit) {
             // there was no emission, so the response has to be fetched from the service
-            log.info("CACHE MISS for " + cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
+              log.debug("CACHE MISS for " + cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
             fetchAndStore();
           }
         }
@@ -330,7 +330,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
             @Override
             public void onNext(JsonNode fetchedNode) {
-              log.info("response for " + descriptor + " has been fetched and will be put in the cache");
+                log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
 
               ObjectNode wrappedNode = wrapInEnvelope(fetchedNode);
               caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), strategy, request);
