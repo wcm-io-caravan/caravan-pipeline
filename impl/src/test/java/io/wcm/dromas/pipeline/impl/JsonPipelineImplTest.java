@@ -480,7 +480,7 @@ public class JsonPipelineImplTest {
     .thenReturn(cacheKey);
 
     when(caching.get(eq(cacheKey), eq(strategy), any(Request.class)))
-    .thenReturn(Observable.just("{b: 456}"));
+        .thenReturn(Observable.just("{ metadata: {}, content: {b: 456}}"));
 
     String output = cached.getStringOutput().toBlocking().single();
 
@@ -514,14 +514,16 @@ public class JsonPipelineImplTest {
     // get must have been called to check if the document is available in the cache
     verify(caching).get(eq(cacheKey), eq(strategy), any(Request.class));
 
-    // put must have been called with an altered version of the JSON, that contains an additional _cacheInfo
+    // put must have been called with an cache envelope version of the JSON, that contains an additional _cacheInfo
     verify(caching).put(eq(cacheKey), Matchers.argThat(new BaseMatcher<String>() {
 
       @Override
       public boolean matches(Object item) {
-        ObjectNode storedNode = (ObjectNode)JacksonFunctions.stringToNode(item.toString());
+        ObjectNode storedNode = JacksonFunctions.stringToObjectNode(item.toString());
 
-        return storedNode.get("a").asInt() == 123 && storedNode.has("_cacheInfo");
+        return storedNode.has("metadata")
+            && storedNode.has("content")
+            && storedNode.get("content").get("a").asInt() == 123;
       }
 
       @Override

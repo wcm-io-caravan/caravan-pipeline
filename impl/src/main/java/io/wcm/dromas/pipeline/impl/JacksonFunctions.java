@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -73,6 +73,23 @@ public final class JacksonFunctions {
     }
     catch (IOException ex) {
       throw new JsonPipelineInputException("Failed to parse JSON: " + jsonString, ex);
+    }
+    return node;
+  };
+
+  /**
+   * Parse the given JSON string using the default factory
+   * @param jsonString a string with a valid JSON document
+   * @return a {@link ObjectNode}
+   * @throws JsonPipelineInputException if the input is not valid a JSON *Object*
+   */
+  public static ObjectNode stringToObjectNode(String jsonString) {
+    ObjectNode node = null;
+    try {
+      node = jsonFactory.createParser(jsonString).readValueAsTree();
+    }
+    catch (IOException | ClassCastException ex) {
+      throw new JsonPipelineInputException("Failed to parse JSON object from: " + jsonString, ex);
     }
     return node;
   };

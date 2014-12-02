@@ -36,6 +36,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -46,6 +48,7 @@ import rx.Observer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.PathNotFoundException;
 
@@ -56,7 +59,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private static final Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
 
-  private String serviceName;
+  private static JsonNodeFactory nodeFactory = JsonNodeFactory.withExactBigDecimals(false);
+
+  private SortedSet<String> sourceServiceNames = new TreeSet<String>();
   private Request request;
 
   private CacheAdapter caching;
@@ -71,7 +76,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * @param caching the caching layer to use
    */
   JsonPipelineImpl(String serviceName, Request request, Observable<Response> responseObservable, CacheAdapter caching) {
-    this.serviceName = serviceName;
+
+    if (isNotBlank(serviceName)) {
+      this.sourceServiceNames.add(serviceName);
+    }
     this.request = request;
 
     this.caching = caching;
@@ -95,7 +103,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private JsonPipelineImpl cloneWith(Observable<JsonNode> newSource, String descriptorSuffix) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
-    clone.serviceName = this.serviceName;
+    clone.sourceServiceNames.addAll(this.sourceServiceNames);
     clone.request = this.request;
 
     clone.caching = this.caching;
@@ -111,6 +119,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public String getDescriptor() {
     return descriptor;
+  }
+
+  @Override
+  public SortedSet<String> getSourceServices() {
+    return this.sourceServiceNames;
   }
 
   @Override
@@ -236,11 +249,17 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
     String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + targetSuffix + ")";
-    return cloneWith(zippedSource, transformationDesc);
+
+    JsonPipelineImpl mergedPipeline = cloneWith(zippedSource, transformationDesc);
+    mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
+    return mergedPipeline;
   }
 
   @Override
   public JsonPipeline addCachePoint(CacheStrategy strategy) {
+
+
+    // TODO: this method has grown too much and the caching detail logic should be refactored out of this class
 
     // skip all caching logic if the expiry time for this request is 0
     if (strategy.getExpirySeconds(request) == 0) {
@@ -256,7 +275,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonNode> cachedSource = Observable.create((subscriber) -> {
 
       // construct a unique cache key from the pipeline's descriptor
-      final String cacheKey = caching.getCacheKey(serviceName, descriptor);
+      final String cacheKey = caching.getCacheKey(getSourceServicePrefix(), descriptor);
 
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggest to ignore cache)
       Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : caching.get(cacheKey, strategy, request));
@@ -272,9 +291,19 @@ public final class JsonPipelineImpl implements JsonPipeline {
         public void onNext(String jsonFromCache) {
 
           // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
-          cacheHit = true;
           log.info("CACHE HIT for " + cacheKey);
-          subscriber.onNext(JacksonFunctions.stringToNode(jsonFromCache));
+
+          ObjectNode envelopeFromCache = JacksonFunctions.stringToObjectNode(jsonFromCache);
+          if (!envelopeFromCache.has("metadata") || !envelopeFromCache.has("content")) {
+            log.warn("Ignoring cached document " + cacheKey + ", because it doesn't have the expected metadata/content envelope.");
+            return;
+          }
+
+          JsonNode contentFromCache = envelopeFromCache.get("content");
+
+          cacheHit = true;
+
+          subscriber.onNext(contentFromCache);
           subscriber.onCompleted();
         };
 
@@ -282,7 +311,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         public void onCompleted() {
           if (!cacheHit) {
             // there was no emission, so the response has to be fetched from the service
-            log.info("CACHE MISS for " + cacheKey + " fetching response through pipeline...");
+            log.info("CACHE MISS for " + cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
             fetchAndStore();
           }
         }
@@ -290,7 +319,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         @Override
         public void onError(Throwable e) {
           // also fall back to the actual service if the couchbase request failed
-          log.warn("Failed to connect to couchbase server, falling back to direct connection to " + serviceName);
+          log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix());
           fetchAndStore();
         }
 
@@ -303,8 +332,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
             public void onNext(JsonNode fetchedNode) {
               log.info("response for " + descriptor + " has been fetched and will be put in the cache");
 
-              JsonNode decoratedNode = decorateWithCacheInfo(fetchedNode);
-              caching.put(cacheKey, JacksonFunctions.nodeToString(decoratedNode), strategy, request);
+              ObjectNode wrappedNode = wrapInEnvelope(fetchedNode);
+              caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), strategy, request);
 
               // everything else is just forwarding to the subscriber to the cachedSource
               subscriber.onNext(fetchedNode);
@@ -320,22 +349,21 @@ public final class JsonPipelineImpl implements JsonPipeline {
               subscriber.onError(e);
             }
 
-            private JsonNode decorateWithCacheInfo(JsonNode fetchedNode) {
+            private ObjectNode wrapInEnvelope(JsonNode fetchedNode) {
 
-              if (!(fetchedNode instanceof ObjectNode)) {
-                log.warn("Can't add cache info to " + descriptor + ": fetchedNode is " + fetchedNode);
-                return fetchedNode;
-              }
+              ObjectNode envelope = nodeFactory.objectNode();
 
-              ObjectNode clone = fetchedNode.deepCopy();
-              clone.putObject("_cacheInfo")
-              .put("cacheKey", cacheKey)
-              .put("pipeline", descriptor)
-              .put("date", new SimpleDateFormat(PATTERN_RFC1123, Locale.US).format(new Date()));
+              ObjectNode metadata = envelope.putObject("metadata");
+              metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServices()));
+              metadata.put("pipeline", descriptor);
+              metadata.put("generated", new SimpleDateFormat(PATTERN_RFC1123, Locale.US).format(new Date()));
+              metadata.put("expiry", strategy.getExpirySeconds(request));
+              metadata.put("resetExpiryOnGet", strategy.getExpirySeconds(request));
 
-              return clone;
+              envelope.set("content", fetchedNode);
+
+              return envelope;
             }
-
           });
         }
       });
@@ -359,4 +387,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     return dataSource.map(JacksonFunctions.nodeToPojo(clazz));
   }
 
+  private String getSourceServicePrefix() {
+    return StringUtils.join(sourceServiceNames, '+');
+  }
 }

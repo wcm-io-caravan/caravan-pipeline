@@ -21,6 +21,9 @@ package io.wcm.dromas.pipeline;
 
 import io.wcm.dromas.io.http.ResilientHttp;
 import io.wcm.dromas.pipeline.cache.CacheStrategy;
+
+import java.util.SortedSet;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,6 +53,11 @@ public interface JsonPipeline {
    * @return e.g. "GET(serviceName/path)+SELECT($..someProperty into targetPeropty)"
    */
   String getDescriptor();
+
+  /**
+   * @return all logical service names that were used in generating the pipeline's result
+   */
+  SortedSet<String> getSourceServices();
 
   /**
    * Assert that the Response contains content at the given JsonPath

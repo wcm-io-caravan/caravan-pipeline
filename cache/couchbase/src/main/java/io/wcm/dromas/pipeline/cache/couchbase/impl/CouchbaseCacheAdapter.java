@@ -73,8 +73,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   }
 
   @Override
-  public String getCacheKey(String serviceName, String descriptor) {
-    String prefix = keyPrefix + serviceName + ":";
+  public String getCacheKey(String servicePrefix, String descriptor) {
+    String prefix = keyPrefix + servicePrefix + ":";
 
     String cacheKey = prefix + descriptor;
     if (cacheKey.length() < MAX_CACHE_KEY_LENGTH) {
