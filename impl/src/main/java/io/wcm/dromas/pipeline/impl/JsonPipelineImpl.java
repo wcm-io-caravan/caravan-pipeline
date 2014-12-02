@@ -19,6 +19,7 @@
  */
 package io.wcm.dromas.pipeline.impl;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.wcm.dromas.io.http.ResilientHttp;
 import io.wcm.dromas.io.http.request.Request;
 import io.wcm.dromas.io.http.response.Response;
@@ -72,7 +73,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.request = request;
 
     this.caching = caching;
-    this.descriptor = "GET(" + request.url() + ")";
+    this.descriptor = isNotBlank(request.url()) ? "GET(" + request.url() + ")" : "EMPTY()";
 
     this.dataSource = responseObservable
         .map(response -> {

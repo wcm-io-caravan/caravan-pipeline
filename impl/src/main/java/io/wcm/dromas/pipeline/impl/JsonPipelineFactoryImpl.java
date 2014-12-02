@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,10 +21,15 @@ package io.wcm.dromas.pipeline.impl;
 
 import io.wcm.dromas.io.http.ResilientHttp;
 import io.wcm.dromas.io.http.request.Request;
+import io.wcm.dromas.io.http.request.RequestTemplate;
 import io.wcm.dromas.io.http.response.Response;
 import io.wcm.dromas.pipeline.JsonPipeline;
 import io.wcm.dromas.pipeline.JsonPipelineFactory;
 import io.wcm.dromas.pipeline.cache.spi.CacheAdapter;
+
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.HashMap;
 
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Reference;
@@ -53,6 +58,15 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     Observable<Response> response = transport.execute(serviceName, request);
 
     return new JsonPipelineImpl(serviceName, request, response, cacheAdapter);
+  }
+
+  @Override
+  public JsonPipeline createEmpty() {
+
+    Request dummyRequest = new RequestTemplate().request();
+    Response emptyJsonResponse = Response.create(200, "Ok", new HashMap<String, Collection<String>>(), "{}", Charset.forName("UTF-8"));
+
+    return new JsonPipelineImpl("", dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter);
   }
 
 }
