@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -57,7 +58,12 @@ import com.jayway.jsonpath.PathNotFoundException;
  */
 public final class JsonPipelineImpl implements JsonPipeline {
 
+
   private static final Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
+
+  /** the property name to use if caching metadata is also embedded in the output JSON */
+  private static final String CACHE_METADATA_OUTPUT_PROPERTY = "_cacheMetadata";
+
 
   private static JsonNodeFactory nodeFactory = JsonNodeFactory.withExactBigDecimals(false);
 
@@ -211,7 +217,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline merge(JsonPipeline secondarySource, String targetProperty) {
 
-    Observable<JsonNode> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (jsonFromPrimary, jsonFromSecondardy) -> {
+    Observable<JsonNode> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (jsonFromPrimary, jsonFromSecondary) -> {
       log.debug("zipping object from secondary source into target property " + targetProperty);
 
       if (!(jsonFromPrimary instanceof ObjectNode)) {
@@ -224,24 +230,16 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
       // if a target property is specified, the JSON to be merged is inserted into this property
       if (isNotBlank(targetProperty)) {
-        mergedObject.set(targetProperty, jsonFromSecondardy);
+        mergedObject.set(targetProperty, jsonFromSecondary);
       }
       else {
 
         // if no target property is specified, all properties of the secondary pipeline are copied into the merged object
-        if (!(jsonFromSecondardy instanceof ObjectNode)) {
+        if (!(jsonFromSecondary instanceof ObjectNode)) {
           throw new JsonPipelineOutputException("Only pipelines with JSON *Object* responses can be merged without specify a target property");
         }
-        Iterator<Entry<String, JsonNode>> propertyIterator = ((ObjectNode)jsonFromSecondardy).fields();
-        while (propertyIterator.hasNext()) {
-          Entry<String, JsonNode> nextProperty = propertyIterator.next();
 
-          if (mergedObject.has(nextProperty.getKey())) {
-            throw new JsonPipelineOutputException("Target pipeline " + this.getDescriptor() + " already has a property named " + nextProperty.getKey());
-          }
-
-          mergedObject.set(nextProperty.getKey(), nextProperty.getValue());
-        }
+        mergeAllPropertiesInto((ObjectNode)jsonFromSecondary, mergedObject);
       }
 
       return mergedObject;
@@ -255,11 +253,39 @@ public final class JsonPipelineImpl implements JsonPipeline {
     return mergedPipeline;
   }
 
+  private void mergeAllPropertiesInto(ObjectNode nodeToMerge, ObjectNode targetNode) {
+
+    // iterate over all properties of the given node
+    Iterator<Entry<String, JsonNode>> propertyIterator = nodeToMerge.fields();
+    while (propertyIterator.hasNext()) {
+      Entry<String, JsonNode> nextProperty = propertyIterator.next();
+      String propertyName = nextProperty.getKey();
+
+      // what to do if the property already exists?
+      if (targetNode.has(propertyName)) {
+
+        // if it's just a _cacheMetadata property: increase counter suffix until there is no collision
+        if (propertyName == CACHE_METADATA_OUTPUT_PROPERTY) {
+          int suffix = 0;
+          do {
+            suffix++;
+            propertyName = nextProperty.getKey() + "#" + suffix;
+          }
+          while (targetNode.has(propertyName));
+        }
+        else {
+
+          // otherwise throw an exception,
+          throw new JsonPipelineOutputException("Target pipeline " + this.getDescriptor() + " already has a property named " + propertyName);
+        }
+      }
+
+      targetNode.set(propertyName, nextProperty.getValue());
+    }
+  }
+
   @Override
   public JsonPipeline addCachePoint(CacheStrategy strategy) {
-
-
-    // TODO: this method has grown too much and the caching detail logic should be refactored out of this class
 
     // skip all caching logic if the expiry time for this request is 0
     if (strategy.getExpirySeconds(request) == 0) {
@@ -280,93 +306,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggest to ignore cache)
       Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : caching.get(cacheKey, strategy, request));
 
-      // define what to do when the response is ready (or could not be retrieved from cache)
-      cachedJsonString.subscribe(new Observer<String>() {
-
-        private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
-
-        private boolean cacheHit;
-
-        @Override
-        public void onNext(String jsonFromCache) {
-
-          // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
-            log.debug("CACHE HIT for " + cacheKey);
-
-          ObjectNode envelopeFromCache = JacksonFunctions.stringToObjectNode(jsonFromCache);
-          if (!envelopeFromCache.has("metadata") || !envelopeFromCache.has("content")) {
-            log.warn("Ignoring cached document " + cacheKey + ", because it doesn't have the expected metadata/content envelope.");
-            return;
-          }
-
-          JsonNode contentFromCache = envelopeFromCache.get("content");
-
-          cacheHit = true;
-
-          subscriber.onNext(contentFromCache);
-          subscriber.onCompleted();
-        };
-
-        @Override
-        public void onCompleted() {
-          if (!cacheHit) {
-            // there was no emission, so the response has to be fetched from the service
-              log.debug("CACHE MISS for " + cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
-            fetchAndStore();
-          }
-        }
-
-        @Override
-        public void onError(Throwable e) {
-          // also fall back to the actual service if the couchbase request failed
-          log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix());
-          fetchAndStore();
-        }
-
-        private void fetchAndStore() {
-
-          // fetch the output with a new subscription, which will also store the response in the cache when it is retrieved
-          getOutput().subscribe(new Observer<JsonNode>() {
-
-            @Override
-            public void onNext(JsonNode fetchedNode) {
-                log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
-
-              ObjectNode wrappedNode = wrapInEnvelope(fetchedNode);
-              caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), strategy, request);
-
-              // everything else is just forwarding to the subscriber to the cachedSource
-              subscriber.onNext(fetchedNode);
-            }
-
-            @Override
-            public void onCompleted() {
-              subscriber.onCompleted();
-            }
-
-            @Override
-            public void onError(Throwable e) {
-              subscriber.onError(e);
-            }
-
-            private ObjectNode wrapInEnvelope(JsonNode fetchedNode) {
-
-              ObjectNode envelope = nodeFactory.objectNode();
-
-              ObjectNode metadata = envelope.putObject("metadata");
-              metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServices()));
-              metadata.put("pipeline", descriptor);
-              metadata.put("generated", new SimpleDateFormat(PATTERN_RFC1123, Locale.US).format(new Date()));
-              metadata.put("expiry", strategy.getExpirySeconds(request));
-              metadata.put("resetExpiryOnGet", strategy.getExpirySeconds(request));
-
-              envelope.set("content", fetchedNode);
-
-              return envelope;
-            }
-          });
-        }
-      });
+      // CacheResponseObserver will decide what to do when the response is ready (or could not be retrieved from cache)
+      cachedJsonString.subscribe(new CacheResponseObserver(cacheKey, strategy, subscriber));
     });
 
     return cloneWith(cachedSource, null);
@@ -389,5 +330,129 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private String getSourceServicePrefix() {
     return StringUtils.join(sourceServiceNames, '+');
+  }
+
+
+  /**
+   * an observer that is subscribed to the {@link Observable} returned by
+   * {@link CacheAdapter#get(String, CacheStrategy, Request)}, and is responsible for
+   * <ul>
+   * <li>unwrapping the JSON content from the caching envelope if it was succesfully retrieved from cache</li>
+   * <li>forwarding the unwrapped repsonse to the subscriber given in the construtor</li>
+   * <li>fetch the response from the Pipeline's dataSource if it couldn't be retrieved from cache</li>
+   * <li>store the fetched responses to couchbase (wrapped in an envlope with metadata</li> *
+   * </ul>
+   * TODO: this should be moved into a top-level class, but it still contains lots of references to {@link JsonPipeline}
+   * internal's
+   */
+  private final class CacheResponseObserver implements Observer<String> {
+
+    private static final String CACHE_METADATA_PROPERTY = "metadata";
+    private static final String CACHE_CONTENT_PROPERTY = "content";
+
+    private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
+
+    private final String cacheKey;
+    private final CacheStrategy strategy;
+    private final Subscriber<? super JsonNode> subscriber;
+
+    private boolean cacheHit;
+    private boolean includeCacheMetadataInResponse;
+
+    private CacheResponseObserver(String cacheKey, CacheStrategy strategy, Subscriber<? super JsonNode> subscriberToForwardTo) {
+      this.cacheKey = cacheKey;
+      this.strategy = strategy;
+      this.subscriber = subscriberToForwardTo;
+    }
+
+    @Override
+    public void onNext(String jsonFromCache) {
+
+      // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
+      log.debug("CACHE HIT for " + this.cacheKey);
+
+      ObjectNode envelopeFromCache = JacksonFunctions.stringToObjectNode(jsonFromCache);
+      if (!envelopeFromCache.has(CACHE_METADATA_PROPERTY) || !envelopeFromCache.has(CACHE_CONTENT_PROPERTY)) {
+        log.warn("Ignoring cached document " + this.cacheKey + ", because it doesn't have the expected metadata/content envelope.");
+        return;
+      }
+
+      JsonNode contentFromCache = envelopeFromCache.get(CACHE_CONTENT_PROPERTY);
+
+      // optionally, the cache metadata can also be included in the response to help debugging
+      if (includeCacheMetadataInResponse && contentFromCache instanceof ObjectNode) {
+        ObjectNode decoratedNode = contentFromCache.deepCopy();
+
+        decoratedNode.set(CACHE_METADATA_OUTPUT_PROPERTY, envelopeFromCache.get(CACHE_METADATA_PROPERTY));
+        contentFromCache = decoratedNode;
+      }
+
+      cacheHit = true;
+
+      subscriber.onNext(contentFromCache);
+      subscriber.onCompleted();
+    }
+
+    @Override
+    public void onCompleted() {
+      if (!cacheHit) {
+        // there was no emission, so the response has to be fetched from the service
+        log.debug("CACHE MISS for " + this.cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
+        fetchAndStore();
+      }
+    }
+
+    @Override
+    public void onError(Throwable e) {
+      // also fall back to the actual service if the couchbase request failed
+      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix());
+      fetchAndStore();
+    }
+
+    private void fetchAndStore() {
+
+      // fetch the output with a new subscription, which will also store the response in the cache when it is retrieved
+      getOutput().subscribe(new Observer<JsonNode>() {
+
+        @Override
+        public void onNext(JsonNode fetchedNode) {
+          log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
+
+          ObjectNode wrappedNode = wrapInEnvelope(fetchedNode);
+          caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), strategy, request);
+
+          // everything else is just forwarding to the subscriber to the cachedSource
+          subscriber.onNext(fetchedNode);
+        }
+
+        @Override
+        public void onCompleted() {
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+          subscriber.onError(e);
+        }
+
+        private ObjectNode wrapInEnvelope(JsonNode fetchedNode) {
+
+          ObjectNode envelope = nodeFactory.objectNode();
+
+          ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
+
+          metadata.put("cacheKey", cacheKey);
+          metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServices()));
+          metadata.put("pipeline", descriptor);
+          metadata.put("generated", new SimpleDateFormat(PATTERN_RFC1123, Locale.US).format(new Date()));
+          metadata.put("expiry", strategy.getExpirySeconds(request));
+          metadata.put("resetExpiryOnGet", strategy.isResetExpiryOnGet(request));
+
+          envelope.set(CACHE_CONTENT_PROPERTY, fetchedNode);
+
+          return envelope;
+        }
+      });
+    }
   }
 }
