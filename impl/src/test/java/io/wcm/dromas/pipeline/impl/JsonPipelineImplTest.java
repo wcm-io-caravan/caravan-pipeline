@@ -199,6 +199,7 @@ public class JsonPipelineImplTest {
     verifyNoMoreInteractions(booksObserver, caching);
   }
 
+
   @Test
   public void extractObject() throws JSONException {
 
@@ -208,6 +209,19 @@ public class JsonPipelineImplTest {
 
     String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: { label: 'abc' }}", output, JSONCompareMode.STRICT);
+
+    assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), extracted.getDescriptor());
+  }
+
+  @Test
+  public void extractObjectNoTargetProperty() throws JSONException {
+
+    // test extraction of a single *Object* property *without specify a target property*
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline extracted = pipeline.extract("$.a", "");
+
+    String output = extracted.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{ label: 'abc' }", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), extracted.getDescriptor());
   }
@@ -226,6 +240,19 @@ public class JsonPipelineImplTest {
   }
 
   @Test
+  public void extractArrayNoTargetProperty() throws JSONException {
+
+    // test extraction of a single *Array* property *without specify a target property*
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }}");
+    JsonPipeline extracted = pipeline.extract("$.a.numbers", "");
+
+    String output = extracted.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("[1,2,3,4]", output, JSONCompareMode.STRICT);
+
+    assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), extracted.getDescriptor());
+  }
+
+  @Test
   public void extractNoResult() throws JSONException {
 
     // test handling of a valid JSONPath for the given structure that has no results
@@ -235,6 +262,7 @@ public class JsonPipelineImplTest {
     String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: null }", output, JSONCompareMode.STRICT);
   }
+
 
   @Test
   public void extractPathNotFound() {
@@ -278,6 +306,18 @@ public class JsonPipelineImplTest {
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
   }
 
+  @Test
+  public void collectStringsNoTargetProperty() throws JSONException {
+
+    // test extraction of a multiple *String* properties
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
+    JsonPipeline collected = pipeline.collect("$..label", "");
+
+    String output = collected.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("['abc', 'def']", output, JSONCompareMode.STRICT);
+
+    assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
+  }
 
   @Test
   public void collectArrays() throws JSONException {
@@ -301,6 +341,19 @@ public class JsonPipelineImplTest {
 
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [4,8] }", output, JSONCompareMode.STRICT);
+
+    assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
+  }
+
+  @Test
+  public void collectArrayEntriesNoTargetProperty() throws JSONException {
+
+    // test extraction of multiple items with an *Array*
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
+    JsonPipeline collected = pipeline.collect("$..numbers[3]", "");
+
+    String output = collected.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("[4,8]", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
   }
@@ -360,6 +413,23 @@ public class JsonPipelineImplTest {
     String output = merged.getStringOutput().toBlocking().single();
 
     JSONAssert.assertEquals("{a: 123, c: {b: 456}}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void mergedPipelineNoTargetProperty() throws JSONException {
+
+    // test successful merging of one pipeline into the other *without adding another property*
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+
+    JsonPipeline merged = a.merge(b, null);
+
+    assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
+    assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
+
+    String output = merged.getStringOutput().toBlocking().single();
+
+    JSONAssert.assertEquals("{a: 123, b: 456}", output, JSONCompareMode.STRICT);
   }
 
   @Test

@@ -33,7 +33,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -165,10 +167,14 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     Observable<JsonNode> resultSource = dataSource
         .map(new JsonPathSelector(jsonPath))
-        .map(arrayNode -> arrayNode.size() == 0 ? null : arrayNode.get(0))
-        .map(jsonNode -> JacksonFunctions.wrapInObject(targetProperty, jsonNode));
+        .map(arrayNode -> arrayNode.size() == 0 ? null : arrayNode.get(0));
 
-    String transformationDesc = "EXTRACT(" + jsonPath + " INTO " + targetProperty + ")";
+    if (isNotBlank(targetProperty)) {
+      resultSource = resultSource.map(jsonNode -> JacksonFunctions.wrapInObject(targetProperty, jsonNode));
+    }
+
+    String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
+    String transformationDesc = "EXTRACT(" + jsonPath + targetSuffix + ")";
     return cloneWith(resultSource, transformationDesc);
   }
 
@@ -177,10 +183,14 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline collect(String jsonPath, String targetProperty) {
 
     Observable<JsonNode> resultSource = dataSource
-        .map(new JsonPathSelector(jsonPath))
-        .map(arrayNode -> JacksonFunctions.wrapInObject(targetProperty, arrayNode));
+        .map(new JsonPathSelector(jsonPath));
 
-    String transformationDesc = "COLLECT(" + jsonPath + " INTO " + targetProperty + ")";
+    if (isNotBlank(targetProperty)) {
+      resultSource = resultSource.map(arrayNode -> JacksonFunctions.wrapInObject(targetProperty, arrayNode));
+    }
+
+    String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
+    String transformationDesc = "COLLECT(" + jsonPath + targetSuffix + ")";
     return cloneWith(resultSource, transformationDesc);
   }
 
@@ -196,12 +206,36 @@ public final class JsonPipelineImpl implements JsonPipeline {
             + this.getDescriptor() + " contained " + jsonFromPrimary.getClass().getSimpleName());
       }
 
-      ObjectNode mergedObject = ((ObjectNode)jsonFromPrimary).deepCopy();
-      mergedObject.set(targetProperty, jsonFromSecondardy);
+      // start with cloning the the response of the primary pipeline
+      ObjectNode mergedObject = jsonFromPrimary.deepCopy();
+
+      // if a target property is specified, the JSON to be merged is inserted into this property
+      if (isNotBlank(targetProperty)) {
+        mergedObject.set(targetProperty, jsonFromSecondardy);
+      }
+      else {
+
+        // if no target property is specified, all properties of the secondary pipeline are copied into the merged object
+        if (!(jsonFromSecondardy instanceof ObjectNode)) {
+          throw new JsonPipelineOutputException("Only pipelines with JSON *Object* responses can be merged without specify a target property");
+        }
+        Iterator<Entry<String, JsonNode>> propertyIterator = ((ObjectNode)jsonFromSecondardy).fields();
+        while (propertyIterator.hasNext()) {
+          Entry<String, JsonNode> nextProperty = propertyIterator.next();
+
+          if (mergedObject.has(nextProperty.getKey())) {
+            throw new JsonPipelineOutputException("Target pipeline " + this.getDescriptor() + " already has a property named " + nextProperty.getKey());
+          }
+
+          mergedObject.set(nextProperty.getKey(), nextProperty.getValue());
+        }
+      }
+
       return mergedObject;
     });
 
-    String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + " INTO " + targetProperty + ")";
+    String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
+    String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + targetSuffix + ")";
     return cloneWith(zippedSource, transformationDesc);
   }
 

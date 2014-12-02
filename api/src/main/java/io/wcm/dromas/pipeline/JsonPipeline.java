@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,10 +61,11 @@ public interface JsonPipeline {
 
   /**
    * Select a single property from the pipeline's response by specifying a JSON path.
-   * The output of the resulting pipeline will have only a single "target" property with the result of the JSONPath
-   * expression (only the first if there are multiple matches for the JSONPath expression)
+   * If targetProperty is null or blank, the pipeline's response will return the (first) result of the JSONPath
+   * expression. If a targetProperty is specified, the output of will be an object with a single property containing the
+   * result.
    * @param jsonPath a jsonPath expression that matches a single leaf in the source JSON
-   * @param targetProperty the name of the single property in new response JSON object
+   * @param targetProperty the name of the single property in new response JSON object (can be null or empty)
    * @return a new pipeline that will only emit a single JSON object with a single Object property containing the
    *         (first) result of the JSON path expression
    */
@@ -72,10 +73,11 @@ public interface JsonPipeline {
 
   /**
    * Select multiple properties (or individual entries from a property array!) from the pipeline's response by
-   * specifying a JSON path. The output of the resulting pipeline will have only a single "target" property with an
-   * array containing the results of the JSONPath expression (even if there is only a single result!)
+   * specifying a JSON path. If targetProperty is null or blank, the pipeline's response will return an array with the
+   * results of the JSONPath expression. If a targetProperty is specified, the output of will be an object with a single
+   * property containing the result array.
    * @param jsonPath a jsonPath expression that can match multiple items in the source JSON
-   * @param targetProperty the name of the single property in new response JSON object
+   * @param targetProperty the name of the single property in new response JSON object (can be null or empty)
    * @return a new pipeline that will only emit a single JSON object with a single array property containing the results
    *         of the JSON path expression
    */
