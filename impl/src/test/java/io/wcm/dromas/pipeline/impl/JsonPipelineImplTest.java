@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -109,7 +109,7 @@ public class JsonPipelineImplTest {
     // check that a plain pipeline will return the JSON emitted by the transport layer
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString());
 
-    JsonNode output = pipeline.getOutput().toBlocking().first();
+    JsonNode output = pipeline.getOutput().toBlocking().single();
     JSONAssert.assertEquals(getBooksString(), JacksonFunctions.nodeToString(output), JSONCompareMode.STRICT_ORDER);
   }
 
@@ -120,7 +120,7 @@ public class JsonPipelineImplTest {
     // check that a plain pipeline will return the JSON emitted by the transport layer
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString());
 
-    String output = pipeline.getStringOutput().toBlocking().first();
+    String output = pipeline.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals(getBooksString(), output, JSONCompareMode.STRICT_ORDER);
   }
 
@@ -130,7 +130,7 @@ public class JsonPipelineImplTest {
     // check that the book.json is also properly mapped to the BooksDocument pojo
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString());
 
-    BooksDocument doc = pipeline.getTypedOutput(BooksDocument.class).toBlocking().first();
+    BooksDocument doc = pipeline.getTypedOutput(BooksDocument.class).toBlocking().single();
 
     assertEquals("number of books", 4, doc.getStore().getBook().size());
     assertNotNull("existence of bike", doc.getStore().getBicycle());
@@ -206,7 +206,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline extracted = pipeline.extract("$.a", "extracted");
 
-    String output = extracted.getStringOutput().toBlocking().first();
+    String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: { label: 'abc' }}", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), extracted.getDescriptor());
@@ -219,7 +219,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }}");
     JsonPipeline extracted = pipeline.extract("$.a.numbers", "extracted");
 
-    String output = extracted.getStringOutput().toBlocking().first();
+    String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [1,2,3,4] }", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), extracted.getDescriptor());
@@ -232,7 +232,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline extracted = pipeline.extract("$.a[?(@.label=='def')]", "extracted");
 
-    String output = extracted.getStringOutput().toBlocking().first();
+    String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: null }", output, JSONCompareMode.STRICT);
   }
 
@@ -272,7 +272,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
     JsonPipeline collected = pipeline.collect("$..label", "extracted");
 
-    String output = collected.getStringOutput().toBlocking().first();
+    String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: ['abc', 'def'] }", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
@@ -286,7 +286,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
     JsonPipeline collected = pipeline.collect("$..numbers", "extracted");
 
-    String output = collected.getStringOutput().toBlocking().first();
+    String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [[1,2,3,4], [5,6,7,8]] }", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
@@ -299,7 +299,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
     JsonPipeline collected = pipeline.collect("$..numbers[3]", "extracted");
 
-    String output = collected.getStringOutput().toBlocking().first();
+    String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [4,8] }", output, JSONCompareMode.STRICT);
 
     assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
@@ -312,7 +312,7 @@ public class JsonPipelineImplTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline collected = pipeline.collect("$.a[?(@.label=='def')]", "extracted");
 
-    String output = collected.getStringOutput().toBlocking().first();
+    String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [] }", output, JSONCompareMode.STRICT);
   }
 
@@ -357,7 +357,7 @@ public class JsonPipelineImplTest {
     assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
     assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
 
-    String output = merged.getStringOutput().toBlocking().first();
+    String output = merged.getStringOutput().toBlocking().single();
 
     JSONAssert.assertEquals("{a: 123, c: {b: 456}}", output, JSONCompareMode.STRICT);
   }
@@ -412,7 +412,7 @@ public class JsonPipelineImplTest {
     when(caching.get(eq(cacheKey), eq(strategy), any(Request.class)))
     .thenReturn(Observable.just("{b: 456}"));
 
-    String output = cached.getStringOutput().toBlocking().first();
+    String output = cached.getStringOutput().toBlocking().single();
 
     // only getCacheKey and get should have been called to check if it is available in the cache
     verify(caching).getCacheKey(SERVICE_NAME, a.getDescriptor());
@@ -439,7 +439,7 @@ public class JsonPipelineImplTest {
     when(caching.get(eq(cacheKey), eq(strategy), any(Request.class)))
     .thenReturn(Observable.empty());
 
-    String output = cached.getStringOutput().toBlocking().first();
+    String output = cached.getStringOutput().toBlocking().single();
 
     // get must have been called to check if the document is available in the cache
     verify(caching).get(eq(cacheKey), eq(strategy), any(Request.class));
