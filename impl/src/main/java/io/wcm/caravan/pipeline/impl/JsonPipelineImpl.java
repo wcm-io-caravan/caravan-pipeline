@@ -39,6 +39,8 @@ import java.util.Map.Entry;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +97,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
         .map(response -> {
           try {
             log.debug("received " + response.status() + " response (" + response.reason() + ") with from " + request.url());
-            return response.body().asString();
+            if (response.status() == HttpServletResponse.SC_OK) {
+              return response.body().asString();
+            }
+            else {
+              throw new JsonPipelineInputException("Call to " + request.url() + " failed with HTTP return code: " + response.status());
+            }
           }
           catch (IOException ex) {
             throw new JsonPipelineInputException("Failed to read JSON response from " + request.url(), ex);
