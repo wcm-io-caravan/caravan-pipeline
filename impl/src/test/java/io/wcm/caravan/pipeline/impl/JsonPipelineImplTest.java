@@ -44,6 +44,7 @@ import io.wcm.caravan.pipeline.impl.testdata.BooksDocument.Book;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.BaseMatcher;
@@ -469,7 +470,7 @@ public class JsonPipelineImplTest {
   @Test
   public void cacheHit() throws JSONException {
 
-    CacheStrategy strategy = CacheStrategies.timeToLive(1);
+    CacheStrategy strategy = CacheStrategies.timeToLive(1, TimeUnit.SECONDS);
 
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline cached = a.addCachePoint(strategy);
@@ -480,7 +481,7 @@ public class JsonPipelineImplTest {
     .thenReturn(cacheKey);
 
     when(caching.get(eq(cacheKey), eq(strategy), any(Request.class)))
-        .thenReturn(Observable.just("{ metadata: {}, content: {b: 456}}"));
+    .thenReturn(Observable.just("{ metadata: {}, content: {b: 456}}"));
 
     String output = cached.getStringOutput().toBlocking().single();
 
@@ -496,7 +497,7 @@ public class JsonPipelineImplTest {
   @Test
   public void cacheMissAndStore() throws JSONException {
 
-    CacheStrategy strategy = CacheStrategies.timeToLive(1);
+    CacheStrategy strategy = CacheStrategies.timeToLive(1, TimeUnit.SECONDS);
 
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline cached = a.addCachePoint(strategy);

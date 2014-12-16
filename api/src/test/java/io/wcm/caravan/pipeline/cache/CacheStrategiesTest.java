@@ -23,20 +23,55 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Test;
 
 public class CacheStrategiesTest {
 
   @Test
   public void testTimeToLive() {
-    CacheStrategy underTest = CacheStrategies.timeToLive(55);
+    CacheStrategy underTest = CacheStrategies.timeToLive(55, TimeUnit.SECONDS);
     assertEquals(55, underTest.getExpirySeconds(null));
     assertFalse(underTest.isResetExpiryOnGet(null));
   }
 
   @Test
+  public void testTimeToLive_Minutes() {
+    CacheStrategy underTest = CacheStrategies.timeToLive(55, TimeUnit.MINUTES);
+    assertEquals(55 * 60, underTest.getExpirySeconds(null));
+  }
+
+  @Test
+  public void testTimeToLive_Hours() {
+    CacheStrategy underTest = CacheStrategies.timeToLive(24, TimeUnit.HOURS);
+    assertEquals(24 * 60 * 60, underTest.getExpirySeconds(null));
+  }
+
+  @Test
+  public void testTimeToLive_Days() {
+    CacheStrategy underTest = CacheStrategies.timeToLive(2, TimeUnit.DAYS);
+    assertEquals(2 * 24 * 60 * 60, underTest.getExpirySeconds(null));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testTimeToLive_Milliseconds() {
+    CacheStrategies.timeToLive(10, TimeUnit.MILLISECONDS);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testTimeToLive_Microseconds() {
+    CacheStrategies.timeToLive(10, TimeUnit.MICROSECONDS);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testTimeToLive_Nanoseconds() {
+    CacheStrategies.timeToLive(10, TimeUnit.NANOSECONDS);
+  }
+
+  @Test
   public void testTimeToIdle() {
-    CacheStrategy underTest = CacheStrategies.timeToIdle(55);
+    CacheStrategy underTest = CacheStrategies.timeToIdle(55, TimeUnit.SECONDS);
     assertEquals(55, underTest.getExpirySeconds(null));
     assertTrue(underTest.isResetExpiryOnGet(null));
   }

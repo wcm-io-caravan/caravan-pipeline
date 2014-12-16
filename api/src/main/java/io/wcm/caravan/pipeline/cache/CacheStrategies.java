@@ -22,10 +22,16 @@ package io.wcm.caravan.pipeline.cache;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.pipeline.JsonPipeline;
 
+import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Default implementations of differente cache strategies.
  */
 public final class CacheStrategies {
+
+  private static final EnumSet SUPPORTED_TIME_UNITS = EnumSet.of(TimeUnit.SECONDS, TimeUnit.MINUTES,
+      TimeUnit.HOURS, TimeUnit.DAYS);
 
   private CacheStrategies() {
     // static methods only
@@ -33,20 +39,33 @@ public final class CacheStrategies {
 
   /**
    * Invalidate item after a fixed time-to-live interval.
-   * @param seconds Time-to-live interval in seconds
+   * @param duration Time-to-live duration
+   * @param unit Time unit
    * @return Cache strategy
    */
-  public static CacheStrategy timeToLive(int seconds) {
-    return new CacheStrategyImpl(seconds, false);
+  public static CacheStrategy timeToLive(int duration, TimeUnit unit) {
+    return new CacheStrategyImpl(toSeconds(duration, unit), false);
   }
 
   /**
    * Invalidate item after a time-to-idle interval, prolong expery on each get operation on this item.
-   * @param seconds Time-to-idle interval in seconds
+   * @param duration Time-to-live duration
+   * @param unit Time unit
    * @return Cache strategy
    */
-  public static CacheStrategy timeToIdle(int seconds) {
-    return new CacheStrategyImpl(seconds, true);
+  public static CacheStrategy timeToIdle(int duration, TimeUnit unit) {
+    return new CacheStrategyImpl(toSeconds(duration, unit), true);
+  }
+
+  private static int toSeconds(int duration, TimeUnit unit) {
+    if (!SUPPORTED_TIME_UNITS.contains(unit)) {
+      throw new IllegalArgumentException("Unsupported time unit: " + unit);
+    }
+    long seconds = unit.toSeconds(duration);
+    if (seconds > Integer.MAX_VALUE) {
+      throw new IllegalArgumentException("Duration is too long: " + seconds + " seconds");
+    }
+    return (int)unit.toSeconds(duration);
   }
 
   /**
