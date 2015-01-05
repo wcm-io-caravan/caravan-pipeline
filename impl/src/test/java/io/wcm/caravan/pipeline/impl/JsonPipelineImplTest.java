@@ -334,9 +334,23 @@ public class JsonPipelineImplTest {
   }
 
   @Test
-  public void collectArrayEntries() throws JSONException {
+  public void collectAllArrayEntries() throws JSONException {
 
-    // test extraction of multiple items with an *Array*
+    // test extraction of all items from multiple arrays
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
+    JsonPipeline collected = pipeline.collect("$..numbers[*]", "extracted");
+
+    String output = collected.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{ extracted: [1,2,3,4,5,6,7,8] }", output, JSONCompareMode.STRICT);
+
+    assertNotEquals("descriptor has been updated?", pipeline.getDescriptor(), collected.getDescriptor());
+  }
+
+
+  @Test
+  public void collectSpecificArrayEntries() throws JSONException {
+
+    // test extraction of the third item from each of multiple arrays
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
     JsonPipeline collected = pipeline.collect("$..numbers[3]", "extracted");
 
