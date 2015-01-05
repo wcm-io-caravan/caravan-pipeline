@@ -92,7 +92,19 @@ public class JsonPipelineImplTest {
    * @return pipeline for the given input content
    */
   private JsonPipeline newPipelineWithResponseBody(String json) {
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(getJsonResponse(json)), caching);
+    Response response = getJsonResponse(200, json);
+    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
+  }
+
+  /**
+   * @param code the HTTP status code to send with the response
+   * @return pipeline for the given input content
+   */
+  private JsonPipeline newPipelineWithResponseCode(int code) {
+    // we are using some valid JSON as response body, because one of the purpose of this methods is to ensure that
+    // the content is not parsed when there is a >200 response code
+    Response response = getJsonResponse(code, "{ responseCode:" + code + "}");
+    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
   }
 
   /**
@@ -173,6 +185,18 @@ public class JsonPipelineImplTest {
 
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
     verify(stringObserver).onError(ex);
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void plainPipelineResourceNotFound() {
+
+    // tests that 404 responses are not parsed as JSON, but treated as an error
+    JsonPipeline pipeline = newPipelineWithResponseCode(404);
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
 
@@ -266,7 +290,7 @@ public class JsonPipelineImplTest {
 
 
   @Test
-  public void extractPathNotFound() {
+  public void extractJsonPathNotFound() {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
@@ -291,6 +315,18 @@ public class JsonPipelineImplTest {
 
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
     verify(stringObserver).onError(ex);
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void extractResourceNotFound() {
+
+    // tests that 404 responses from the transport layers are properly handled
+    JsonPipeline pipeline = newPipelineWithResponseCode(404).extract("$..", "targetproperty");
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
 
@@ -385,7 +421,7 @@ public class JsonPipelineImplTest {
   }
 
   @Test
-  public void collectPathNotFound() {
+  public void collectJsonPathNotFound() {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
@@ -393,7 +429,7 @@ public class JsonPipelineImplTest {
 
     collected.getStringOutput().subscribe(stringObserver);
 
-    // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
+    // make sure that only #onError was called with a PathNotFoundException
     verify(stringObserver).onError(any(PathNotFoundException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
@@ -567,8 +603,8 @@ public class JsonPipelineImplTest {
     }
   }
 
-  static Response getJsonResponse(String content) {
-    return Response.create(200, "Ok", Collections.emptyMap(), content, Charsets.UTF_8);
+  static Response getJsonResponse(int statusCode, String content) {
+    return Response.create(statusCode, "Ok", Collections.emptyMap(), content, Charsets.UTF_8);
   }
 
 }
