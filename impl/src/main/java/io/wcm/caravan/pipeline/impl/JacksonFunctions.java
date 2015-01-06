@@ -72,7 +72,7 @@ public final class JacksonFunctions {
       node = jsonFactory.createParser(jsonString).readValueAsTree();
     }
     catch (IOException ex) {
-      throw new JsonPipelineInputException("Failed to parse JSON: " + jsonString, ex);
+      throw new JsonPipelineInputException(500, "Failed to parse JSON: " + jsonString, ex);
     }
     return node;
   };
@@ -89,7 +89,7 @@ public final class JacksonFunctions {
       node = jsonFactory.createParser(jsonString).readValueAsTree();
     }
     catch (IOException | ClassCastException ex) {
-      throw new JsonPipelineInputException("Failed to parse JSON object from: " + jsonString, ex);
+      throw new JsonPipelineInputException(500, "Failed to parse JSON object from: " + jsonString, ex);
     }
     return node;
   };
@@ -136,7 +136,7 @@ public final class JacksonFunctions {
       node = objectMapper.valueToTree(object);
     }
     catch (IllegalArgumentException ex) {
-      throw new JsonPipelineInputException("Failed to create JSONNode from object of clsas " + object.getClass().getName(), ex);
+      throw new JsonPipelineInputException(500, "Failed to create JSONNode from object of class " + object.getClass().getName(), ex);
     }
     return node;
   };
@@ -174,7 +174,7 @@ public final class JacksonFunctions {
         return jsonFactory.createParser(jsonString).readValueAs(targetType);
       }
       catch (IOException ex) {
-        throw new JsonPipelineInputException("Failed to create entity of " + targetType.getName() + " from JSON", ex);
+        throw new JsonPipelineInputException(500, "Failed to create entity of " + targetType.getName() + " from JSON", ex);
       }
     };
   }

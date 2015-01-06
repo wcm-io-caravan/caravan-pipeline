@@ -66,6 +66,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.PathNotFoundException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -446,6 +447,64 @@ public class JsonPipelineImplTest {
 
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
     verify(stringObserver).onError(ex);
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void assertExistsSuccess() throws JSONException {
+
+    // check that a fulfilled assertion will not influence the pipeline output
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
+        .assertExists("$.a", new RuntimeException("a not found"));
+
+    String output = pipeline.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{a: 123}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void assertExistsFails() {
+
+    // check that an unfulfilled assertion will throw the specified exception
+    RuntimeException expectedEx = new RuntimeException("b not found");
+
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
+        .assertExists("$.b", expectedEx);
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
+    verify(stringObserver).onError(eq(expectedEx));
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void assertExistsAfterExtract() {
+
+    // check that assertExist also fails with the given runtime exception if the pipeline's result is null because of a preceding extract
+    RuntimeException expectedEx = new RuntimeException("a not found");
+
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
+        .extract("$[?(@.a==456)]", null) // this will *not* match the root object, so the pipeline's output is null
+        .assertExists("$.a", expectedEx); // this used to fail with an InvalidArgumentException within JsonPathSelector, that is now avoided
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
+    verify(stringObserver).onError(eq(expectedEx));
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void assertExistsWithInvalidPath() {
+
+    // check that assertExist fails with an InvalidPathException if the given JSONPath is not valid
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
+        .assertExists("$.a[invalid]", new RuntimeException());
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
+    verify(stringObserver).onError(any(InvalidPathException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
 

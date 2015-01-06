@@ -28,7 +28,8 @@ import io.wcm.caravan.io.http.request.Request;
 public interface JsonPipelineFactory {
 
   /**
-   * Creates a new {@link JsonPipeline} to process the response from a {@link ResilientHttp} for the given service
+   * Creates a new {@link JsonPipeline} to process the response from a {@link ResilientHttp} request for the given
+   * service
    * @param serviceName the logical service name (is mapped to configured real host names).
    * @param request the REST request to execute
    * @return the new pipeline

@@ -60,7 +60,9 @@ public interface JsonPipeline {
   SortedSet<String> getSourceServices();
 
   /**
-   * Assert that the Response contains content at the given JsonPath
+   * Ensure that the pipeline's JSON output contains content at the given JSONPath. If this expectation fails, the
+   * pipeline processing will be aborted and {@link rx.Observer#onError(Throwable)} of the pipeline's output
+   * subscribers will be called with the given exception.
    * @param jsonPath the expression to look for
    * @param ex the exception to fail with
    * @return a new pipeline with the same response and descriptor

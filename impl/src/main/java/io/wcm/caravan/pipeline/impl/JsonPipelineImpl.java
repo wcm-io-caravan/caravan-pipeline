@@ -96,16 +96,18 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.dataSource = responseObservable
         .map(response -> {
           try {
-            log.debug("received " + response.status() + " response (" + response.reason() + ") with from " + request.url());
-            if (response.status() == HttpServletResponse.SC_OK) {
+            int statusCode = response.status();
+            log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.url());
+            if (statusCode == HttpServletResponse.SC_OK) {
               return response.body().asString();
             }
             else {
-              throw new JsonPipelineInputException("Call to " + request.url() + " failed with HTTP return code: " + response.status());
+              throw new JsonPipelineInputException(statusCode, "Call to " + request.url() + " failed with HTTP return code: " + statusCode
+                  + "(" + response.reason() + ")");
             }
           }
           catch (IOException ex) {
-            throw new JsonPipelineInputException("Failed to read JSON response from " + request.url(), ex);
+            throw new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex);
           }
         }).map(JacksonFunctions::stringToNode);
   }
@@ -150,6 +152,13 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
         @Override
         public void onNext(JsonNode responseNode) {
+
+          // if this #assertExist is chained after an #extract call, the responseNode can be null and we should bail out early
+          if (responseNode == null) {
+            this.onError(ex);
+            return;
+          }
+
           try {
             ArrayNode jsonPathResult = new JsonPathSelector(jsonPath).call(responseNode);
 
@@ -158,7 +167,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
               this.onError(ex);
             }
             else {
-              // the responseNode has content at the given JsoNPath, so we can
+              // the responseNode has content at the given JsonPath, so we can continue processing processing the response
               subscriber.onNext(responseNode);
             }
           }
