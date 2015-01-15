@@ -24,6 +24,7 @@ import io.wcm.caravan.io.http.ResilientHttp;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
@@ -93,23 +94,46 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.caching = caching;
     this.descriptor = isNotBlank(request.url()) ? "GET(" + request.url() + ")" : "EMPTY()";
 
-    this.dataSource = responseObservable
-        .map(response -> {
+    this.dataSource = Observable.create(subscriber -> {
+
+      responseObservable.subscribe(new Observer<Response>() {
+
+        @Override
+        public void onNext(Response response) {
           try {
             int statusCode = response.status();
             log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.url());
             if (statusCode == HttpServletResponse.SC_OK) {
-              return response.body().asString();
+              subscriber.onNext(JacksonFunctions.stringToNode(response.body().asString()));
             }
             else {
-              throw new JsonPipelineInputException(statusCode, "Call to " + request.url() + " failed with HTTP return code: " + statusCode
-                  + "(" + response.reason() + ")");
+              subscriber.onError(new JsonPipelineInputException(statusCode, "Call to " + request.url() + " failed with HTTP return code: " + statusCode
+                  + "(" + response.reason() + ")"));
             }
+          } catch (IOException ex) {
+            subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex));
           }
-          catch (IOException ex) {
-            throw new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex);
+        }
+
+        @Override
+        public void onCompleted() {
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+          /* TODO: consider to also wrap these exceptions in an JsonPipelineInputException with the following code
+          int statusCode = 500;
+          if (e instanceof IllegalResponseRuntimeException) {
+            statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
           }
-        }).map(JacksonFunctions::stringToNode);
+          subscriber.onError(new JsonPipelineInputException(statusCode, "An exception occured connecting to " + request.url(), e));
+           */
+          subscriber.onError(e);
+        }
+      });
+
+    });
   }
 
   private JsonPipelineImpl() {
@@ -236,7 +260,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonNode> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (jsonFromPrimary, jsonFromSecondary) -> {
       log.debug("zipping object from secondary source into target property " + targetProperty);
 
-      if (!(jsonFromPrimary instanceof ObjectNode)) {
+      if (!(jsonFromPrimary.isObject())) {
         throw new JsonPipelineOutputException("Only pipelines with JSON *Objects* can be used as a target for a merge operation, but response data for "
             + this.getDescriptor() + " contained " + jsonFromPrimary.getClass().getSimpleName());
       }
@@ -246,12 +270,31 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
       // if a target property is specified, the JSON to be merged is inserted into this property
       if (isNotBlank(targetProperty)) {
-        mergedObject.set(targetProperty, jsonFromSecondary);
+
+        if (!mergedObject.has(targetProperty)) {
+            // the target property does not exist yet, so we just can set the property
+          mergedObject.set(targetProperty, jsonFromSecondary);
+        }
+        else {
+
+            // the target property already exists - let's hope we can merge!
+          JsonNode targetNode = mergedObject.get(targetProperty);
+
+          if (!targetNode.isObject()) {
+            throw new JsonPipelineOutputException("When merging two pipelines into the same target property, both most contain JSON *Object* responses");
+          }
+
+          if (!(jsonFromSecondary.isObject())) {
+            throw new JsonPipelineOutputException("Only pipelines with JSON *Object* responses can be merged into an existing target property");
+          }
+
+          mergeAllPropertiesInto((ObjectNode)jsonFromSecondary, (ObjectNode)targetNode);
+        }
       }
       else {
 
         // if no target property is specified, all properties of the secondary pipeline are copied into the merged object
-        if (!(jsonFromSecondary instanceof ObjectNode)) {
+        if (!(jsonFromSecondary.isObject())) {
           throw new JsonPipelineOutputException("Only pipelines with JSON *Object* responses can be merged without specify a target property");
         }
 
@@ -327,6 +370,72 @@ public final class JsonPipelineImpl implements JsonPipeline {
     });
 
     return cloneWith(cachedSource, null);
+  }
+
+  @Override
+  public JsonPipeline handleException(JsonPipelineExceptionHandler handler) {
+
+    // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "wrappedSource" observable
+    Observable<JsonNode> wrappedSource = Observable.create((subscriber) -> {
+
+      dataSource.subscribe(new Observer<JsonNode>() {
+
+        @Override
+        public void onNext(JsonNode t) {
+          subscriber.onNext(t);
+        }
+
+        @Override
+        public void onCompleted() {
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+          int statusCode = 500;
+          if (e instanceof JsonPipelineInputException) {
+            statusCode = ((JsonPipelineInputException)e).getStatusCode();
+          }
+
+          if (e instanceof RuntimeException) {
+            try {
+              Observable<JsonNode> fallbackResponse = handler.rethrowOrReturnFallback(statusCode, (RuntimeException)e);
+
+              // use the given fallback response
+              fallbackResponse.subscribe(new Observer<JsonNode>() {
+
+                @Override
+                public void onNext(JsonNode t) {
+
+                  // TODO: mark the fallback content as not cachable...
+                  subscriber.onNext(t);
+                }
+
+                @Override
+                public void onCompleted() {
+                  subscriber.onCompleted();
+                }
+
+                @Override
+                public void onError(Throwable ex) {
+                  subscriber.onError(ex);
+                }
+              });
+
+            }
+            catch (Throwable rethrown) {
+              subscriber.onError(rethrown);
+            }
+          }
+          else {
+            subscriber.onError(e);
+          }
+        }
+      });
+
+    });
+
+    return cloneWith(wrappedSource, null);
   }
 
   @Override
@@ -471,4 +580,5 @@ public final class JsonPipelineImpl implements JsonPipeline {
       });
     }
   }
+
 }

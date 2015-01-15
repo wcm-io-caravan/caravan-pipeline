@@ -23,11 +23,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static rx.Observable.just;
 import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.request.RequestTemplate;
@@ -645,6 +647,88 @@ public class JsonPipelineImplTest {
 
     // the _cacheInfo however should not be contained in the output
     JSONAssert.assertEquals("{a: 123}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void handleExceptionSuccess() throws JSONException {
+
+    String responseJson = "{a: 123}";
+
+    JsonPipeline pipeline = newPipelineWithResponseBody(responseJson)
+        .handleException((status, ex) -> {
+          fail("this should not be called");
+          return just(JacksonFunctions.stringToNode(responseJson));
+        });
+
+    String output = pipeline.getStringOutput().toBlocking().first();
+
+    JSONAssert.assertEquals(responseJson, output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void handleException404Rethrow() {
+
+    RuntimeException rethrown = new RuntimeException();
+
+    JsonPipeline pipeline = newPipelineWithResponseCode(404)
+        .handleException((status, ex) -> {
+          assertEquals(404, status);
+          throw rethrown;
+        });
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(rethrown);
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void handleException404Fallback() throws JSONException {
+
+    String fallbackJson = "{fallback: true}";
+
+    JsonPipeline pipeline = newPipelineWithResponseCode(404)
+        .handleException((status, ex) -> {
+          assertEquals(404, status);
+          return just(JacksonFunctions.stringToNode(fallbackJson));
+        });
+
+    String output = pipeline.getStringOutput().toBlocking().first();
+
+    JSONAssert.assertEquals(fallbackJson, output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void handleException500Rethrow() {
+
+    RuntimeException rethrown = new RuntimeException("Rethrown");
+
+    JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
+        .handleException((status, ex) -> {
+          assertEquals(500, status);
+          throw rethrown;
+        });
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(rethrown);
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void handleException500Fallback() throws JSONException {
+
+    String fallbackJson = "{fallback: true}";
+
+    JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
+        .handleException((status, ex) -> {
+          assertEquals(500, status);
+          return just(JacksonFunctions.stringToNode(fallbackJson));
+        });
+
+    String output = pipeline.getStringOutput().toBlocking().first();
+
+    JSONAssert.assertEquals(fallbackJson, output, JSONCompareMode.STRICT);
   }
 
   // helper methods to get example JSON response data from src/test/resources

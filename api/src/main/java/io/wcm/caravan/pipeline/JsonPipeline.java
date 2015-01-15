@@ -110,6 +110,13 @@ public interface JsonPipeline {
   JsonPipeline addCachePoint(CacheStrategy strategy);
 
   /**
+   * work-in progress: allows to provide fallback-content or wrap the exception
+   * @param handler a lambda that specifies exception behaviour
+   * @return a new pipeline with specific exception handling
+   */
+  JsonPipeline handleException(JsonPipelineExceptionHandler handler);
+
+  /**
    * @return an Observable that will emit a single JSON node (of type {@link ObjectNode} or {@link ArrayNode}) when the
    *         response has been fetched (and processed by all stages of the pipeline)
    */
