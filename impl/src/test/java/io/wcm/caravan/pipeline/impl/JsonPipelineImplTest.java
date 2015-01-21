@@ -726,10 +726,37 @@ public class JsonPipelineImplTest {
           return just(JacksonFunctions.stringToNode(fallbackJson));
         });
 
+
     String output = pipeline.getStringOutput().toBlocking().first();
 
     JSONAssert.assertEquals(fallbackJson, output, JSONCompareMode.STRICT);
   }
+
+  @Test
+  public void handleExceptionChaining500() {
+
+    RuntimeException rethrown = new RuntimeException("Rethrown");
+
+    JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
+        // first register an exception handler that provides fallback content for a 404, but rethrows any other exceptions
+        .handleException((status, ex) -> {
+          if (status == 404) {
+            return Observable.just(JacksonFunctions.stringToNode("{}"));
+          }
+          throw ex;
+        })
+        // then add the other handler that should be actually triggered here
+        .handleException((status, ex) -> {
+          assertEquals(500, status);
+          throw rethrown;
+        });
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(rethrown);
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
 
   // helper methods to get example JSON response data from src/test/resources
 
