@@ -62,12 +62,7 @@ import com.jayway.jsonpath.PathNotFoundException;
  */
 public final class JsonPipelineImpl implements JsonPipeline {
 
-
   private static final Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
-
-  /** the property name to use if caching metadata is also embedded in the output JSON */
-  private static final String CACHE_METADATA_OUTPUT_PROPERTY = "_cacheMetadata";
-
 
   private static JsonNodeFactory nodeFactory = JsonNodeFactory.withExactBigDecimals(false);
 
@@ -321,23 +316,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
       Entry<String, JsonNode> nextProperty = propertyIterator.next();
       String propertyName = nextProperty.getKey();
 
-      // what to do if the property already exists?
       if (targetNode.has(propertyName)) {
-
-        // if it's just a _cacheMetadata property: increase counter suffix until there is no collision
-        if (propertyName == CACHE_METADATA_OUTPUT_PROPERTY) {
-          int suffix = 0;
-          do {
-            suffix++;
-            propertyName = nextProperty.getKey() + "#" + suffix;
-          }
-          while (targetNode.has(propertyName));
-        }
-        else {
-
-          // otherwise throw an exception,
-          throw new JsonPipelineOutputException("Target pipeline " + this.getDescriptor() + " already has a property named " + propertyName);
-        }
+        // what to do if the property already exists? for now, just throw an exception,
+        throw new JsonPipelineOutputException("Target pipeline " + this.getDescriptor() + " already has a property named " + propertyName);
       }
 
       targetNode.set(propertyName, nextProperty.getValue());
@@ -489,7 +470,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
     private final Subscriber<? super JsonNode> subscriber;
 
     private boolean cacheHit;
-    private boolean includeCacheMetadataInResponse;
 
     private CacheResponseObserver(String cacheKey, CacheStrategy strategy, Subscriber<? super JsonNode> subscriberToForwardTo) {
       this.cacheKey = cacheKey;
@@ -510,14 +490,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
       }
 
       JsonNode contentFromCache = envelopeFromCache.get(CACHE_CONTENT_PROPERTY);
-
-      // optionally, the cache metadata can also be included in the response to help debugging
-      if (includeCacheMetadataInResponse && contentFromCache instanceof ObjectNode) {
-        ObjectNode decoratedNode = contentFromCache.deepCopy();
-
-        decoratedNode.set(CACHE_METADATA_OUTPUT_PROPERTY, envelopeFromCache.get(CACHE_METADATA_PROPERTY));
-        contentFromCache = decoratedNode;
-      }
 
       cacheHit = true;
 
@@ -587,5 +559,4 @@ public final class JsonPipelineImpl implements JsonPipeline {
       });
     }
   }
-
 }
