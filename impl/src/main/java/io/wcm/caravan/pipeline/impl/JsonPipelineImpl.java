@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
 import io.wcm.caravan.io.http.ResilientHttp;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.response.Response;
@@ -272,12 +273,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
       if (isNotBlank(targetProperty)) {
 
         if (!mergedObject.has(targetProperty)) {
-            // the target property does not exist yet, so we just can set the property
+          // the target property does not exist yet, so we just can set the property
           mergedObject.set(targetProperty, jsonFromSecondary);
         }
         else {
 
-            // the target property already exists - let's hope we can merge!
+          // the target property already exists - let's hope we can merge!
           JsonNode targetNode = mergedObject.get(targetProperty);
 
           if (!targetNode.isObject()) {
@@ -393,8 +394,15 @@ public final class JsonPipelineImpl implements JsonPipeline {
         @Override
         public void onError(Throwable e) {
           int statusCode = 500;
+
+          // extract the HTTP status code from the exceptions known to contain such information
+
           if (e instanceof JsonPipelineInputException) {
             statusCode = ((JsonPipelineInputException)e).getStatusCode();
+          }
+
+          if (e instanceof IllegalResponseRuntimeException) {
+            statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
           }
 
           if (e instanceof RuntimeException) {
@@ -407,7 +415,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
                 @Override
                 public void onNext(JsonNode t) {
 
-                  // TODO: mark the fallback content as not cachable...
                   subscriber.onNext(t);
                 }
 
