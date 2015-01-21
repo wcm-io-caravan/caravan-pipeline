@@ -19,8 +19,6 @@
  */
 package io.wcm.caravan.pipeline.cache.spi;
 
-import io.wcm.caravan.io.http.request.Request;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import rx.Observable;
 
 /**
@@ -39,19 +37,18 @@ public interface CacheAdapter {
   /**
    * retrieve an item from cache
    * @param cacheKey Cache key
-   * @param strategy Cache strategy
-   * @param request TODO:
+   * @param extendExpiry whether to reset the expiry time for cache-hits, to achieve a "time-to-idle" caching behaviour
+   * @param expirySeconds the value to reset the expiry time to if extendExpiry is true
    * @return an observable that will either emit the cached JSON string, or complete without emitting on a cache miss
    */
-  Observable<String> get(String cacheKey, CacheStrategy strategy, Request request);
+  Observable<String> get(String cacheKey, boolean extendExpiry, int expirySeconds);
 
   /**
    * store an item in the cache
    * @param cacheKey Cache key
    * @param jsonString JSON data
-   * @param strategy Cache strategy
-   * @param request TODO:
+   * @param expirySeconds how long to keep the entry in the cache
    */
-  void put(String cacheKey, String jsonString, CacheStrategy strategy, Request request);
+  void put(String cacheKey, String jsonString, int expirySeconds);
 
 }

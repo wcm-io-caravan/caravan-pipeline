@@ -25,13 +25,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
-import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.request.RequestTemplate;
 import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -591,14 +592,14 @@ public class JsonPipelineImplTest {
     when(caching.getCacheKey(SERVICE_NAME, a.getDescriptor()))
     .thenReturn(cacheKey);
 
-    when(caching.get(eq(cacheKey), eq(strategy), any(Request.class)))
+    when(caching.get(eq(cacheKey), anyBoolean(), anyInt()))
     .thenReturn(Observable.just("{ metadata: {}, content: {b: 456}}"));
 
     String output = cached.getStringOutput().toBlocking().single();
 
     // only getCacheKey and get should have been called to check if it is available in the cache
     verify(caching).getCacheKey(SERVICE_NAME, a.getDescriptor());
-    verify(caching).get(eq(cacheKey), eq(strategy), any(Request.class));
+    verify(caching).get(eq(cacheKey), eq(false), eq(1));
     verifyNoMoreInteractions(caching);
 
     // make sure that the version from the cache is emitted in the response
@@ -618,13 +619,13 @@ public class JsonPipelineImplTest {
     when(caching.getCacheKey(SERVICE_NAME, a.getDescriptor()))
     .thenReturn(cacheKey);
 
-    when(caching.get(eq(cacheKey), eq(strategy), any(Request.class)))
+    when(caching.get(eq(cacheKey), anyBoolean(), anyInt()))
     .thenReturn(Observable.empty());
 
     String output = cached.getStringOutput().toBlocking().single();
 
     // get must have been called to check if the document is available in the cache
-    verify(caching).get(eq(cacheKey), eq(strategy), any(Request.class));
+    verify(caching).get(eq(cacheKey), eq(false), eq(1));
 
     // put must have been called with an cache envelope version of the JSON, that contains an additional _cacheInfo
     verify(caching).put(eq(cacheKey), Matchers.argThat(new BaseMatcher<String>() {
@@ -643,7 +644,7 @@ public class JsonPipelineImplTest {
         description.appendText("Expected storedObject to contain original value & _cacheInfo");
       }
 
-    }), eq(strategy), any(Request.class));
+    }), eq(1));
 
     // the _cacheInfo however should not be contained in the output
     JSONAssert.assertEquals("{a: 123}", output, JSONCompareMode.STRICT);

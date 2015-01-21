@@ -345,7 +345,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
       final String cacheKey = caching.getCacheKey(getSourceServicePrefix(), descriptor);
 
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggest to ignore cache)
-      Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : caching.get(cacheKey, strategy, request));
+      boolean resetExpiry = strategy.isResetExpiryOnGet(request);
+      int expirySeconds = strategy.getExpirySeconds(request);
+
+      Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : caching.get(cacheKey, resetExpiry, expirySeconds));
 
       // CacheResponseObserver will decide what to do when the response is ready (or could not be retrieved from cache)
       cachedJsonString.subscribe(new CacheResponseObserver(cacheKey, strategy, subscriber));
@@ -522,8 +525,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
         public void onNext(JsonNode fetchedNode) {
           log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
 
+          int expirySeconds = strategy.getExpirySeconds(request);
+
           ObjectNode wrappedNode = wrapInEnvelope(fetchedNode);
-          caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), strategy, request);
+          caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), expirySeconds);
 
           // everything else is just forwarding to the subscriber to the cachedSource
           subscriber.onNext(fetchedNode);

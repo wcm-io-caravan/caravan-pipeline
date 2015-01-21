@@ -20,8 +20,6 @@
 package io.wcm.caravan.pipeline.cache.couchbase.impl;
 
 import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
-import io.wcm.caravan.io.http.request.Request;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.io.UnsupportedEncodingException;
@@ -93,15 +91,12 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
 
   @Override
-  public Observable<String> get(String cacheKey, CacheStrategy strategy, Request request) {
+  public Observable<String> get(String cacheKey, boolean extendExpiry, int expirySeconds) {
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
-
-    boolean extendExpiry = strategy.isResetExpiryOnGet(request);
 
     Observable<RawJsonDocument> fromCache;
     if (extendExpiry) {
-      int expiryInt = Math.min(strategy.getExpirySeconds(request), Integer.MAX_VALUE);
-      fromCache = bucket.getAndTouch(cacheKey, expiryInt, RawJsonDocument.class);
+      fromCache = bucket.getAndTouch(cacheKey, expirySeconds, RawJsonDocument.class);
     }
     else {
       fromCache = bucket.get(cacheKey, RawJsonDocument.class);
@@ -117,12 +112,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   }
 
   @Override
-  public void put(String cacheKey, String jsonString, CacheStrategy strategy, Request request) {
+  public void put(String cacheKey, String jsonString, int expirySeconds) {
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 
-    int expiryInt = Math.min(strategy.getExpirySeconds(request), Integer.MAX_VALUE);
-
-    RawJsonDocument doc = RawJsonDocument.create(cacheKey, expiryInt, jsonString);
+    RawJsonDocument doc = RawJsonDocument.create(cacheKey, expirySeconds, jsonString);
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);
 
     insertionObservable.subscribe(new Observer<RawJsonDocument>() {
