@@ -103,8 +103,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
               subscriber.onNext(JacksonFunctions.stringToNode(response.body().asString()));
             }
             else {
-              subscriber.onError(new JsonPipelineInputException(statusCode, "Call to " + request.url() + " failed with HTTP return code: " + statusCode
-                  + "(" + response.reason() + ")"));
+              String msg = "Request for " + request.url() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
+              subscriber.onError(new JsonPipelineInputException(statusCode, msg));
             }
           } catch (IOException ex) {
             subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex));
