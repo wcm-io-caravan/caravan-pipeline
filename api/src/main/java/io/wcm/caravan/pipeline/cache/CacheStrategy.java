@@ -27,6 +27,8 @@ import io.wcm.caravan.io.http.request.Request;
  */
 public interface CacheStrategy {
 
+  int getStaleSeconds(Request request);
+
   /**
    * @param request Request
    * @return the duration in seconds to keep the response in the cache

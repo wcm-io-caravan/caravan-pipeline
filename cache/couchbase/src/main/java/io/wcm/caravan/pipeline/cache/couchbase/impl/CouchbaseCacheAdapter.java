@@ -108,6 +108,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       log.trace("Succesfully retrieved document with id {}: {}", doc.id(), doc.content());
 
       return content;
+
     });
   }
 
@@ -132,7 +133,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
       @Override
       public void onError(Throwable e) {
-        log.error("Failed to put document " + cacheKey + " into the Couchbas cache", e);
+        log.error("Failed to put document " + cacheKey + " into the Couchbase cache", e);
       }
 
     });

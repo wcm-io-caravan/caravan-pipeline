@@ -32,93 +32,36 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
-import io.wcm.caravan.io.http.request.RequestTemplate;
-import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument.Bicycle;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument.Book;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.json.JSONException;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
-import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import rx.Observable;
-import rx.Observer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Charsets;
-import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.PathNotFoundException;
 
 @RunWith(MockitoJUnitRunner.class)
-public class JsonPipelineImplTest {
-
-  private static final String SERVICE_NAME = "testService";
-
-  @Mock
-  private CacheAdapter caching;
-
-  @Mock
-  private Observer<String> stringObserver;
-
-  @Mock
-  private Observer<BooksDocument> booksObserver;
-
-  @BeforeClass
-  public static void initJsonPath() {
-    Configuration.setDefaults(JsonPathDefaultConfig.INSTANCE);
-  }
-
-  /**
-   * @param json the input content for pipeline
-   * @return pipeline for the given input content
-   */
-  private JsonPipeline newPipelineWithResponseBody(String json) {
-    Response response = getJsonResponse(200, json);
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
-  }
-
-  /**
-   * @param code the HTTP status code to send with the response
-   * @return pipeline for the given input content
-   */
-  private JsonPipeline newPipelineWithResponseCode(int code) {
-    // we are using some valid JSON as response body, because one of the purpose of this methods is to ensure that
-    // the content is not parsed when there is a >200 response code
-    Response response = getJsonResponse(code, "{ responseCode:" + code + "}");
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
-  }
-
-  /**
-   * @param t the simulated error in the transport layer
-   * @return pipeline that will fail when getting its input data
-   */
-  private JsonPipeline newPipelineWithResponseError(Throwable t) {
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.error(t), caching);
-  }
-
+public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
   @Test
   public void plainPipelineOutput() throws JSONException {
@@ -126,7 +69,7 @@ public class JsonPipelineImplTest {
     // check that a plain pipeline will return the JSON emitted by the transport layer
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString());
 
-    JsonNode output = pipeline.getOutput().toBlocking().single();
+    JsonNode output = pipeline.getJsonOutput().toBlocking().single();
     JSONAssert.assertEquals(getBooksString(), JacksonFunctions.nodeToString(output), JSONCompareMode.STRICT_ORDER);
   }
 
@@ -578,11 +521,10 @@ public class JsonPipelineImplTest {
     verify(stringObserver).onError(ex);
     verifyNoMoreInteractions(stringObserver, caching);
   }
-
   @Test
   public void cacheHit() throws JSONException {
 
-    CacheStrategy strategy = CacheStrategies.timeToLive(1, TimeUnit.SECONDS);
+    CacheStrategy strategy = CacheStrategies.timeToLive(10, TimeUnit.SECONDS);
 
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline cached = a.addCachePoint(strategy);
@@ -593,13 +535,13 @@ public class JsonPipelineImplTest {
     .thenReturn(cacheKey);
 
     when(caching.get(eq(cacheKey), anyBoolean(), anyInt()))
-    .thenReturn(Observable.just("{ metadata: {}, content: {b: 456}}"));
+    .thenReturn(cachedContent("{b: 456}}", 5));
 
     String output = cached.getStringOutput().toBlocking().single();
 
     // only getCacheKey and get should have been called to check if it is available in the cache
     verify(caching).getCacheKey(SERVICE_NAME, a.getDescriptor());
-    verify(caching).get(eq(cacheKey), eq(false), eq(1));
+    verify(caching).get(eq(cacheKey), eq(false), eq(10));
     verifyNoMoreInteractions(caching);
 
     // make sure that the version from the cache is emitted in the response
@@ -761,21 +703,5 @@ public class JsonPipelineImplTest {
 
   // helper methods to get example JSON response data from src/test/resources
 
-  static String getBooksString() {
-    return getJsonString("/json/books.json");
-  }
-
-  static String getJsonString(String resourcePath) {
-    try {
-      return IOUtils.toString(JsonPipelineImplTest.class.getResourceAsStream(resourcePath));
-    }
-    catch (IOException ex) {
-      throw new RuntimeException("Failed to read json response from " + resourcePath);
-    }
-  }
-
-  static Response getJsonResponse(int statusCode, String content) {
-    return Response.create(statusCode, "Ok", Collections.emptyMap(), content, Charsets.UTF_8);
-  }
 
 }

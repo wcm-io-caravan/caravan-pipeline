@@ -87,6 +87,11 @@ public final class CacheStrategies {
     }
 
     @Override
+    public int getStaleSeconds(Request request) {
+      return this.expirySeconds;
+    }
+
+    @Override
     public int getExpirySeconds(Request request) {
       return this.expirySeconds;
     }
@@ -95,7 +100,6 @@ public final class CacheStrategies {
     public boolean isResetExpiryOnGet(Request request) {
       return this.resetExpiryOnGet;
     }
-
   }
 
 }

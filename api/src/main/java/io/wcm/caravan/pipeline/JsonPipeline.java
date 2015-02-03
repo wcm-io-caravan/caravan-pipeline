@@ -116,11 +116,13 @@ public interface JsonPipeline {
    */
   JsonPipeline handleException(JsonPipelineExceptionHandler handler);
 
+  Observable<JsonPipelineOutput> getOutput();
+
   /**
    * @return an Observable that will emit a single JSON node (of type {@link ObjectNode} or {@link ArrayNode}) when the
    *         response has been fetched (and processed by all stages of the pipeline)
    */
-  Observable<JsonNode> getOutput();
+  Observable<JsonNode> getJsonOutput();
 
   /**
    * @return an Observable that will emit a single JSON String when the response has been fetched (and processed by all
@@ -135,5 +137,6 @@ public interface JsonPipeline {
    * @param <T> Mapping type
    */
   <T> Observable<T> getTypedOutput(Class<T> clazz);
+
 
 }

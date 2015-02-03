@@ -27,16 +27,15 @@ import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
+import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -72,7 +71,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   private CacheAdapter caching;
   private String descriptor;
 
-  private Observable<JsonNode> dataSource;
+  private Observable<JsonPipelineOutputImpl> dataSource;
 
   /**
    * @param serviceName the logical service name. Will be used as a namespace for cache keys
@@ -100,7 +99,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
             int statusCode = response.status();
             log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.url());
             if (statusCode == HttpServletResponse.SC_OK) {
-              subscriber.onNext(JacksonFunctions.stringToNode(response.body().asString()));
+
+              JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
+              JsonPipelineOutputImpl model = new JsonPipelineOutputImpl(payload);
+
+              subscriber.onNext(model);
             }
             else {
               String msg = "Request for " + request.url() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
@@ -136,7 +139,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     // only used internally
   }
 
-  private JsonPipelineImpl cloneWith(Observable<JsonNode> newSource, String descriptorSuffix) {
+  private JsonPipelineImpl cloneWith(Observable<JsonPipelineOutputImpl> newSource, String descriptorSuffix) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
     clone.request = this.request;
@@ -164,14 +167,16 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline assertExists(String jsonPath, RuntimeException ex) {
 
-    Observable<JsonNode> assertingSource = Observable.create(subscriber -> {
+    Observable<JsonPipelineOutputImpl> assertingSource = Observable.create(subscriber -> {
 
-      getOutput().subscribe(new Observer<JsonNode>() {
+      dataSource.subscribe(new Observer<JsonPipelineOutputImpl>() {
 
         private boolean assertionFailed;
 
         @Override
-        public void onNext(JsonNode responseNode) {
+        public void onNext(JsonPipelineOutputImpl responseModel) {
+
+          JsonNode responseNode = responseModel.getPayload();
 
           // if this #assertExist is chained after an #extract call, the responseNode can be null and we should bail out early
           if (responseNode == null) {
@@ -188,7 +193,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
             }
             else {
               // the responseNode has content at the given JsonPath, so we can continue processing processing the response
-              subscriber.onNext(responseNode);
+              subscriber.onNext(responseModel);
             }
           }
           catch (PathNotFoundException p) {
@@ -220,41 +225,87 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline extract(String jsonPath, String targetProperty) {
 
-    Observable<JsonNode> resultSource = dataSource
-        .map(new JsonPathSelector(jsonPath))
-        .map(arrayNode -> arrayNode.size() == 0 ? null : arrayNode.get(0));
+    Observable<JsonPipelineOutputImpl> extractedModel = Observable.create(subscriber -> {
 
-    if (isNotBlank(targetProperty)) {
-      resultSource = resultSource.map(jsonNode -> JacksonFunctions.wrapInObject(targetProperty, jsonNode));
-    }
+      dataSource.subscribe(new Observer<JsonPipelineOutputImpl>() {
+
+        @Override
+        public void onNext(JsonPipelineOutputImpl t) {
+          ArrayNode result = new JsonPathSelector(jsonPath).call(t.getPayload());
+
+          JsonNode extractedPayload = result.size() == 0 ? null : result.get(0);
+
+          if (isNotBlank(targetProperty)) {
+            extractedPayload = JacksonFunctions.wrapInObject(targetProperty, extractedPayload);
+          }
+
+          subscriber.onNext(t.withPayload(extractedPayload));
+        }
+
+        @Override
+        public void onCompleted() {
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+          subscriber.onError(e);
+        }
+
+      });
+    });
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
     String transformationDesc = "EXTRACT(" + jsonPath + targetSuffix + ")";
-    return cloneWith(resultSource, transformationDesc);
+    return cloneWith(extractedModel, transformationDesc);
   }
 
 
   @Override
   public JsonPipeline collect(String jsonPath, String targetProperty) {
 
-    Observable<JsonNode> resultSource = dataSource
-        .map(new JsonPathSelector(jsonPath));
+    Observable<JsonPipelineOutputImpl> extractedModel = Observable.create(subscriber -> {
 
-    if (isNotBlank(targetProperty)) {
-      resultSource = resultSource.map(arrayNode -> JacksonFunctions.wrapInObject(targetProperty, arrayNode));
-    }
+      dataSource.subscribe(new Observer<JsonPipelineOutputImpl>() {
+
+        @Override
+        public void onNext(JsonPipelineOutputImpl t) {
+          JsonNode extractedPayload = new JsonPathSelector(jsonPath).call(t.getPayload());
+
+          if (isNotBlank(targetProperty)) {
+            extractedPayload = JacksonFunctions.wrapInObject(targetProperty, extractedPayload);
+          }
+
+          subscriber.onNext(t.withPayload(extractedPayload));
+        }
+
+        @Override
+        public void onCompleted() {
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(Throwable e) {
+          subscriber.onError(e);
+        }
+      });
+    });
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
     String transformationDesc = "COLLECT(" + jsonPath + targetSuffix + ")";
-    return cloneWith(resultSource, transformationDesc);
+    return cloneWith(extractedModel, transformationDesc);
   }
 
 
   @Override
   public JsonPipeline merge(JsonPipeline secondarySource, String targetProperty) {
 
-    Observable<JsonNode> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (jsonFromPrimary, jsonFromSecondary) -> {
+    Observable<JsonPipelineOutputImpl> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (primaryModel, secondaryModel) -> {
+
       log.debug("zipping object from secondary source into target property " + targetProperty);
+
+      JsonNode jsonFromPrimary = primaryModel.getPayload();
+      JsonNode jsonFromSecondary = secondaryModel.getPayload();
 
       if (!(jsonFromPrimary.isObject())) {
         throw new JsonPipelineOutputException("Only pipelines with JSON *Objects* can be used as a target for a merge operation, but response data for "
@@ -297,7 +348,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         mergeAllPropertiesInto((ObjectNode)jsonFromSecondary, mergedObject);
       }
 
-      return mergedObject;
+        return primaryModel.withPayload(mergedObject).withMaxAge(Math.min(primaryModel.getMaxAge(), secondaryModel.getMaxAge()));
     });
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
@@ -339,7 +390,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     boolean ignoreCache = (cacheControl != null && cacheControl.contains("no-cache"));
 
     // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "cachedSource" observable
-    Observable<JsonNode> cachedSource = Observable.create((subscriber) -> {
+    Observable<JsonPipelineOutputImpl> cachedSource = Observable.create((subscriber) -> {
 
       // construct a unique cache key from the pipeline's descriptor
       final String cacheKey = caching.getCacheKey(getSourceServicePrefix(), descriptor);
@@ -361,12 +412,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline handleException(JsonPipelineExceptionHandler handler) {
 
     // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "wrappedSource" observable
-    Observable<JsonNode> wrappedSource = Observable.create((subscriber) -> {
+    Observable<JsonPipelineOutputImpl> wrappedSource = Observable.create((subscriber) -> {
 
-      dataSource.subscribe(new Observer<JsonNode>() {
+      dataSource.subscribe(new Observer<JsonPipelineOutputImpl>() {
 
         @Override
-        public void onNext(JsonNode t) {
+        public void onNext(JsonPipelineOutputImpl t) {
           subscriber.onNext(t);
         }
 
@@ -399,7 +450,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
                 @Override
                 public void onNext(JsonNode t) {
 
-                  subscriber.onNext(t);
+                  // TODO: where to get Metadata from?
+
+                  subscriber.onNext(new JsonPipelineOutputImpl(t));
                 }
 
                 @Override
@@ -429,19 +482,25 @@ public final class JsonPipelineImpl implements JsonPipeline {
     return cloneWith(wrappedSource, null);
   }
 
+
   @Override
-  public Observable<JsonNode> getOutput() {
-    return dataSource;
+  public Observable<JsonPipelineOutput> getOutput() {
+    return dataSource.map(o -> o);
+  }
+
+  @Override
+  public Observable<JsonNode> getJsonOutput() {
+    return dataSource.map(model -> model.getPayload());
   }
 
   @Override
   public Observable<String> getStringOutput() {
-    return dataSource.map(JacksonFunctions::nodeToString);
+    return getJsonOutput().map(JacksonFunctions::nodeToString);
   }
 
   @Override
   public <T> Observable<T> getTypedOutput(Class<T> clazz) {
-    return dataSource.map(JacksonFunctions.nodeToPojo(clazz));
+    return getJsonOutput().map(JacksonFunctions.nodeToPojo(clazz));
   }
 
   private String getSourceServicePrefix() {
@@ -450,8 +509,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
 
   /**
-   * an observer that is subscribed to the {@link Observable} returned by
-   * {@link CacheAdapter#get(String, CacheStrategy, Request)}, and is responsible for
+   * an observer that is subscribed to the {@link Observable} returned by {@link CacheAdapter#get(String, boolean, int)}
+   * , and is responsible for
    * <ul>
    * <li>unwrapping the JSON content from the caching envelope if it was succesfully retrieved from cache</li>
    * <li>forwarding the unwrapped repsonse to the subscriber given in the construtor</li>
@@ -466,27 +525,26 @@ public final class JsonPipelineImpl implements JsonPipeline {
     private static final String CACHE_METADATA_PROPERTY = "metadata";
     private static final String CACHE_CONTENT_PROPERTY = "content";
 
-    private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
 
     private final String cacheKey;
     private final CacheStrategy strategy;
-    private final Subscriber<? super JsonNode> subscriber;
+    private final Subscriber<? super JsonPipelineOutputImpl> subscriber;
 
     private boolean cacheHit;
 
-    private CacheResponseObserver(String cacheKey, CacheStrategy strategy, Subscriber<? super JsonNode> subscriberToForwardTo) {
+    private CacheResponseObserver(String cacheKey, CacheStrategy strategy, Subscriber<? super JsonPipelineOutputImpl> subscriberToForwardTo) {
       this.cacheKey = cacheKey;
       this.strategy = strategy;
       this.subscriber = subscriberToForwardTo;
     }
 
     @Override
-    public void onNext(String jsonFromCache) {
+    public void onNext(String cachedContent) {
 
       // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
       log.debug("CACHE HIT for " + this.cacheKey);
 
-      ObjectNode envelopeFromCache = JacksonFunctions.stringToObjectNode(jsonFromCache);
+      ObjectNode envelopeFromCache = JacksonFunctions.stringToObjectNode(cachedContent);
       if (!envelopeFromCache.has(CACHE_METADATA_PROPERTY) || !envelopeFromCache.has(CACHE_CONTENT_PROPERTY)) {
         log.warn("Ignoring cached document " + this.cacheKey + ", because it doesn't have the expected metadata/content envelope.");
         return;
@@ -496,8 +554,45 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
       cacheHit = true;
 
-      subscriber.onNext(contentFromCache);
-      subscriber.onCompleted();
+      String generatedDate = envelopeFromCache.get(CACHE_METADATA_PROPERTY).get("generated").asText();
+      int cacheHitAge = CacheDateUtils.getSecondsSince(generatedDate);
+      int staleSeconds = strategy.getStaleSeconds(request);
+
+      if (cacheHitAge < staleSeconds) {
+
+        // the content from cache is fresh enough to serve it - just make sure to set the max-age content-header just
+        // to the time the cached content will become stale
+        int maxAge = staleSeconds - cacheHitAge;
+
+        subscriber.onNext(new JsonPipelineOutputImpl(contentFromCache).withMaxAge(maxAge));
+        subscriber.onCompleted();
+      }
+      else {
+        // this means the cached content is outdated - we better fetch the data from the backend
+        log.info("Cached content for " + this.cacheKey + " is available, but it's " + cacheHitAge + " seconds old and considered stale.");
+
+        fetchAndStore(new Subscriber<JsonPipelineOutputImpl>() {
+
+          @Override
+          public void onNext(JsonPipelineOutputImpl fetchedOutput) {
+            log.info("Instead of the stale content from cache, a brand new response has been fetched and stored for " + cacheKey);
+            subscriber.onNext(fetchedOutput);
+          }
+
+          @Override
+          public void onCompleted() {
+            subscriber.onCompleted();
+          }
+
+          @Override
+          public void onError(Throwable e) {
+            log.warn("Using stale content from cache as a fallback after failing to fresh content for " + cacheKey, e);
+
+            subscriber.onNext(new JsonPipelineOutputImpl(contentFromCache).withMaxAge(staleSeconds));
+            subscriber.onCompleted();
+          }
+        });
+      }
     }
 
     @Override
@@ -505,43 +600,44 @@ public final class JsonPipelineImpl implements JsonPipeline {
       if (!cacheHit) {
         // there was no emission, so the response has to be fetched from the service
         log.debug("CACHE MISS for " + this.cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
-        fetchAndStore();
+        fetchAndStore(subscriber);
       }
     }
 
     @Override
     public void onError(Throwable e) {
       // also fall back to the actual service if the couchbase request failed
-      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix());
-      fetchAndStore();
+      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix(), e);
+      fetchAndStore(subscriber);
     }
 
-    private void fetchAndStore() {
+    private void fetchAndStore(Subscriber<? super JsonPipelineOutputImpl> backendResponseSubscriber) {
 
       // fetch the output with a new subscription, which will also store the response in the cache when it is retrieved
-      getOutput().subscribe(new Observer<JsonNode>() {
+      dataSource.subscribe(new Observer<JsonPipelineOutputImpl>() {
 
         @Override
-        public void onNext(JsonNode fetchedNode) {
+        public void onNext(JsonPipelineOutputImpl fetchedModel) {
           log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
 
           int expirySeconds = strategy.getExpirySeconds(request);
+          int staleSeconds = strategy.getStaleSeconds(request);
 
-          ObjectNode wrappedNode = wrapInEnvelope(fetchedNode);
+          ObjectNode wrappedNode = wrapInEnvelope(fetchedModel.getPayload());
           caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), expirySeconds);
 
           // everything else is just forwarding to the subscriber to the cachedSource
-          subscriber.onNext(fetchedNode);
+          backendResponseSubscriber.onNext(fetchedModel.withMaxAge(staleSeconds));
         }
 
         @Override
         public void onCompleted() {
-          subscriber.onCompleted();
+          backendResponseSubscriber.onCompleted();
         }
 
         @Override
         public void onError(Throwable e) {
-          subscriber.onError(e);
+          backendResponseSubscriber.onError(e);
         }
 
         private ObjectNode wrapInEnvelope(JsonNode fetchedNode) {
@@ -553,7 +649,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
           metadata.put("cacheKey", cacheKey);
           metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServices()));
           metadata.put("pipeline", descriptor);
-          metadata.put("generated", new SimpleDateFormat(PATTERN_RFC1123, Locale.US).format(new Date()));
+          metadata.put("generated", CacheDateUtils.formatCurrentTime());
           metadata.put("expiry", strategy.getExpirySeconds(request));
           metadata.put("resetExpiryOnGet", strategy.isResetExpiryOnGet(request));
 
@@ -564,4 +660,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
       });
     }
   }
+
+
 }
