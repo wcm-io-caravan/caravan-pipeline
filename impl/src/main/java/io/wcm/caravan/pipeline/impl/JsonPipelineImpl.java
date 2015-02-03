@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import rx.functions.Func1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -348,7 +349,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         mergeAllPropertiesInto((ObjectNode)jsonFromSecondary, mergedObject);
       }
 
-        return primaryModel.withPayload(mergedObject).withMaxAge(Math.min(primaryModel.getMaxAge(), secondaryModel.getMaxAge()));
+      return primaryModel.withPayload(mergedObject).withMaxAge(Math.min(primaryModel.getMaxAge(), secondaryModel.getMaxAge()));
     });
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
@@ -374,6 +375,18 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
       targetNode.set(propertyName, nextProperty.getValue());
     }
+  }
+
+  @Override
+  public JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping) {
+
+    Observable<JsonPipelineOutputImpl> transformedOutput = dataSource.map(output -> {
+      JsonNode newPayload = mapping.call(output.getPayload());
+      return output.withPayload(newPayload);
+    });
+
+    String transformationDesc = "TRANSFORM(" + transformationId + ")";
+    return cloneWith(transformedOutput, transformationDesc);
   }
 
   @Override

@@ -25,6 +25,7 @@ import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import java.util.SortedSet;
 
 import rx.Observable;
+import rx.functions.Func1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -101,6 +102,14 @@ public interface JsonPipeline {
    * @return a new pipeline with the merged response
    */
   JsonPipeline merge(JsonPipeline secondarySource, String targetProperty);
+
+  /**
+   * Applies a custom transformation on this pipeline's JSON content (e.g. a HAL representation)
+   * @param transformationId an id that is unique for the given transformation.
+   * @param mapping a function that is given the root node of the Json output, and will return the new root
+   * @return a new pipeline that will emit the result of the transformation
+   */
+  JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping);
 
   /**
    * Make the result of the current pipeline cacheable
