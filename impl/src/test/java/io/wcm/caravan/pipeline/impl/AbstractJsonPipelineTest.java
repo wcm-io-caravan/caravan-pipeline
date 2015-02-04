@@ -28,7 +28,9 @@ import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
@@ -66,7 +68,16 @@ public class AbstractJsonPipelineTest {
    * @return pipeline for the given input content
    */
   protected JsonPipeline newPipelineWithResponseBody(String json) {
-    Response response = getJsonResponse(200, json);
+    Response response = getJsonResponse(200, json, -1);
+    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
+  }
+
+  /**
+   * @param json the input content for pipeline
+   * @return pipeline for the given input content
+   */
+  protected JsonPipeline newPipelineWithResponseBodyAndMaxAge(String json, int maxAge) {
+    Response response = getJsonResponse(200, json, maxAge);
     return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
   }
 
@@ -77,7 +88,7 @@ public class AbstractJsonPipelineTest {
   protected JsonPipeline newPipelineWithResponseCode(int code) {
     // we are using some valid JSON as response body, because one of the purpose of this methods is to ensure that
     // the content is not parsed when there is a >200 response code
-    Response response = getJsonResponse(code, "{ responseCode:" + code + "}");
+    Response response = getJsonResponse(code, "{ responseCode:" + code + "}", -1);
     return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
   }
 
@@ -98,8 +109,15 @@ public class AbstractJsonPipelineTest {
     }
   }
 
-  static Response getJsonResponse(int statusCode, String content) {
-    return Response.create(statusCode, "Ok", Collections.emptyMap(), content, Charsets.UTF_8);
+  static Response getJsonResponse(int statusCode, String content, int maxAge) {
+
+    // the cache-control unit-tests expect the content to be cacheable
+    HashMap<String, Collection<String>> headers = new HashMap<String, Collection<String>>();
+    if (maxAge > 0 && statusCode == 200) {
+      headers.put("Cache-Control", Arrays.asList("max-age: " + maxAge));
+    }
+
+    return Response.create(statusCode, "Ok", headers, content, Charsets.UTF_8);
   }
 
   public AbstractJsonPipelineTest() {

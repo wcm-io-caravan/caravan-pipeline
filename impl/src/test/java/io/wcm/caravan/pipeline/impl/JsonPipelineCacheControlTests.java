@@ -43,6 +43,7 @@ import rx.Observable;
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
 
+  
   @Test
   public void defaultMaxAgeIsZero() {
 
@@ -67,6 +68,42 @@ public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
 
     // the max-age must match the expiry time from the cache strategy
+    assertEquals(timeToLiveSeconds, output.getMaxAge());
+  }
+
+  @Test
+  public void cacheMissMaxAgeFromResponseIsHigher() {
+
+    int responseMaxAge = 600;
+    int timeToLiveSeconds = 60;
+
+    Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
+    .thenReturn(Observable.empty());
+
+    JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", responseMaxAge)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+
+    // the overall max-age from the response should override that of our cache-point (because it is higher)
+    assertEquals(responseMaxAge, output.getMaxAge());
+  }
+
+  @Test
+  public void cacheMissMaxAgeFromResponseIsLower() {
+
+    int responseMaxAge = 6;
+    int timeToLiveSeconds = 60;
+
+    Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
+    .thenReturn(Observable.empty());
+
+    JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", responseMaxAge)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+
+    // the overall max-age from the response should *not* override that of our cache-point (because it is lower)
     assertEquals(timeToLiveSeconds, output.getMaxAge());
   }
 
@@ -112,7 +149,7 @@ public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
     // and the new content must have been put into the cache
     Mockito.verify(caching).put(anyString(), anyString(), eq(timeToLiveSeconds));
 
-    // the max-age must be taken from the cacing strategy
+    // the max-age must be taken from the caching strategy
     assertEquals(timeToLiveSeconds, output.getMaxAge());
 
   }

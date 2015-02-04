@@ -43,6 +43,7 @@ import java.util.TreeSet;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,6 +104,19 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
               JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
               JsonPipelineOutputImpl model = new JsonPipelineOutputImpl(payload);
+
+              if (response.headers() != null && response.headers().get("Cache-Control") != null) {
+                // TODO: this extracting of specific cache-control should be moved into Response class
+                for (String cacheControl : response.headers().get("Cache-Control")) {
+                  if (cacheControl.startsWith("max-age:")) {
+                    // if the response already contain a max-age header then respect that value
+                    int maxAge = NumberUtils.toInt(StringUtils.substringAfter(cacheControl, ":").trim());
+                    if (maxAge > 0) {
+                      model = model.withMaxAge(maxAge);
+                    }
+                  }
+                }
+              }
 
               subscriber.onNext(model);
             }
@@ -463,9 +477,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
                 @Override
                 public void onNext(JsonNode t) {
 
-                  // TODO: where to get Metadata from?
-
-                  subscriber.onNext(new JsonPipelineOutputImpl(t));
+                  // TODO: let the handler decide the max-age of the fallback content!
+                  subscriber.onNext(new JsonPipelineOutputImpl(t).withMaxAge(55));
                 }
 
                 @Override
@@ -634,7 +647,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
           log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
 
           int expirySeconds = strategy.getExpirySeconds(request);
-          int staleSeconds = strategy.getStaleSeconds(request);
+          int staleSeconds = Math.max(strategy.getStaleSeconds(request), fetchedModel.getMaxAge());
 
           ObjectNode wrappedNode = wrapInEnvelope(fetchedModel.getPayload());
           caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), expirySeconds);
