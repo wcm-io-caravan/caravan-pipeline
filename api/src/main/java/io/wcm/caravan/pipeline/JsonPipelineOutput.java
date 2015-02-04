@@ -27,4 +27,9 @@ public interface JsonPipelineOutput {
   int getMaxAge();
 
   JsonNode getPayload();
+
+  JsonPipelineOutput withPayload(JsonNode newPayload);
+  JsonPipelineOutput withStatusCode(int statusCode);
+
+  JsonPipelineOutput withMaxAge(int expirySeconds);
 }

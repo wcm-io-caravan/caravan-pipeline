@@ -125,6 +125,8 @@ public interface JsonPipeline {
    */
   JsonPipeline handleException(JsonPipelineExceptionHandler handler);
 
+  JsonPipeline handleNotFound(Func1<JsonPipelineOutput, JsonPipelineOutput> fallbackContent);
+
   Observable<JsonPipelineOutput> getOutput();
 
   /**

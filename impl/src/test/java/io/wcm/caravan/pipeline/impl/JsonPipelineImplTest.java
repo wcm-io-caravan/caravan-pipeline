@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
@@ -140,11 +141,10 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     // tests that 404 responses are not parsed as JSON, but treated as an error
     JsonPipeline pipeline = newPipelineWithResponseCode(404);
-    pipeline.getStringOutput().subscribe(stringObserver);
 
-    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+
+    assertEquals(404, output.getStatusCode());
   }
 
   @Test
@@ -614,8 +614,8 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     RuntimeException rethrown = new RuntimeException();
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
-        .handleException((status, ex) -> {
-          assertEquals(404, status);
+        .handleNotFound(fallbackContent -> {
+          assertEquals(404, fallbackContent.getStatusCode());
           throw rethrown;
         });
 
@@ -631,13 +631,12 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     String fallbackJson = "{fallback: true}";
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
-        .handleException((status, ex) -> {
-          assertEquals(404, status);
-          return just(JacksonFunctions.stringToNode(fallbackJson));
+        .handleNotFound(fallbackOutput -> {
+          assertEquals(404, fallbackOutput.getStatusCode());
+          return fallbackOutput.withPayload(JacksonFunctions.stringToNode(fallbackJson));
         });
 
     String output = pipeline.getStringOutput().toBlocking().first();
-
     JSONAssert.assertEquals(fallbackJson, output, JSONCompareMode.STRICT);
   }
 

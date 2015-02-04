@@ -125,6 +125,13 @@ public final class JacksonFunctions {
   }
 
   /**
+   * @return an empty ObjectNode
+   */
+  public static ObjectNode emptyObject() {
+    return nodeFactory.objectNode();
+  }
+
+  /**
    * Create a JSON tree with the same structure as the given map
    * @param object that can be properly mapped to JSOn with Jackson (e.g. a POJO or Map)
    * @return an {@link ObjectNode}

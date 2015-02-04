@@ -39,7 +39,10 @@ class JsonPipelineOutputImpl implements JsonPipelineOutput {
   }
 
   JsonPipelineOutputImpl deepCopy() {
-    return new JsonPipelineOutputImpl(payload);
+    JsonPipelineOutputImpl copy = new JsonPipelineOutputImpl(payload);
+    copy.getMetadata().setMaxAge(getMaxAge());
+    copy.getMetadata().setStatusCode(getStatusCode());
+    return copy;
   }
 
   @Override
@@ -51,7 +54,8 @@ class JsonPipelineOutputImpl implements JsonPipelineOutput {
     return metadata;
   }
 
-  JsonPipelineOutputImpl withPayload(JsonNode newPayload) {
+  @Override
+  public JsonPipelineOutput withPayload(JsonNode newPayload) {
     return new JsonPipelineOutputImpl(metadata, newPayload);
   }
 
@@ -61,11 +65,19 @@ class JsonPipelineOutputImpl implements JsonPipelineOutput {
   }
 
   @Override
+  public JsonPipelineOutput withStatusCode(int statusCode) {
+    JsonPipelineOutputImpl copy = deepCopy();
+    copy.getMetadata().setStatusCode(statusCode);
+    return copy;
+  }
+
+  @Override
   public int getMaxAge() {
     return metadata.getMaxAge();
   }
 
-  JsonPipelineOutputImpl withMaxAge(int expirySeconds) {
+  @Override
+  public JsonPipelineOutput withMaxAge(int expirySeconds) {
     JsonPipelineOutputImpl copy = deepCopy();
     copy.getMetadata().setMaxAge(expirySeconds);
     return copy;
