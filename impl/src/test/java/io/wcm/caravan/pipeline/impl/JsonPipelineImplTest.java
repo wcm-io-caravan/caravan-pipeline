@@ -630,14 +630,24 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     String fallbackJson = "{fallback: true}";
 
+    int fallbackTtl = 15;
+
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
         .handleNotFound(fallbackOutput -> {
           assertEquals(404, fallbackOutput.getStatusCode());
-          return fallbackOutput.withPayload(JacksonFunctions.stringToNode(fallbackJson));
+          return fallbackOutput
+              .withPayload(JacksonFunctions.stringToNode(fallbackJson))
+              .withStatusCode(200)
+              .withMaxAge(fallbackTtl);
         });
 
-    String output = pipeline.getStringOutput().toBlocking().first();
-    JSONAssert.assertEquals(fallbackJson, output, JSONCompareMode.STRICT);
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
+
+    assertEquals(200, output.getStatusCode());
+    assertEquals(fallbackTtl, output.getMaxAge());
+
+    String jsonOutput = JacksonFunctions.nodeToString(output.getPayload());
+    JSONAssert.assertEquals(fallbackJson, jsonOutput, JSONCompareMode.STRICT);
   }
 
   @Test
