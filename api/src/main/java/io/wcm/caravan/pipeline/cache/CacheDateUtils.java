@@ -24,24 +24,46 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
-
-public class CacheDateUtils {
+/**
+ * some formatting/parsing functions for the date-format to be used in HTTP headers (see
+ * http://tools.ietf.org/html/rfc2616#section-3.3.1)
+ */
+public final class CacheDateUtils {
 
   private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
+  private static final TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
 
-  public static DateFormat getDateFormat() {
-    return new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+  private CacheDateUtils() {
+
   }
 
-  public static String formatRelativeTime(int secondsRelativeToNow) {
-    return getDateFormat().format(new Date(new Date().getTime() + 1000 * secondsRelativeToNow));
+  private static DateFormat getDateFormat() {
+    SimpleDateFormat df = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+    df.setTimeZone(GMT_TIME_ZONE);
+    return df;
   }
 
+  /**
+   * @return the current date and time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
+   */
   public static String formatCurrentTime() {
     return getDateFormat().format(new Date());
   }
 
+  /**
+   * @param secondsRelativeToNow offset to the current time (positive or negative!)
+   * @return that time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
+   */
+  public static String formatRelativeTime(int secondsRelativeToNow) {
+    return getDateFormat().format(new Date(new Date().getTime() + 1000 * secondsRelativeToNow));
+  }
+
+  /**
+   * @param rfc1123Date date and time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
+   * @return the parsed date
+   */
   public static Date parse(String rfc1123Date) {
     try {
       return getDateFormat().parse(rfc1123Date);
@@ -51,6 +73,10 @@ public class CacheDateUtils {
     }
   }
 
+  /**
+   * @param rfc1123Date date and time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
+   * @return the number of seconds that have passed since the given date
+   */
   public static int getSecondsSince(String rfc1123Date) {
 
     Date reference = parse(rfc1123Date);

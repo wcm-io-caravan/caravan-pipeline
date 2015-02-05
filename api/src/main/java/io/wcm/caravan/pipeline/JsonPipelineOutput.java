@@ -21,15 +21,42 @@ package io.wcm.caravan.pipeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+/**
+ * The immutable output of a {@link JsonPipeline}'s processing step: the
+ * main JSON content payload, and additional metadata about the status and cachability of the content.
+ */
 public interface JsonPipelineOutput {
 
+  /**
+   * @return the HTTP status code
+   */
   int getStatusCode();
+
+  /**
+   * @return the duration in seconds for which the content can be stored in cache, before it should be re-validated
+   */
   int getMaxAge();
 
+  /**
+   * @return the JSON content
+   */
   JsonNode getPayload();
 
+  /**
+   * @param newPayload
+   * @return a new instance with the same metadata, but new JSON content
+   */
   JsonPipelineOutput withPayload(JsonNode newPayload);
-  JsonPipelineOutput withStatusCode(int statusCode);
 
-  JsonPipelineOutput withMaxAge(int expirySeconds);
+  /**
+   * @param newStatusCode
+   * @return a new instance with the same JSON content but updated metadata
+   */
+  JsonPipelineOutput withStatusCode(int newStatusCode);
+
+  /**
+   * @param newMaxAge
+   * @return a new instance with the same JSON content but updated metadata
+   */
+  JsonPipelineOutput withMaxAge(int newMaxAge);
 }

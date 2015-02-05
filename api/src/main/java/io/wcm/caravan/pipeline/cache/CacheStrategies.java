@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline.cache;
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.pipeline.JsonPipeline;
 
@@ -26,7 +27,7 @@ import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Default implementations of differente cache strategies.
+ * Default implementations of different cache strategies.
  */
 public final class CacheStrategies {
 
@@ -38,23 +39,25 @@ public final class CacheStrategies {
   }
 
   /**
-   * Invalidate item after a fixed time-to-live interval.
+   * Invalidate item after a fixed time-to-live interval, using the same duration as storage time and
+   * revalidation-interval
    * @param duration Time-to-live duration
    * @param unit Time unit
    * @return Cache strategy
    */
   public static CacheStrategy timeToLive(int duration, TimeUnit unit) {
-    return new CacheStrategyImpl(toSeconds(duration, unit), false);
+    return new CacheStrategyImpl(toSeconds(duration, unit), toSeconds(duration, unit), false);
   }
 
   /**
-   * Invalidate item after a time-to-idle interval, prolong expery on each get operation on this item.
-   * @param duration Time-to-live duration
+   * Invalidate item after a time-to-idle interval: The content is considered immutable, and storage time will be
+   * extended to specified value on each get operation on this item, so it is kept in cache as long as it is requested
+   * @param duration Time-to-idle duration
    * @param unit Time unit
    * @return Cache strategy
    */
   public static CacheStrategy timeToIdle(int duration, TimeUnit unit) {
-    return new CacheStrategyImpl(toSeconds(duration, unit), true);
+    return new CacheStrategyImpl(toSeconds(365, DAYS), toSeconds(duration, unit), true);
   }
 
   private static int toSeconds(int duration, TimeUnit unit) {
@@ -73,32 +76,34 @@ public final class CacheStrategies {
    * @return Cache strategy
    */
   public static CacheStrategy noCache() {
-    return new CacheStrategyImpl(0, false);
+    return new CacheStrategyImpl(0, 0, false);
   }
 
   private static class CacheStrategyImpl implements CacheStrategy {
 
-    private final int expirySeconds;
-    private final boolean resetExpiryOnGet;
+    private final int refreshInterval;
+    private final int storageTime;
+    private final boolean extendStorageTimeOnGet;
 
-    public CacheStrategyImpl(int expirySeconds, boolean resetExpiryOnGet) {
-      this.expirySeconds = expirySeconds;
-      this.resetExpiryOnGet = resetExpiryOnGet;
+    public CacheStrategyImpl(int refreshInterval, int storageTime, boolean resetExpiryOnGet) {
+      this.refreshInterval = refreshInterval;
+      this.storageTime = storageTime;
+      this.extendStorageTimeOnGet = resetExpiryOnGet;
     }
 
     @Override
-    public int getStaleSeconds(Request request) {
-      return this.expirySeconds;
+    public int getRefreshInterval(Request request) {
+      return this.refreshInterval;
     }
 
     @Override
-    public int getExpirySeconds(Request request) {
-      return this.expirySeconds;
+    public int getStorageTime(Request request) {
+      return this.storageTime;
     }
 
     @Override
-    public boolean isResetExpiryOnGet(Request request) {
-      return this.resetExpiryOnGet;
+    public boolean isExtendStorageTimeOnGet(Request request) {
+      return this.extendStorageTimeOnGet;
     }
   }
 
