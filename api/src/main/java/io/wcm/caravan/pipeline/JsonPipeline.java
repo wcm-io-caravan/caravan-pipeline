@@ -71,6 +71,14 @@ public interface JsonPipeline {
   JsonPipeline assertExists(String jsonPath, RuntimeException ex);
 
   /**
+   * a simple way to switch to default 404 handling in case that expected content is not present in the pipeline's JSON
+   * @param jsonPath a JSONPath expression
+   * @param msg the expression to look for
+   * @return a pipeline that fails with a {@link JsonPipelineInputException} if no content is found at the given path
+   */
+  JsonPipeline assertExists(String jsonPath, String msg);
+
+  /**
    * Select a single property from the pipeline's response by specifying a JSON path.
    * If targetProperty is null or blank, the pipeline's response will return the (first) result of the JSONPath
    * expression. If a targetProperty is specified, the output of will be an object with a single property containing the
@@ -119,23 +127,39 @@ public interface JsonPipeline {
   JsonPipeline addCachePoint(CacheStrategy strategy);
 
   /**
-   * work-in progress: allows to provide fallback-content or wrap the exception
+   * work-in progress: allows to provide fallback-content or wrap the exception.
+   * TODO: remove this method? it wasn't an intuitive concept, and it's rarely used since {@link #handleNotFound(Func1)}
+   * was added
    * @param handler a lambda that specifies exception behaviour
    * @return a new pipeline with specific exception handling
    */
   JsonPipeline handleException(JsonPipelineExceptionHandler handler);
 
+  /**
+   * Allow to specifically handle 404 responses with a lambda method that is given a default fallback-content that you
+   * can manipulate (adding payload, changing status code, add max-age time), or throw any RuntimeException if this is
+   * an unrecoverable error.
+   * @param fallbackContent default fallback: contains an empty {@link ObjectNode}, a status code of 404 and
+   * @return a new pipeline
+   */
   JsonPipeline handleNotFound(Func1<JsonPipelineOutput, JsonPipelineOutput> fallbackContent);
 
+  /**
+   * allows to subscribe to the full pipeline output that consists of a {@link JsonNode} payload and some additional
+   * metadata.
+   * @return an Observable that will emit a single JsonPipelineOutput
+   */
   Observable<JsonPipelineOutput> getOutput();
 
   /**
+   * Allows to subscribe only to the payload of the pipeline (if you're not interested in metadata)
    * @return an Observable that will emit a single JSON node (of type {@link ObjectNode} or {@link ArrayNode}) when the
    *         response has been fetched (and processed by all stages of the pipeline)
    */
   Observable<JsonNode> getJsonOutput();
 
   /**
+   * Allows to subscribe only to the serialized payload of the pipeline (if you're not interested in metadata)
    * @return an Observable that will emit a single JSON String when the response has been fetched (and processed by all
    *         stages of the pipeline)
    */
@@ -143,6 +167,8 @@ public interface JsonPipeline {
 
   /**
    * Can be used to convert the JSON response from this pipeline into a Java object (if a simple mapping is possible)
+   * TODO: remove this method to clean-up the interface? default mapping to java object with jackson is trivial to do
+   * anyway
    * @param clazz a POJO class that is suitable for automatic Json-to-Object Mapping
    * @return an Observable that will emit a single object when the response has been retrieved
    * @param <T> Mapping type

@@ -141,10 +141,11 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     // tests that 404 responses are not parsed as JSON, but treated as an error
     JsonPipeline pipeline = newPipelineWithResponseCode(404);
+    pipeline.getStringOutput().subscribe(stringObserver);
 
-    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
-
-    assertEquals(404, output.getStatusCode());
+    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verifyNoMoreInteractions(stringObserver, caching);
   }
 
   @Test

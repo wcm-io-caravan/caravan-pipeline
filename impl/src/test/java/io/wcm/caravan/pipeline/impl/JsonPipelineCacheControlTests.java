@@ -20,12 +20,15 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
 
 import java.util.concurrent.TimeUnit;
@@ -43,7 +46,7 @@ import rx.Observable;
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
 
-  
+
   @Test
   public void defaultMaxAgeIsZero() {
 
@@ -177,5 +180,49 @@ public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
 
     // the max-age must be taken from the caching strategy
     assertEquals(timeToLiveSeconds, output.getMaxAge());
+  }
+
+  @Test
+  public void cache404Responses() {
+
+    int timeToLiveSeconds = 30;
+
+    Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
+    .thenReturn(Observable.empty());
+
+    JsonPipeline pipeline = newPipelineWithResponseCode(404)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    try {
+      pipeline.getOutput().toBlocking().single();
+      fail("expected JsonPipelineInputException with 404 response code to be thrown");
+    }
+    catch (JsonPipelineInputException e) {
+      assertEquals(404, e.getStatusCode());
+    }
+
+    // make sure that an entry representing the 404 has been put into the cache
+    Mockito.verify(caching).put(anyString(), anyString(), eq(timeToLiveSeconds));
+  }
+
+  @Test
+  public void useCached404Response() {
+
+    int timeToLiveSeconds = 30;
+
+    Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
+    .thenReturn(Observable.just("{metadata: {generated:'" + CacheDateUtils.formatRelativeTime(-15) + "', statusCode: 404}, content: {reason: 'cached!'}}"));
+
+    JsonPipeline pipeline = newPipelineWithResponseCode(404)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    try {
+      pipeline.getOutput().toBlocking().single();
+      fail("expected JsonPipelineInputException with 404 response code to be thrown");
+    }
+    catch (JsonPipelineInputException e) {
+      assertEquals(404, e.getStatusCode());
+      assertEquals("cached!", e.getMessage());
+    }
   }
 }

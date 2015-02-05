@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
+import rx.Observable.OnSubscribe;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Func1;
@@ -132,10 +133,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
               .put("reason", response.reason())
               .put("url", request.url());
 
-              JsonPipelineOutput model = new JsonPipelineOutputImpl(errorObj).withStatusCode(statusCode).withMaxAge(0);
-              subscriber.onNext(model);
+              //JsonPipelineOutput model = new JsonPipelineOutputImpl(errorObj).withStatusCode(statusCode).withMaxAge(0);
+              //subscriber.onNext(model);
 
-              //subscriber.onError(new JsonPipelineInputException(statusCode, msg));
+              subscriber.onError(new JsonPipelineInputException(statusCode, msg));
             }
           } catch (IOException ex) {
             subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex));
@@ -247,6 +248,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
     });
 
     return cloneWith(assertingSource, null);
+  }
+
+  @Override
+  public JsonPipeline assertExists(String jsonPath, String msg) {
+
+    return assertExists(jsonPath, new JsonPipelineInputException(404, msg));
   }
 
 
@@ -524,13 +531,48 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline handleNotFound(Func1<JsonPipelineOutput, JsonPipelineOutput> fallbackContent) {
 
-    Observable<JsonPipelineOutput> fallbackSource = dataSource.map(output -> {
+    Observable<JsonPipelineOutput> fallbackSource = Observable.create(new OnSubscribe<JsonPipelineOutput>() {
 
-      if (output.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-        return fallbackContent.call(output);
+      @Override
+      public void call(Subscriber<? super JsonPipelineOutput> subscriber) {
+
+        dataSource.subscribe(new Observer<JsonPipelineOutput>() {
+
+          @Override
+          public void onNext(JsonPipelineOutput regularOutput) {
+            subscriber.onNext(regularOutput);
+          }
+
+          @Override
+          public void onCompleted() {
+            subscriber.onCompleted();
+          }
+
+          @Override
+          public void onError(Throwable e) {
+            if (e instanceof JsonPipelineInputException) {
+              if (((JsonPipelineInputException)e).getStatusCode() == 404) {
+
+                JsonPipelineOutput defaultFallbackOutput = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject())
+                .withStatusCode(404)
+                .withMaxAge(0);
+
+                try {
+
+                  JsonPipelineOutput customFallbackOutput = fallbackContent.call(defaultFallbackOutput);
+
+                  subscriber.onNext(customFallbackOutput);
+                  subscriber.onCompleted();
+                }
+                catch (RuntimeException rethrownException) {
+                  subscriber.onError(rethrownException);
+                }
+              }
+            }
+          }
+        });
       }
 
-      return output;
     });
 
     return cloneWith(fallbackSource, null);
@@ -607,18 +649,29 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
       cacheHit = true;
 
-      String generatedDate = envelopeFromCache.get(CACHE_METADATA_PROPERTY).get("generated").asText();
+      JsonNode metadataFromCache = envelopeFromCache.get(CACHE_METADATA_PROPERTY);
+
+      String generatedDate = metadataFromCache.at("/generated").asText();
+      int statusCode = metadataFromCache.at("/statusCode").asInt(HttpStatus.SC_OK);
+
       int cacheHitAge = CacheDateUtils.getSecondsSince(generatedDate);
       int staleSeconds = strategy.getStaleSeconds(request);
 
       if (cacheHitAge < staleSeconds) {
+        // the content from cache is fresh enough to serve it
 
-        // the content from cache is fresh enough to serve it - just make sure to set the max-age content-header just
-        // to the time the cached content will become stale
-        int maxAge = staleSeconds - cacheHitAge;
+        if (statusCode == HttpStatus.SC_NOT_FOUND) {
 
-        subscriber.onNext(new JsonPipelineOutputImpl(contentFromCache).withMaxAge(maxAge));
-        subscriber.onCompleted();
+          String reason = contentFromCache.at("/reason").asText("Not Found");
+          subscriber.onError(new JsonPipelineInputException(HttpStatus.SC_NOT_FOUND, reason + " (Cached!)"));
+        }
+        else {
+          //  make sure to set the max-age content-header just to the time the cached content will become stale
+          int maxAge = staleSeconds - cacheHitAge;
+
+          subscriber.onNext(new JsonPipelineOutputImpl(contentFromCache).withMaxAge(maxAge));
+          subscriber.onCompleted();
+        }
       }
       else {
         // this means the cached content is outdated - we better fetch the data from the backend
@@ -676,7 +729,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
           int expirySeconds = strategy.getExpirySeconds(request);
           int staleSeconds = Math.max(strategy.getStaleSeconds(request), fetchedModel.getMaxAge());
 
-          ObjectNode wrappedNode = wrapInEnvelope(fetchedModel.getPayload());
+          ObjectNode wrappedNode = wrapInEnvelope(fetchedModel.getPayload(), HttpStatus.SC_OK);
           caching.put(cacheKey, JacksonFunctions.nodeToString(wrappedNode), expirySeconds);
 
           // everything else is just forwarding to the subscriber to the cachedSource
@@ -690,10 +743,22 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
         @Override
         public void onError(Throwable e) {
+          if (e instanceof JsonPipelineInputException) {
+            if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+
+              log.info("404 response for " + descriptor + " will be stored in the cache");
+
+              int expirySeconds = strategy.getExpirySeconds(request);
+
+              ObjectNode content = JacksonFunctions.emptyObject().put("reason", e.getMessage());
+              ObjectNode envelope = wrapInEnvelope(content, HttpStatus.SC_NOT_FOUND);
+              caching.put(cacheKey, JacksonFunctions.nodeToString(envelope), expirySeconds);
+            }
+          }
           backendResponseSubscriber.onError(e);
         }
 
-        private ObjectNode wrapInEnvelope(JsonNode fetchedNode) {
+        private ObjectNode wrapInEnvelope(JsonNode fetchedNode, int statusCode) {
 
           ObjectNode envelope = nodeFactory.objectNode();
 
@@ -705,6 +770,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
           metadata.put("generated", CacheDateUtils.formatCurrentTime());
           metadata.put("expiry", strategy.getExpirySeconds(request));
           metadata.put("resetExpiryOnGet", strategy.isResetExpiryOnGet(request));
+          metadata.put("statusCode", statusCode);
 
           envelope.set(CACHE_CONTENT_PROPERTY, fetchedNode);
 
