@@ -58,7 +58,7 @@
       <version>0.2.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
-    
+
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.commons.osgi</artifactId>
