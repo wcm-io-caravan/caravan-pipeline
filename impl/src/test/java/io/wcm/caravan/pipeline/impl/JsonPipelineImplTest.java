@@ -599,9 +599,9 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     String responseJson = "{a: 123}";
 
     JsonPipeline pipeline = newPipelineWithResponseBody(responseJson)
-        .handleException((status, ex) -> {
+        .handleServerOrNetworkError((fallbackContent, ex) -> {
           fail("this should not be called");
-          return just(JacksonFunctions.stringToNode(responseJson));
+          return just(fallbackContent.withPayload(JacksonFunctions.stringToNode(responseJson)));
         });
 
     String output = pipeline.getStringOutput().toBlocking().first();
@@ -615,7 +615,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     RuntimeException rethrown = new RuntimeException();
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
-        .handleNotFound(fallbackContent -> {
+        .handleNotFound((fallbackContent, ex) -> {
           assertEquals(404, fallbackContent.getStatusCode());
           throw rethrown;
         });
@@ -634,12 +634,12 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     int fallbackTtl = 15;
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
-        .handleNotFound(fallbackOutput -> {
-          assertEquals(404, fallbackOutput.getStatusCode());
-          return fallbackOutput
+        .handleNotFound((fallbackContent, ex) -> {
+          assertEquals(404, fallbackContent.getStatusCode());
+          return just(fallbackContent
               .withPayload(JacksonFunctions.stringToNode(fallbackJson))
               .withStatusCode(200)
-              .withMaxAge(fallbackTtl);
+              .withMaxAge(fallbackTtl));
         });
 
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
@@ -657,8 +657,8 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     RuntimeException rethrown = new RuntimeException("Rethrown");
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
-        .handleException((status, ex) -> {
-          assertEquals(500, status);
+        .handleServerOrNetworkError((fallbackContent, ex) -> {
+          assertEquals(500, fallbackContent.getStatusCode());
           throw rethrown;
         });
 
@@ -674,9 +674,9 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     String fallbackJson = "{fallback: true}";
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
-        .handleException((status, ex) -> {
-          assertEquals(500, status);
-          return just(JacksonFunctions.stringToNode(fallbackJson));
+        .handleServerOrNetworkError((fallbackContent, ex) -> {
+          assertEquals(500, fallbackContent.getStatusCode());
+          return just(fallbackContent.withPayload(JacksonFunctions.stringToNode(fallbackJson)));
         });
 
 
@@ -692,15 +692,12 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
         // first register an exception handler that provides fallback content for a 404, but rethrows any other exceptions
-        .handleException((status, ex) -> {
-          if (status == 404) {
-            return Observable.just(JacksonFunctions.stringToNode("{}"));
-          }
-          throw ex;
+        .handleNotFound((fallbackContent, ex) -> {
+          return just(fallbackContent.withPayload(JacksonFunctions.stringToNode("{}")));
         })
         // then add the other handler that should be actually triggered here
-        .handleException((status, ex) -> {
-          assertEquals(500, status);
+        .handleServerOrNetworkError((fallbackContent, ex) -> {
+          assertEquals(500, fallbackContent.getStatusCode());
           throw rethrown;
         });
 

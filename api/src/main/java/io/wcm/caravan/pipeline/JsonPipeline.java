@@ -127,22 +127,18 @@ public interface JsonPipeline {
   JsonPipeline addCachePoint(CacheStrategy strategy);
 
   /**
-   * work-in progress: allows to provide fallback-content or wrap the exception.
-   * TODO: remove this method? it wasn't an intuitive concept, and it's rarely used since {@link #handleNotFound(Func1)}
-   * was added
-   * @param handler a lambda that specifies exception behaviour
+   * @param fallbackHandler a lambda that specifies exception behaviour
    * @return a new pipeline with specific exception handling
    */
-  JsonPipeline handleException(JsonPipelineExceptionHandler handler);
+  JsonPipeline handleServerOrNetworkError(JsonPipelineExceptionHandler fallbackHandler);
 
   /**
    * Allow to specifically handle 404 responses with a lambda method that is given a default fallback-content that you
    * can manipulate (adding payload, changing status code, add max-age time), or throw any RuntimeException if this is
    * an unrecoverable error.
-   * @param fallbackContent default fallback: contains an empty {@link ObjectNode}, a status code of 404 and
    * @return a new pipeline
    */
-  JsonPipeline handleNotFound(Func1<JsonPipelineOutput, JsonPipelineOutput> fallbackContent);
+  JsonPipeline handleNotFound(JsonPipelineExceptionHandler fallbackHandler);
 
   /**
    * allows to subscribe to the full pipeline output that consists of a {@link JsonNode} payload and some additional

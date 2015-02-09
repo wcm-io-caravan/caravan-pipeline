@@ -20,21 +20,28 @@
 package io.wcm.caravan.pipeline;
 
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import rx.functions.Func2;
 
 /**
- * work in progress! functional interface to allow users of the JsonPipeline to specify custom exception handling with
- * {@link JsonPipeline#handleException(JsonPipelineExceptionHandler)}
+ * A functional interface that allow users of the JsonPipeline to specify custom exception handling for 404 errors (via
+ * {@link JsonPipeline#handleNotFound(JsonPipelineExceptionHandler)}) and other server-side or network exceptions (via
+ * {@link JsonPipeline#handleServerOrNetworkError(JsonPipelineExceptionHandler)}).
  */
-public interface JsonPipelineExceptionHandler {
+public interface JsonPipelineExceptionHandler extends Func2<JsonPipelineOutput, RuntimeException, Observable<JsonPipelineOutput>> {
 
   /**
-   * in this method, you can decide depending on the response code and exception type if you want to provide fallback
-   * content, wrap the exception in another class or rethrow it as it is
-   * @param responseCode if the exception originated from a failed HTTP request, this will contain the status code
-   * @param ex the exception thrown
-   * @return an observable that emits a single JsonNode with the fallback content to use instead
+   * The method that defines the exception handling behavior. You can either
+   * <ul>
+   * <li>return static fallback content (based on the given default fallback content &amp; wrapped as an Observable by
+   * using with {@link Observable#just(Object)} )</li>
+   * <li>Setup another {@link JsonPipeline} to fetch fallback content, and return its output observable as obtained by
+   * {@link JsonPipeline#getOutput()}</li>
+   * <li>Rethrow the exception</li>
+   * </ul>
+   * @param defaultFallbackContent a default pipeline output object that you can manipulate
+   * @param caughtException the exception being handled
    */
-  Observable<JsonNode> rethrowOrReturnFallback(int responseCode, RuntimeException ex);
+  @Override
+  Observable<JsonPipelineOutput> call(JsonPipelineOutput defaultFallbackContent, RuntimeException caughtException);
+
 }

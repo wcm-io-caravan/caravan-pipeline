@@ -453,7 +453,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
-  public JsonPipeline handleException(JsonPipelineExceptionHandler handler) {
+  public JsonPipeline handleServerOrNetworkError(JsonPipelineExceptionHandler handler) {
 
     // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "wrappedSource" observable
     Observable<JsonPipelineOutput> wrappedSource = Observable.create((subscriber) -> {
@@ -484,18 +484,18 @@ public final class JsonPipelineImpl implements JsonPipeline {
             statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
           }
 
-          if (e instanceof RuntimeException) {
+          if (e instanceof RuntimeException && statusCode != 404) {
+
+            JsonPipelineOutput defaultFallbackCOntent = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject()).withStatusCode(500).withMaxAge(0);
             try {
-              Observable<JsonNode> fallbackResponse = handler.rethrowOrReturnFallback(statusCode, (RuntimeException)e);
+              Observable<JsonPipelineOutput> fallbackResponse = handler.call(defaultFallbackCOntent, (RuntimeException)e);
 
               // use the given fallback response
-              fallbackResponse.subscribe(new Observer<JsonNode>() {
+              fallbackResponse.subscribe(new Observer<JsonPipelineOutput>() {
 
                 @Override
-                public void onNext(JsonNode t) {
-
-                  // TODO: let the handler decide the max-age of the fallback content!
-                  subscriber.onNext(new JsonPipelineOutputImpl(t).withMaxAge(0));
+                public void onNext(JsonPipelineOutput t) {
+                  subscriber.onNext(t);
                 }
 
                 @Override
@@ -526,7 +526,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
-  public JsonPipeline handleNotFound(Func1<JsonPipelineOutput, JsonPipelineOutput> fallbackContent) {
+  public JsonPipeline handleNotFound(JsonPipelineExceptionHandler fallbackHandler) {
 
     Observable<JsonPipelineOutput> fallbackSource = Observable.create(new OnSubscribe<JsonPipelineOutput>() {
 
@@ -556,15 +556,35 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
                 try {
 
-                  JsonPipelineOutput customFallbackOutput = fallbackContent.call(defaultFallbackOutput);
+                  Observable<JsonPipelineOutput> customFallbackOutput = fallbackHandler.call(defaultFallbackOutput, (RuntimeException)e);
 
-                  subscriber.onNext(customFallbackOutput);
-                  subscriber.onCompleted();
+                  customFallbackOutput.subscribe(new Observer<JsonPipelineOutput>() {
+
+                    @Override
+                    public void onNext(JsonPipelineOutput t) {
+                      subscriber.onNext(t);
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                      subscriber.onCompleted();
+                    }
+
+                    @Override
+                    public void onError(Throwable ex) {
+                      subscriber.onError(ex);
+                    }
+                  });
+
+
                 }
                 catch (Throwable rethrownException) {
                   subscriber.onError(rethrownException);
                 }
               }
+            }
+            else {
+              subscriber.onError(e);
             }
           }
         });
