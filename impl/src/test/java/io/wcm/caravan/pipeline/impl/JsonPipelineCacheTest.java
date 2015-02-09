@@ -44,7 +44,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
-public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
+public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
 
   @Test
@@ -222,7 +222,7 @@ public class JsonPipelineCacheControlTests extends AbstractJsonPipelineTest {
     }
     catch (JsonPipelineInputException e) {
       assertEquals(404, e.getStatusCode());
-      assertEquals("cached!", e.getMessage());
+      assertEquals("cached!" + JsonPipelineImpl.CacheResponseObserver.SUFFIX_FOR_CACHED_404_REASON_STRING, e.getMessage());
     }
   }
 }

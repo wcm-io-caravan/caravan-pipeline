@@ -36,7 +36,7 @@ import com.jayway.jsonpath.PathNotFoundException;
 
 /** Tests for the {@link JsonPathSelector} functions */
 @RunWith(MockitoJUnitRunner.class)
-public class JsonPathSelectorTests {
+public class JsonPathSelectorTest {
 
   private JsonNode booksJson;
 

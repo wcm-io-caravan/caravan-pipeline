@@ -612,11 +612,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * TODO: this should be moved into a top-level class, but it still contains lots of references to {@link JsonPipeline}
    * internal's
    */
-  private final class CacheResponseObserver implements Observer<String> {
+  final class CacheResponseObserver implements Observer<String> {
 
     private static final String CACHE_METADATA_PROPERTY = "metadata";
     private static final String CACHE_CONTENT_PROPERTY = "content";
 
+    static final String SUFFIX_FOR_CACHED_404_REASON_STRING = " (Cached!)";
 
     private final String cacheKey;
     private final CacheStrategy strategy;
@@ -659,7 +660,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
 
           String reason = contentFromCache.at("/reason").asText("Not Found");
-          subscriber.onError(new JsonPipelineInputException(HttpStatus.SC_NOT_FOUND, reason + " (Cached!)"));
+          subscriber.onError(new JsonPipelineInputException(HttpStatus.SC_NOT_FOUND, reason + SUFFIX_FOR_CACHED_404_REASON_STRING));
         }
         else {
           //  make sure to set the max-age content-header just to the time the cached content will become stale
