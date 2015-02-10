@@ -43,19 +43,19 @@ public interface JsonPipelineOutput {
   JsonNode getPayload();
 
   /**
-   * @param newPayload
+   * @param newPayload the JSON output
    * @return a new instance with the same metadata, but new JSON content
    */
   JsonPipelineOutput withPayload(JsonNode newPayload);
 
   /**
-   * @param newStatusCode
+   * @param newStatusCode the HTTP response status code to return to clients
    * @return a new instance with the same JSON content but updated metadata
    */
   JsonPipelineOutput withStatusCode(int newStatusCode);
 
   /**
-   * @param newMaxAge
+   * @param newMaxAge for how many seconds can the response be cached
    * @return a new instance with the same JSON content but updated metadata
    */
   JsonPipelineOutput withMaxAge(int newMaxAge);

@@ -19,10 +19,15 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import static io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers.fallbackFor404;
+import static io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers.fallbackFor50x;
+import static io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers.rethrow404;
+import static io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers.rethrow50x;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -55,6 +60,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import rx.Observable;
+import rx.Observer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -63,6 +69,32 @@ import com.jayway.jsonpath.PathNotFoundException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
+
+  private final class ExceptionExpectingObserver implements Observer<String> {
+
+    private final Exception expected;
+
+    private ExceptionExpectingObserver(Exception expected) {
+      this.expected = expected;
+    }
+
+    @Override
+    public void onNext(String t) {
+      fail("Only onError should be called");
+    }
+
+    @Override
+    public void onCompleted() {
+      fail("Only onError should be called");
+    }
+
+    @Override
+    public void onError(Throwable e) {
+      assertTrue(e instanceof JsonPipelineInputException);
+      assertEquals(500, ((JsonPipelineInputException)e).getStatusCode());
+      assertEquals(e.getCause(), expected);
+    }
+  }
 
   @Test
   public void plainPipelineOutput() throws JSONException {
@@ -132,8 +164,8 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     pipeline.getStringOutput().subscribe(stringObserver);
 
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
-    verify(stringObserver).onError(ex);
-    verifyNoMoreInteractions(stringObserver, caching);
+    pipeline.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
+    verifyNoMoreInteractions(caching);
   }
 
   @Test
@@ -259,11 +291,10 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     JsonPipeline pipeline = newPipelineWithResponseError(ex).extract("$..", "targetproperty");
 
-    pipeline.getStringOutput().subscribe(stringObserver);
-
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
-    verify(stringObserver).onError(ex);
-    verifyNoMoreInteractions(stringObserver, caching);
+    pipeline.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
+
+    verifyNoMoreInteractions(caching);
   }
 
   @Test
@@ -390,11 +421,10 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     JsonPipeline pipeline = newPipelineWithResponseError(ex).collect("$..", "targetproperty");
 
-    pipeline.getStringOutput().subscribe(stringObserver);
-
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
-    verify(stringObserver).onError(ex);
-    verifyNoMoreInteractions(stringObserver, caching);
+    pipeline.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
+
+    verifyNoMoreInteractions(caching);
   }
 
   @Test
@@ -402,7 +432,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     // check that a fulfilled assertion will not influence the pipeline output
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
-        .assertExists("$.a", new RuntimeException("a not found"));
+        .assertExists("$.a", 500, "a not found");
 
     String output = pipeline.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{a: 123}", output, JSONCompareMode.STRICT);
@@ -411,33 +441,30 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
   @Test
   public void assertExistsFails() {
 
-    // check that an unfulfilled assertion will throw the specified exception
-    RuntimeException expectedEx = new RuntimeException("b not found");
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
-        .assertExists("$.b", expectedEx);
+        .assertExists("$.b", 404, "b not found");
 
     pipeline.getStringOutput().subscribe(stringObserver);
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(stringObserver).onError(eq(expectedEx));
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
 
   @Test
   public void assertExistsAfterExtract() {
 
-    // check that assertExist also fails with the given runtime exception if the pipeline's result is null because of a preceding extract
-    RuntimeException expectedEx = new RuntimeException("a not found");
+    // check that assertExist also fails with an exception if the pipeline's result is null because of a preceding extract
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
         .extract("$[?(@.a==456)]", null) // this will *not* match the root object, so the pipeline's output is null
-        .assertExists("$.a", expectedEx); // this used to fail with an InvalidArgumentException within JsonPathSelector, that is now avoided
+        .assertExists("$.a", 404, "a not found"); // this used to fail with an InvalidArgumentException within JsonPathSelector, that is now avoided
 
     pipeline.getStringOutput().subscribe(stringObserver);
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(stringObserver).onError(eq(expectedEx));
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
 
@@ -446,7 +473,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     // check that assertExist fails with an InvalidPathException if the given JSONPath is not valid
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
-        .assertExists("$.a[invalid]", new RuntimeException());
+        .assertExists("$.a[invalid]", 404, "not found");
 
     pipeline.getStringOutput().subscribe(stringObserver);
 
@@ -499,11 +526,11 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     JsonPipeline b = newPipelineWithResponseError(ex);
 
     JsonPipeline merged = a.merge(b, "c");
-    merged.getStringOutput().subscribe(stringObserver);
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(stringObserver).onError(ex);
-    verifyNoMoreInteractions(stringObserver, caching);
+
+    merged.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
+    verifyNoMoreInteractions(caching);
   }
 
   @Test
@@ -516,11 +543,10 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
 
     JsonPipeline merged = a.merge(b, "c");
-    merged.getStringOutput().subscribe(stringObserver);
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(stringObserver).onError(ex);
-    verifyNoMoreInteractions(stringObserver, caching);
+    merged.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
+    verifyNoMoreInteractions(caching);
   }
   @Test
   public void cacheHit() throws JSONException {
@@ -599,9 +625,9 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     String responseJson = "{a: 123}";
 
     JsonPipeline pipeline = newPipelineWithResponseBody(responseJson)
-        .handleServerOrNetworkError((fallbackContent, ex) -> {
+        .handleException((fallbackContent, ex) -> {
           fail("this should not be called");
-          return just(fallbackContent.withPayload(JacksonFunctions.stringToNode(responseJson)));
+          return just(fallbackContent);
         });
 
     String output = pipeline.getStringOutput().toBlocking().first();
@@ -615,10 +641,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     RuntimeException rethrown = new RuntimeException();
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
-        .handleNotFound((fallbackContent, ex) -> {
-          assertEquals(404, fallbackContent.getStatusCode());
-          throw rethrown;
-        });
+        .handleException(rethrow404(rethrown));
 
     pipeline.getStringOutput().subscribe(stringObserver);
 
@@ -634,13 +657,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     int fallbackTtl = 15;
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
-        .handleNotFound((fallbackContent, ex) -> {
-          assertEquals(404, fallbackContent.getStatusCode());
-          return just(fallbackContent
-              .withPayload(JacksonFunctions.stringToNode(fallbackJson))
-              .withStatusCode(200)
-              .withMaxAge(fallbackTtl));
-        });
+        .handleException(fallbackFor404(JacksonFunctions.stringToNode(fallbackJson), fallbackTtl));
 
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
 
@@ -657,10 +674,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     RuntimeException rethrown = new RuntimeException("Rethrown");
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
-        .handleServerOrNetworkError((fallbackContent, ex) -> {
-          assertEquals(500, fallbackContent.getStatusCode());
-          throw rethrown;
-        });
+        .handleException(rethrow50x(rethrown));
 
     pipeline.getStringOutput().subscribe(stringObserver);
 
@@ -674,11 +688,7 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     String fallbackJson = "{fallback: true}";
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
-        .handleServerOrNetworkError((fallbackContent, ex) -> {
-          assertEquals(500, fallbackContent.getStatusCode());
-          return just(fallbackContent.withPayload(JacksonFunctions.stringToNode(fallbackJson)));
-        });
-
+        .handleException(fallbackFor50x(JacksonFunctions.stringToNode(fallbackJson), 0));
 
     String output = pipeline.getStringOutput().toBlocking().first();
 
@@ -692,11 +702,9 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Original"))
         // first register an exception handler that provides fallback content for a 404, but rethrows any other exceptions
-        .handleNotFound((fallbackContent, ex) -> {
-          return just(fallbackContent.withPayload(JacksonFunctions.stringToNode("{}")));
-        })
+        .handleException(fallbackFor404(JacksonFunctions.stringToNode("{}"), 0))
         // then add the other handler that should be actually triggered here
-        .handleServerOrNetworkError((fallbackContent, ex) -> {
+        .handleException((fallbackContent, ex) -> {
           assertEquals(500, fallbackContent.getStatusCode());
           throw rethrown;
         });

@@ -49,7 +49,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
-import rx.Observable.OnSubscribe;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Func1;
@@ -147,14 +146,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
         @Override
         public void onError(Throwable e) {
-          /* TODO: consider to also wrap these exceptions in an JsonPipelineInputException with the following code
           int statusCode = 500;
           if (e instanceof IllegalResponseRuntimeException) {
             statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
           }
-          subscriber.onError(new JsonPipelineInputException(statusCode, "An exception occured connecting to " + request.url(), e));
-           */
-          subscriber.onError(e);
+          subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.url(), e));
         }
       });
 
@@ -191,8 +187,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
-  public JsonPipeline assertExists(String jsonPath, RuntimeException ex) {
+  public JsonPipeline assertExists(String jsonPath, int statusCode, String msg) {
 
+    RuntimeException ex = new JsonPipelineInputException(statusCode, msg);
     Observable<JsonPipelineOutput> assertingSource = Observable.create(subscriber -> {
 
       dataSource.subscribe(new Observer<JsonPipelineOutput>() {
@@ -245,12 +242,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
     });
 
     return cloneWith(assertingSource, null);
-  }
-
-  @Override
-  public JsonPipeline assertExists(String jsonPath, String msg) {
-
-    return assertExists(jsonPath, new JsonPipelineInputException(404, msg));
   }
 
 
@@ -453,9 +444,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
-  public JsonPipeline handleServerOrNetworkError(JsonPipelineExceptionHandler handler) {
+  public JsonPipeline handleException(JsonPipelineExceptionHandler handler) {
 
-    // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "wrappedSource" observable
     Observable<JsonPipelineOutput> wrappedSource = Observable.create((subscriber) -> {
 
       dataSource.subscribe(new Observer<JsonPipelineOutput>() {
@@ -475,7 +465,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
           int statusCode = 500;
 
           // extract the HTTP status code from the exceptions known to contain such information
-
           if (e instanceof JsonPipelineInputException) {
             statusCode = ((JsonPipelineInputException)e).getStatusCode();
           }
@@ -484,9 +473,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
             statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
           }
 
-          if (e instanceof RuntimeException && statusCode != 404) {
+          if (e instanceof RuntimeException) {
 
-            JsonPipelineOutput defaultFallbackCOntent = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject()).withStatusCode(500).withMaxAge(0);
+            JsonPipelineOutput defaultFallbackCOntent = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject()).withStatusCode(statusCode).withMaxAge(0);
             try {
               Observable<JsonPipelineOutput> fallbackResponse = handler.call(defaultFallbackCOntent, (RuntimeException)e);
 
@@ -523,76 +512,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
     });
 
     return cloneWith(wrappedSource, null);
-  }
-
-  @Override
-  public JsonPipeline handleNotFound(JsonPipelineExceptionHandler fallbackHandler) {
-
-    Observable<JsonPipelineOutput> fallbackSource = Observable.create(new OnSubscribe<JsonPipelineOutput>() {
-
-      @Override
-      public void call(Subscriber<? super JsonPipelineOutput> subscriber) {
-
-        dataSource.subscribe(new Observer<JsonPipelineOutput>() {
-
-          @Override
-          public void onNext(JsonPipelineOutput regularOutput) {
-            subscriber.onNext(regularOutput);
-          }
-
-          @Override
-          public void onCompleted() {
-            subscriber.onCompleted();
-          }
-
-          @Override
-          public void onError(Throwable e) {
-            if (e instanceof JsonPipelineInputException) {
-              if (((JsonPipelineInputException)e).getStatusCode() == 404) {
-
-                JsonPipelineOutput defaultFallbackOutput = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject())
-                .withStatusCode(404)
-                .withMaxAge(0);
-
-                try {
-
-                  Observable<JsonPipelineOutput> customFallbackOutput = fallbackHandler.call(defaultFallbackOutput, (RuntimeException)e);
-
-                  customFallbackOutput.subscribe(new Observer<JsonPipelineOutput>() {
-
-                    @Override
-                    public void onNext(JsonPipelineOutput t) {
-                      subscriber.onNext(t);
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                      subscriber.onCompleted();
-                    }
-
-                    @Override
-                    public void onError(Throwable ex) {
-                      subscriber.onError(ex);
-                    }
-                  });
-
-
-                }
-                catch (Throwable rethrownException) {
-                  subscriber.onError(rethrownException);
-                }
-              }
-            }
-            else {
-              subscriber.onError(e);
-            }
-          }
-        });
-      }
-
-    });
-
-    return cloneWith(fallbackSource, null);
   }
 
   @Override

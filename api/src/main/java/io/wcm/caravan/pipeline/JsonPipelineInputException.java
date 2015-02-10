@@ -30,7 +30,8 @@ public final class JsonPipelineInputException extends RuntimeException {
   private final int statusCode;
 
   /**
-   * @param msg Message
+   * @param statusCode the status code to use in the HTTP response
+   * @param msg the error message (that will also be used as reason string in the HTTP response)
    */
   public JsonPipelineInputException(int statusCode, String msg) {
     super(msg);
@@ -38,7 +39,8 @@ public final class JsonPipelineInputException extends RuntimeException {
   }
 
   /**
-   * @param msg Message
+   * @param statusCode the status code to use in the HTTP response
+   * @param msg the error message (that will also be used as reason string in the HTTP response)
    * @param cause Cause
    */
   public JsonPipelineInputException(int statusCode, String msg, Throwable cause) {

@@ -61,22 +61,13 @@ public interface JsonPipeline {
   SortedSet<String> getSourceServices();
 
   /**
-   * Ensure that the pipeline's JSON output contains content at the given JSONPath. If this expectation fails, the
-   * pipeline processing will be aborted and {@link rx.Observer#onError(Throwable)} of the pipeline's output
-   * subscribers will be called with the given exception.
-   * @param jsonPath the expression to look for
-   * @param ex the exception to fail with
-   * @return a new pipeline with the same response and descriptor
-   */
-  JsonPipeline assertExists(String jsonPath, RuntimeException ex);
-
-  /**
-   * a simple way to switch to default 404 handling in case that expected content is not present in the pipeline's JSON
+   * a simple way to switch to default er handling in case that expected content is not present in the pipeline's JSON
    * @param jsonPath a JSONPath expression
+   * @param statusCode
    * @param msg the expression to look for
    * @return a pipeline that fails with a {@link JsonPipelineInputException} if no content is found at the given path
    */
-  JsonPipeline assertExists(String jsonPath, String msg);
+  JsonPipeline assertExists(String jsonPath, int statusCode, String msg);
 
   /**
    * Select a single property from the pipeline's response by specifying a JSON path.
@@ -127,18 +118,18 @@ public interface JsonPipeline {
   JsonPipeline addCachePoint(CacheStrategy strategy);
 
   /**
-   * @param fallbackHandler a lambda that specifies exception behaviour
-   * @return a new pipeline with specific exception handling
+   * Catches all exceptions from any of the previous pipeline steps, and passes them to the given exception handler
+   * function, together with a fallback content object that is initialized with the appropriate status code for the
+   * given exception, and the max-age value set to 0.
+   * Based on the type of the exception and the status code, the exception handler function can decide to return
+   * fallback content, rethrow the exception as it is, or wrap it in an exception with a more informative error message.
+   * {@link JsonPipelineExceptionHandlers} contains some common exception handling strategies for providing fallback
+   * content or rethrowing 404 and 50x errors.
+   * @param exceptionHandler the function to call when an exception is caught
+   * @return a new pipeline with the same descriptor but additional exception handling behaviour from the given function
+   * @see JsonPipelineExceptionHandlers
    */
-  JsonPipeline handleServerOrNetworkError(JsonPipelineExceptionHandler fallbackHandler);
-
-  /**
-   * Allow to specifically handle 404 responses with a lambda method that is given a default fallback-content that you
-   * can manipulate (adding payload, changing status code, add max-age time), or throw any RuntimeException if this is
-   * an unrecoverable error.
-   * @return a new pipeline
-   */
-  JsonPipeline handleNotFound(JsonPipelineExceptionHandler fallbackHandler);
+  JsonPipeline handleException(JsonPipelineExceptionHandler exceptionHandler);
 
   /**
    * allows to subscribe to the full pipeline output that consists of a {@link JsonNode} payload and some additional
