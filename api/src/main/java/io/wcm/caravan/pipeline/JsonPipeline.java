@@ -61,9 +61,9 @@ public interface JsonPipeline {
   SortedSet<String> getSourceServices();
 
   /**
-   * a simple way to switch to default er handling in case that expected content is not present in the pipeline's JSON
+   * a simple way to raise an exception in case that expected content is not present in the pipeline's JSON
    * @param jsonPath a JSONPath expression
-   * @param statusCode
+   * @param statusCode the appropriate status code to send to the client if the assumption fails
    * @param msg the expression to look for
    * @return a pipeline that fails with a {@link JsonPipelineInputException} if no content is found at the given path
    */
