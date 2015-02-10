@@ -172,7 +172,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       return this;
     }
 
-    CachePointTransformer transformer = new CachePointTransformer(caching, request, descriptor, StringUtils.join(sourceServiceNames, '+'), strategy);
+    CachePointTransformer transformer = new CachePointTransformer(caching, request, descriptor, sourceServiceNames, strategy);
     Observable<JsonPipelineOutput> cachingObservable = observable.compose(transformer);
 
     return cloneWith(cachingObservable, null);

@@ -29,7 +29,9 @@ import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collection;
+import java.util.SortedSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,23 +55,27 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private final CacheAdapter caching;
   private final Request request;
   private final String descriptor;
-  private final String sourceServicePrefix;
+  private SortedSet<String> sourceServiceNames;
   private final CacheStrategy strategy;
 
   /**
    * @param caching the cache adapter to use
    * @param request the outgoing request
    * @param descriptor the unique id of the pipeline (to build a cache key)
-   * @param sourceServicePrefix name(s) of the services (for logging)
+   * @param sourceServiceNames names of the services (for logging)
    * @param strategy the CacheStrategy to get storage time and refresh interval
    */
-  public CachePointTransformer(CacheAdapter caching, Request request, String descriptor, String sourceServicePrefix, CacheStrategy strategy) {
+  public CachePointTransformer(CacheAdapter caching, Request request, String descriptor, SortedSet<String> sourceServiceNames, CacheStrategy strategy) {
     super();
     this.caching = caching;
     this.request = request;
     this.descriptor = descriptor;
-    this.sourceServicePrefix = sourceServicePrefix;
+    this.sourceServiceNames = sourceServiceNames;
     this.strategy = strategy;
+  }
+
+  private String getSourceServicePrefix() {
+    return StringUtils.join(sourceServiceNames, '+');
   }
 
   @Override
@@ -84,7 +90,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     Observable<JsonPipelineOutput> cachedSource = Observable.create((subscriber) -> {
 
       // construct a unique cache key from the pipeline's descriptor
-      final String cacheKey = caching.getCacheKey(sourceServicePrefix, descriptor);
+      final String cacheKey = caching.getCacheKey(getSourceServicePrefix(), descriptor);
 
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggest to ignore cache)
       boolean extendStorageTime = strategy.isExtendStorageTimeOnGet(request);
@@ -170,13 +176,13 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       }
       else {
         // this means the cached content is outdated - we better fetch the data from the backend
-        log.info("Cached content for " + cacheKey + " is available, but it's " + responseAge + " seconds old and considered stale.");
+        log.debug("Cached content for " + cacheKey + " is available, but it's " + responseAge + " seconds old and considered stale.");
 
         fetchAndStore(new Subscriber<JsonPipelineOutput>() {
 
           @Override
           public void onNext(JsonPipelineOutput fetchedOutput) {
-            log.info("Instead of the stale content from cache, a brand new response has been fetched and stored for " + cacheKey);
+            log.debug("Instead of the stale content from cache, a brand new response has been fetched and stored for " + cacheKey);
             subscriber.onNext(fetchedOutput);
           }
 
@@ -202,7 +208,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     public void onCompleted() {
       if (!cacheHit) {
         // there was no emission, so the response has to be fetched from the service
-        log.debug("CACHE MISS for " + cacheKey + " fetching response from " + sourceServicePrefix + " through pipeline...");
+        log.debug("CACHE MISS for " + cacheKey + " fetching response from " + getSourceServicePrefix() + " through pipeline...");
         fetchAndStore(subscriber);
       }
     }
@@ -212,7 +218,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       Exceptions.throwIfFatal(e);
 
       // also fall back to the actual service if the couchbase request failed
-      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + sourceServicePrefix, e);
+      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix(), e);
       fetchAndStore(subscriber);
     }
 
@@ -247,7 +253,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           if (e instanceof JsonPipelineInputException) {
             if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
 
-              log.info("404 response for " + descriptor + " will be stored in the cache");
+              log.debug("404 response for " + descriptor + " will be stored in the cache");
 
               int storageTime = strategy.getStorageTime(request);
 
@@ -266,7 +272,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
 
           metadata.put("cacheKey", cacheKey);
-          metadata.set("sources", JacksonFunctions.pojoToNode(sourceServicePrefix));
+          metadata.set("sources", JacksonFunctions.pojoToNode(sourceServiceNames));
           metadata.put("pipeline", descriptor);
           metadata.put("generated", CacheDateUtils.formatCurrentTime());
           metadata.put("expiry", strategy.getStorageTime(request));
