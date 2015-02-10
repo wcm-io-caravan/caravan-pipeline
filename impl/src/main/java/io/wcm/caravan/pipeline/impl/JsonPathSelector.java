@@ -48,7 +48,10 @@ public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
 
   private final String jsonPath;
 
-  JsonPathSelector(String jsonPath) {
+  /**
+   * @param jsonPath the JSONPath to evaluate
+   */
+  public JsonPathSelector(String jsonPath) {
     this.jsonPath = jsonPath;
   }
 

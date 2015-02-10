@@ -23,12 +23,19 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-class JsonPipelineOutputImpl implements JsonPipelineOutput {
+/**
+ * Implementation of JsonPipelineOutput
+ */
+public class JsonPipelineOutputImpl implements JsonPipelineOutput {
 
-  private JsonPipelineMetadata metadata;
-  private JsonNode payload;
+  private final JsonPipelineMetadata metadata;
+  private final JsonNode payload;
 
-  JsonPipelineOutputImpl(JsonNode payload) {
+  /**
+   * Creates pipeline output with the given payload
+   * @param payload
+   */
+  public JsonPipelineOutputImpl(JsonNode payload) {
     this.metadata = new JsonPipelineMetadata(200);
     this.payload = payload;
   }

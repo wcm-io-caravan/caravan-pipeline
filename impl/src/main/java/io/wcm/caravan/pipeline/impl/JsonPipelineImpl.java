@@ -20,7 +20,6 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
 import io.wcm.caravan.io.http.ResilientHttp;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.response.Response;
@@ -28,22 +27,21 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.operators.AssertExistsOperator;
+import io.wcm.caravan.pipeline.impl.operators.CollectOperator;
+import io.wcm.caravan.pipeline.impl.operators.HandleExceptionOperator;
+import io.wcm.caravan.pipeline.impl.operators.ExtractOperator;
+import io.wcm.caravan.pipeline.impl.operators.MergeTransformer;
+import io.wcm.caravan.pipeline.impl.operators.ResponseHandlingOperator;
 
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,10 +52,7 @@ import rx.Subscriber;
 import rx.functions.Func1;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.jayway.jsonpath.PathNotFoundException;
 
 /**
  * Default implementation of {@link JsonPipeline}.
@@ -66,8 +61,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private static final Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
 
-  private static JsonNodeFactory nodeFactory = JsonNodeFactory.withExactBigDecimals(false);
-
   private SortedSet<String> sourceServiceNames = new TreeSet<String>();
   private Request request;
 
@@ -75,6 +68,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   private String descriptor;
 
   private Observable<JsonPipelineOutput> dataSource;
+
 
   /**
    * @param serviceName the logical service name. Will be used as a namespace for cache keys
@@ -92,69 +86,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.caching = caching;
     this.descriptor = isNotBlank(request.url()) ? "GET(" + request.url() + ")" : "EMPTY()";
 
-    this.dataSource = Observable.create(subscriber -> {
-
-      responseObservable.subscribe(new Observer<Response>() {
-
-        @Override
-        public void onNext(Response response) {
-          try {
-            int statusCode = response.status();
-            log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.url());
-            if (statusCode == HttpServletResponse.SC_OK) {
-
-              JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
-              JsonPipelineOutput model = new JsonPipelineOutputImpl(payload);
-
-              if (response.headers() != null && response.headers().get("Cache-Control") != null) {
-                // TODO: this extracting of specific cache-control should be moved into Response class
-                for (String cacheControl : response.headers().get("Cache-Control")) {
-                  if (cacheControl.startsWith("max-age:")) {
-                    // if the response already contain a max-age header then respect that value
-                    int maxAge = NumberUtils.toInt(StringUtils.substringAfter(cacheControl, ":").trim());
-                    if (maxAge > 0) {
-                      model = model.withMaxAge(maxAge);
-                    }
-                  }
-                }
-              }
-
-              subscriber.onNext(model);
-            }
-            else {
-
-              String msg = "Request for " + request.url() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
-              log.warn(msg);
-
-              ObjectNode errorObj = JacksonFunctions.emptyObject();
-              errorObj.putObject("error")
-              .put("status", statusCode)
-              .put("reason", response.reason())
-              .put("url", request.url());
-
-              subscriber.onError(new JsonPipelineInputException(statusCode, msg));
-            }
-          } catch (IOException ex) {
-            subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex));
-          }
-        }
-
-        @Override
-        public void onCompleted() {
-          subscriber.onCompleted();
-        }
-
-        @Override
-        public void onError(Throwable e) {
-          int statusCode = 500;
-          if (e instanceof IllegalResponseRuntimeException) {
-            statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
-          }
-          subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.url(), e));
-        }
-      });
-
-    });
+    this.dataSource = responseObservable.lift(new ResponseHandlingOperator(request.url()));
   }
 
   private JsonPipelineImpl() {
@@ -189,214 +121,43 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline assertExists(String jsonPath, int statusCode, String msg) {
 
-    RuntimeException ex = new JsonPipelineInputException(statusCode, msg);
-    Observable<JsonPipelineOutput> assertingSource = Observable.create(subscriber -> {
-
-      dataSource.subscribe(new Observer<JsonPipelineOutput>() {
-
-        private boolean assertionFailed;
-
-        @Override
-        public void onNext(JsonPipelineOutput responseModel) {
-
-          JsonNode responseNode = responseModel.getPayload();
-
-          // if this #assertExist is chained after an #extract call, the responseNode can be null and we should bail out early
-          if (responseNode == null) {
-            this.onError(ex);
-            return;
-          }
-
-          try {
-            ArrayNode jsonPathResult = new JsonPathSelector(jsonPath).call(responseNode);
-
-            if (jsonPathResult.size() == 0) {
-              // the JSONpath was valid, but it just didn't match to any result
-              this.onError(ex);
-            }
-            else {
-              // the responseNode has content at the given JsonPath, so we can continue processing processing the response
-              subscriber.onNext(responseModel);
-            }
-          }
-          catch (PathNotFoundException p) {
-            // the JSONpath didn't match the structure of the response
-            this.onError(ex);
-          }
-        }
-
-        @Override
-        public void onError(Throwable e) {
-          assertionFailed = true;
-          subscriber.onError(e);
-        }
-
-        @Override
-        public void onCompleted() {
-          if (!assertionFailed) {
-            subscriber.onCompleted();
-          }
-        }
-
-      });
-    });
+    Observable<JsonPipelineOutput> assertingSource = dataSource.lift(new AssertExistsOperator(jsonPath, statusCode, msg));
 
     return cloneWith(assertingSource, null);
   }
 
-
   @Override
   public JsonPipeline extract(String jsonPath, String targetProperty) {
 
-    Observable<JsonPipelineOutput> extractedModel = Observable.create(subscriber -> {
-
-      dataSource.subscribe(new Observer<JsonPipelineOutput>() {
-
-        @Override
-        public void onNext(JsonPipelineOutput t) {
-          ArrayNode result = new JsonPathSelector(jsonPath).call(t.getPayload());
-
-          JsonNode extractedPayload = result.size() == 0 ? null : result.get(0);
-
-          if (isNotBlank(targetProperty)) {
-            extractedPayload = JacksonFunctions.wrapInObject(targetProperty, extractedPayload);
-          }
-
-          subscriber.onNext(t.withPayload(extractedPayload));
-        }
-
-        @Override
-        public void onCompleted() {
-          subscriber.onCompleted();
-        }
-
-        @Override
-        public void onError(Throwable e) {
-          subscriber.onError(e);
-        }
-
-      });
-    });
+    Observable<JsonPipelineOutput> extractingSource = dataSource.lift(new ExtractOperator(jsonPath, targetProperty));
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
     String transformationDesc = "EXTRACT(" + jsonPath + targetSuffix + ")";
-    return cloneWith(extractedModel, transformationDesc);
+    return cloneWith(extractingSource, transformationDesc);
   }
-
 
   @Override
   public JsonPipeline collect(String jsonPath, String targetProperty) {
 
-    Observable<JsonPipelineOutput> extractedModel = Observable.create(subscriber -> {
-
-      dataSource.subscribe(new Observer<JsonPipelineOutput>() {
-
-        @Override
-        public void onNext(JsonPipelineOutput t) {
-          JsonNode extractedPayload = new JsonPathSelector(jsonPath).call(t.getPayload());
-
-          if (isNotBlank(targetProperty)) {
-            extractedPayload = JacksonFunctions.wrapInObject(targetProperty, extractedPayload);
-          }
-
-          subscriber.onNext(t.withPayload(extractedPayload));
-        }
-
-        @Override
-        public void onCompleted() {
-          subscriber.onCompleted();
-        }
-
-        @Override
-        public void onError(Throwable e) {
-          subscriber.onError(e);
-        }
-      });
-    });
+    Observable<JsonPipelineOutput> collectingSource = dataSource.lift(new CollectOperator(jsonPath, targetProperty));
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
     String transformationDesc = "COLLECT(" + jsonPath + targetSuffix + ")";
-    return cloneWith(extractedModel, transformationDesc);
+    return cloneWith(collectingSource, transformationDesc);
   }
-
 
   @Override
   public JsonPipeline merge(JsonPipeline secondarySource, String targetProperty) {
 
-    Observable<JsonPipelineOutput> zippedSource = dataSource.zipWith(secondarySource.getOutput(), (primaryModel, secondaryModel) -> {
-
-      log.debug("zipping object from secondary source into target property " + targetProperty);
-
-      JsonNode jsonFromPrimary = primaryModel.getPayload();
-      JsonNode jsonFromSecondary = secondaryModel.getPayload();
-
-      if (!(jsonFromPrimary.isObject())) {
-        throw new JsonPipelineOutputException("Only pipelines with JSON *Objects* can be used as a target for a merge operation, but response data for "
-            + this.getDescriptor() + " contained " + jsonFromPrimary.getClass().getSimpleName());
-      }
-
-      // start with cloning the the response of the primary pipeline
-      ObjectNode mergedObject = jsonFromPrimary.deepCopy();
-
-      // if a target property is specified, the JSON to be merged is inserted into this property
-      if (isNotBlank(targetProperty)) {
-
-        if (!mergedObject.has(targetProperty)) {
-          // the target property does not exist yet, so we just can set the property
-          mergedObject.set(targetProperty, jsonFromSecondary);
-        }
-        else {
-
-          // the target property already exists - let's hope we can merge!
-          JsonNode targetNode = mergedObject.get(targetProperty);
-
-          if (!targetNode.isObject()) {
-            throw new JsonPipelineOutputException("When merging two pipelines into the same target property, both most contain JSON *Object* responses");
-          }
-
-          if (!(jsonFromSecondary.isObject())) {
-            throw new JsonPipelineOutputException("Only pipelines with JSON *Object* responses can be merged into an existing target property");
-          }
-
-          mergeAllPropertiesInto((ObjectNode)jsonFromSecondary, (ObjectNode)targetNode);
-        }
-      }
-      else {
-
-        // if no target property is specified, all properties of the secondary pipeline are copied into the merged object
-        if (!(jsonFromSecondary.isObject())) {
-          throw new JsonPipelineOutputException("Only pipelines with JSON *Object* responses can be merged without specify a target property");
-        }
-
-        mergeAllPropertiesInto((ObjectNode)jsonFromSecondary, mergedObject);
-      }
-
-      return primaryModel.withPayload(mergedObject).withMaxAge(Math.min(primaryModel.getMaxAge(), secondaryModel.getMaxAge()));
-    });
+    MergeTransformer transformer = new MergeTransformer(descriptor, secondarySource.getOutput(), targetProperty);
+    Observable<JsonPipelineOutput> combinedSource = dataSource.compose(transformer);
 
     String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
     String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + targetSuffix + ")";
 
-    JsonPipelineImpl mergedPipeline = cloneWith(zippedSource, transformationDesc);
+    JsonPipelineImpl mergedPipeline = cloneWith(combinedSource, transformationDesc);
     mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
     return mergedPipeline;
-  }
-
-  private void mergeAllPropertiesInto(ObjectNode nodeToMerge, ObjectNode targetNode) {
-
-    // iterate over all properties of the given node
-    Iterator<Entry<String, JsonNode>> propertyIterator = nodeToMerge.fields();
-    while (propertyIterator.hasNext()) {
-      Entry<String, JsonNode> nextProperty = propertyIterator.next();
-      String propertyName = nextProperty.getKey();
-
-      if (targetNode.has(propertyName)) {
-        // what to do if the property already exists? for now, just throw an exception,
-        throw new JsonPipelineOutputException("Target pipeline " + this.getDescriptor() + " already has a property named " + propertyName);
-      }
-
-      targetNode.set(propertyName, nextProperty.getValue());
-    }
   }
 
   @Override
@@ -446,70 +207,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline handleException(JsonPipelineExceptionHandler handler) {
 
-    Observable<JsonPipelineOutput> wrappedSource = Observable.create((subscriber) -> {
-
-      dataSource.subscribe(new Observer<JsonPipelineOutput>() {
-
-        @Override
-        public void onNext(JsonPipelineOutput t) {
-          subscriber.onNext(t);
-        }
-
-        @Override
-        public void onCompleted() {
-          subscriber.onCompleted();
-        }
-
-        @Override
-        public void onError(Throwable e) {
-          int statusCode = 500;
-
-          // extract the HTTP status code from the exceptions known to contain such information
-          if (e instanceof JsonPipelineInputException) {
-            statusCode = ((JsonPipelineInputException)e).getStatusCode();
-          }
-
-          if (e instanceof IllegalResponseRuntimeException) {
-            statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
-          }
-
-          if (e instanceof RuntimeException) {
-
-            JsonPipelineOutput defaultFallbackCOntent = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject()).withStatusCode(statusCode).withMaxAge(0);
-            try {
-              Observable<JsonPipelineOutput> fallbackResponse = handler.call(defaultFallbackCOntent, (RuntimeException)e);
-
-              // use the given fallback response
-              fallbackResponse.subscribe(new Observer<JsonPipelineOutput>() {
-
-                @Override
-                public void onNext(JsonPipelineOutput t) {
-                  subscriber.onNext(t);
-                }
-
-                @Override
-                public void onCompleted() {
-                  subscriber.onCompleted();
-                }
-
-                @Override
-                public void onError(Throwable ex) {
-                  subscriber.onError(ex);
-                }
-              });
-
-            }
-            catch (Throwable rethrown) {
-              subscriber.onError(rethrown);
-            }
-          }
-          else {
-            subscriber.onError(e);
-          }
-        }
-      });
-
-    });
+    Observable<JsonPipelineOutput> wrappedSource = dataSource.lift(new HandleExceptionOperator(handler));
 
     return cloneWith(wrappedSource, null);
   }
@@ -696,7 +394,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
         private ObjectNode wrapInEnvelope(JsonNode fetchedNode, int statusCode) {
 
-          ObjectNode envelope = nodeFactory.objectNode();
+          ObjectNode envelope = JacksonFunctions.emptyObject();
 
           ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
 
