@@ -31,7 +31,9 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer;
+import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
 
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
@@ -211,8 +213,11 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new TreeSet<String>(), null, null);
+    cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
+
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
-    .thenReturn(Observable.just("{metadata: {generated:'" + CacheDateUtils.formatRelativeTime(-15) + "', statusCode: 404}, content: {reason: 'cached!'}}"));
+    .thenReturn(Observable.just(cached404.getEnvelopeString()));
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
         .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
@@ -223,7 +228,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     }
     catch (JsonPipelineInputException e) {
       assertEquals(404, e.getStatusCode());
-      assertEquals("cached!" + CachePointTransformer.CacheResponseObserver.SUFFIX_FOR_CACHED_404_REASON_STRING, e.getMessage());
+      assertEquals("original reason" + CachePointTransformer.CacheResponseObserver.SUFFIX_FOR_CACHED_404_REASON_STRING, e.getMessage());
     }
   }
 }

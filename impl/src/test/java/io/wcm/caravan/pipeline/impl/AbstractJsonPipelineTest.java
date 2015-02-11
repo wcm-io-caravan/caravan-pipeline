@@ -25,12 +25,14 @@ import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.TreeSet;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
@@ -126,7 +128,9 @@ public class AbstractJsonPipelineTest {
 
   static Observable<String> cachedContent(String json, int ageInSeconds) {
 
-    String generatedDate = CacheDateUtils.formatRelativeTime(-ageInSeconds);
-    return Observable.just("{ metadata: { generated: \"" + generatedDate + "\"}, content: " + json + "}");
+    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new TreeSet<String>(), "cacheKey", "descriptor");
+    envelope.setGeneratedDate(CacheDateUtils.formatRelativeTime(-ageInSeconds));
+
+    return Observable.just(envelope.getEnvelopeString());
   }
 }
