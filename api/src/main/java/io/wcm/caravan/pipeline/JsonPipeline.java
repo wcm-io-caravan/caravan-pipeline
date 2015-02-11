@@ -111,6 +111,16 @@ public interface JsonPipeline {
   JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping);
 
   /**
+   * Chain another pipeline that needs the input of this pipeline to be constructed/parameterized.
+   * @param descriptorSuffix an id to append to this pipeline's descriptor to generate a unique cache key
+   * @param pipelineFactoryFunc a function that is given the outpot of this pipeline when it is available, and must
+   *          return the new pipeline to execute
+   * @return a new pipeline that you can subscribe to immediately that will emit the output of the dependeant pipeline
+   *         created by the given factory method
+   */
+  JsonPipeline followedBy(String descriptorSuffix, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryFunc);
+
+  /**
    * Make the result of the current pipeline cacheable
    * @param strategy - specifies details for the caching behavior
    * @return a new cache-aware pipeline with the same response as the current pipeline

@@ -715,8 +715,52 @@ public class JsonPipelineImplTest extends AbstractJsonPipelineTest {
     verifyNoMoreInteractions(stringObserver, caching);
   }
 
+  @Test
+  public void followedBy_success() throws JSONException {
+    JsonPipeline fetchId = newPipelineWithResponseBody("{id: 123}");
+    JsonPipeline fetchIdThenName =
+        fetchId.followedBy("fetchName", (fetchIdOutput) -> {
+          int id = fetchIdOutput.getPayload().get("id").asInt();
+          JsonPipeline fetchName = newPipelineWithResponseBody("{id: " + id + ", name: 'abc'}");
+          return fetchName;
+        });
 
-  // helper methods to get example JSON response data from src/test/resources
+    String output = fetchIdThenName.getStringOutput().toBlocking().first();
 
+    JSONAssert.assertEquals("{id: 123, name: 'abc'}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void followedBy_firstPipelineFails() {
+
+    JsonPipeline fetchId = newPipelineWithResponseError(new RuntimeException());
+    JsonPipeline fetchIdThenName =
+        fetchId.followedBy("fetchName", (fetchIdOutput) -> {
+          int id = fetchIdOutput.getPayload().get("id").asInt();
+          JsonPipeline fetchName = newPipelineWithResponseBody("{id: " + id + ", name: 'abc'}");
+          return fetchName;
+        });
+
+    fetchIdThenName.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
+
+  @Test
+  public void followedBy_secondPipelineFails() {
+
+    JsonPipeline fetchId = newPipelineWithResponseBody("{id: 123}");
+    JsonPipeline fetchIdThenName =
+        fetchId.followedBy("fetchName", (fetchIdOutput) -> {
+          JsonPipeline fetchName = newPipelineWithResponseError(new RuntimeException());
+          return fetchName;
+        });
+
+    fetchIdThenName.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verifyNoMoreInteractions(stringObserver, caching);
+  }
 
 }

@@ -165,6 +165,20 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
+  public JsonPipeline followedBy(String transformationId, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryMethod) {
+
+    Observable<JsonPipelineOutput> followUpObservable = observable.flatMap(output -> {
+
+      JsonPipeline followUpPipeline = pipelineFactoryMethod.call(output);
+
+      return followUpPipeline.getOutput();
+    });
+
+    String transformationDesc = "FOLLOWEDBY(" + transformationId + ")";
+    return cloneWith(followUpObservable, transformationDesc);
+  }
+
+  @Override
   public JsonPipeline addCachePoint(CacheStrategy strategy) {
 
     // skip all caching logic if the expiry time or refresh interval for this request is 0
