@@ -26,10 +26,12 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
@@ -38,8 +40,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
+import rx.Observable.Operator;
 import rx.Observer;
+import rx.Subscriber;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.Timer.Context;
+import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.document.RawJsonDocument;
 
@@ -63,11 +73,45 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   @Reference
   private CouchbaseClientProvider couchbaseClientProvider;
 
+  @Reference
+  private MetricRegistry metricRegistry;
+  private Timer getLatencyTimer;
+  private Timer putLatencyTimer;
+  private Counter hitsCounter;
+  private Counter missesCounter;
+
+  @Reference
+  private HealthCheckRegistry healthCheckRegistry;
+
   private String keyPrefix;
 
   @Activate
   private void activate(Map<String, Object> config) {
     keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
+
+    getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
+    putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
+    hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "hits"));
+    missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
+
+    healthCheckRegistry.register(MetricRegistry.name(getClass()), new HealthCheck() {
+
+      @Override
+      protected Result check() throws Exception {
+        return couchbaseClientProvider != null && couchbaseClientProvider.isEnabled() ? Result.healthy() : Result.unhealthy("No cache bucket");
+      }
+
+    });
+
+  }
+
+  @Deactivate
+  private void deactivate() {
+    metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "get"));
+    metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "put"));
+    metricRegistry.remove(MetricRegistry.name(getClass(), "hits"));
+    metricRegistry.remove(MetricRegistry.name(getClass(), "misses"));
+    healthCheckRegistry.unregister(MetricRegistry.name(getClass()));
   }
 
   @Override
@@ -92,6 +136,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, boolean extendExpiry, int expirySeconds) {
+
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 
     Observable<RawJsonDocument> fromCache;
@@ -102,24 +147,27 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       fromCache = bucket.get(cacheKey, RawJsonDocument.class);
     }
 
-    return fromCache.map(doc -> {
-      String content = doc.content();
-
-      log.trace("Succesfully retrieved document with id {}: {}", doc.id(), doc.content());
-
-      return content;
-
-    });
+    return fromCache
+        .lift(new MetricTimerOperator<RawJsonDocument>(getLatencyTimer))
+        .lift(new HitsAndMissesOperator<RawJsonDocument>(hitsCounter, missesCounter))
+        .map(doc -> {
+          String content = doc.content();
+          log.trace("Succesfully retrieved document with id {}: {}", doc.id(), doc.content());
+          return content;
+        });
   }
 
   @Override
   public void put(String cacheKey, String jsonString, int expirySeconds) {
+
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 
     RawJsonDocument doc = RawJsonDocument.create(cacheKey, expirySeconds, jsonString);
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);
 
-    insertionObservable.subscribe(new Observer<RawJsonDocument>() {
+    insertionObservable
+    .lift(new MetricTimerOperator<RawJsonDocument>(putLatencyTimer))
+    .subscribe(new Observer<RawJsonDocument>() {
 
       @Override
       public void onNext(RawJsonDocument insertedDoc) {
@@ -151,6 +199,79 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
       throw new RuntimeException("Failed to create sha1 Hash from " + message, ex);
     }
+  }
+
+  private static final class MetricTimerOperator<R> implements Operator<R, R> {
+
+    private final Timer timer;
+
+    private MetricTimerOperator(final Timer timer) {
+      this.timer = timer;
+    }
+
+
+    @Override
+    public Subscriber<? super R> call(final Subscriber<? super R> subscriber) {
+      final Context ctx = timer.time();
+      return new Subscriber<R>() {
+
+        @Override
+        public void onCompleted() {
+          ctx.stop();
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(final Throwable e) {
+          ctx.stop();
+          subscriber.onError(e);
+        }
+
+        @Override
+        public void onNext(final R next) {
+          subscriber.onNext(next);
+        }
+      };
+    }
+
+  }
+
+  private static final class HitsAndMissesOperator<R> implements Operator<R, R> {
+
+    private final Counter hitsCounter;
+    private final Counter missesCounter;
+
+    private HitsAndMissesOperator(final Counter hitsCounter, final Counter missesCounter) {
+      this.hitsCounter = hitsCounter;
+      this.missesCounter = missesCounter;
+    }
+
+    @Override
+    public Subscriber<? super R> call(final Subscriber<? super R> subscriber) {
+
+      final AtomicBoolean hit = new AtomicBoolean();
+
+      return new Subscriber<R>() {
+
+        @Override
+        public void onCompleted() {
+          (hit.get() ? hitsCounter : missesCounter).inc();
+          subscriber.onCompleted();
+        }
+
+        @Override
+        public void onError(final Throwable e) {
+          subscriber.onError(e);
+        }
+
+        @Override
+        public void onNext(final R next) {
+          hit.set(true);
+          subscriber.onNext(next);
+        }
+      };
+    }
+
   }
 
 }
