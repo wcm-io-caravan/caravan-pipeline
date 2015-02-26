@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
+import static rx.Observable.just;
 import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
 
 import java.util.concurrent.TimeUnit;
@@ -36,9 +37,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 import rx.Observable;
 
@@ -99,13 +98,10 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void testGet_hit() throws Exception {
-    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class)).then(new Answer<Observable<RawJsonDocument>>() {
 
-      @Override
-      public Observable<RawJsonDocument> answer(final InvocationOnMock invocation) throws InterruptedException {
-        return Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS);
-      }
-    });
+    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class))
+    .thenReturn(Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
+
     Observable<String> observable = adapter.get(CACHE_KEY, false, 0);
 
     assertEquals(0, getHitCounter().getCount());
@@ -135,13 +131,10 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void testGet_miss() throws Exception {
-    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class)).then(new Answer<Observable<RawJsonDocument>>() {
 
-      @Override
-      public Observable<RawJsonDocument> answer(final InvocationOnMock invocation) throws InterruptedException {
-        return Observable.<RawJsonDocument>empty().delay(50, TimeUnit.MILLISECONDS);
-      }
-    });
+    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class))
+    .thenReturn(Observable.<RawJsonDocument>empty().delay(50, TimeUnit.MILLISECONDS));
+
     Observable<String> observable = adapter.get(CACHE_KEY, false, 0);
 
     assertEquals(0, getHitCounter().getCount());
@@ -158,13 +151,9 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void testPut() throws Exception {
-    Mockito.when(bucket.upsert(Matchers.any(RawJsonDocument.class))).then(new Answer<Observable<RawJsonDocument>>() {
+    Mockito.when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+        .thenReturn(just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
 
-      @Override
-      public Observable<RawJsonDocument> answer(final InvocationOnMock invocation) throws InterruptedException {
-        return Observable.just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS);
-      }
-    });
     adapter.put(CACHE_KEY, JSON_DOC, 100);
 
     // we currently have no proper way to detecting that the put was completed, so we wait (up to one second)
