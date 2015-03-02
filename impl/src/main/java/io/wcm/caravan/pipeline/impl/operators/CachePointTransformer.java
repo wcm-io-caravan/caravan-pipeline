@@ -29,6 +29,7 @@ import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.SortedSet;
 
 import org.apache.commons.lang3.StringUtils;
@@ -53,22 +54,22 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private static final Logger log = LoggerFactory.getLogger(CachePointTransformer.class);
 
   private final CacheAdapter caching;
-  private final Request request;
+  private final List<Request> requests;
   private final String descriptor;
   private SortedSet<String> sourceServiceNames;
   private final CacheStrategy strategy;
 
   /**
    * @param caching the cache adapter to use
-   * @param request the outgoing request
+   * @param requests the outgoing REST request(s) used to obtain the JSON data to be cached
    * @param descriptor the unique id of the pipeline (to build a cache key)
    * @param sourceServiceNames names of the services (for logging)
    * @param strategy the CacheStrategy to get storage time and refresh interval
    */
-  public CachePointTransformer(CacheAdapter caching, Request request, String descriptor, SortedSet<String> sourceServiceNames, CacheStrategy strategy) {
+  public CachePointTransformer(CacheAdapter caching, List<Request> requests, String descriptor, SortedSet<String> sourceServiceNames, CacheStrategy strategy) {
     super();
     this.caching = caching;
-    this.request = request;
+    this.requests = requests;
     this.descriptor = descriptor;
     this.sourceServiceNames = sourceServiceNames;
     this.strategy = strategy;
@@ -83,7 +84,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     // if "no-cache" is set in the request headers, then ignore entries from cache
     // and instead act as if there was an cache-miss, i.e. fetch the resource and put into the cache
-    Collection<String> cacheControl = request.headers().get("Cache-Control");
+    Collection<String> cacheControl = requests.get(0).headers().get("Cache-Control");
     boolean ignoreCache = (cacheControl != null && cacheControl.contains("no-cache"));
 
     // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "cachedSource" observable
@@ -93,8 +94,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       final String cacheKey = caching.getCacheKey(getSourceServicePrefix(), descriptor);
 
       // the caching strategy determines if the storage time should be extended for cache hits(i.e. Time-to-Idle behaviour)
-      boolean extendStorageTime = strategy.isExtendStorageTimeOnGet(request);
-      int storageTime = strategy.getStorageTime(request);
+      boolean extendStorageTime = strategy.isExtendStorageTimeOnGet(requests);
+      int storageTime = strategy.getStorageTime(requests);
 
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggested to ignore cache)
       Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : caching.get(cacheKey, extendStorageTime, storageTime));
@@ -147,7 +148,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       cacheHit = true;
 
       int responseAge = cacheEntry.getResponseAge();
-      int refreshInterval = strategy.getRefreshInterval(request);
+      int refreshInterval = strategy.getRefreshInterval(requests);
 
       // check if the content from cache is fresh enough to serve it
       if (responseAge < refreshInterval) {
@@ -226,8 +227,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
         public void onNext(JsonPipelineOutput fetchedModel) {
           log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
 
-          int storageTime = strategy.getStorageTime(request);
-          int refreshInterval = Math.max(strategy.getRefreshInterval(request), fetchedModel.getMaxAge());
+          int storageTime = strategy.getStorageTime(requests);
+          int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
 
           CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), sourceServiceNames, cacheKey, descriptor);
           caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
@@ -250,7 +251,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
               log.debug("404 response for " + descriptor + " will be stored in the cache");
 
-              int storageTime = strategy.getStorageTime(request);
+              int storageTime = strategy.getStorageTime(requests);
 
               CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), sourceServiceNames, cacheKey, descriptor);
               caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);

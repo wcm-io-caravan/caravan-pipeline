@@ -36,6 +36,8 @@ import io.wcm.caravan.pipeline.impl.operators.HandleExceptionOperator;
 import io.wcm.caravan.pipeline.impl.operators.MergeTransformer;
 import io.wcm.caravan.pipeline.impl.operators.ResponseHandlingOperator;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -52,7 +54,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public final class JsonPipelineImpl implements JsonPipeline {
 
   private SortedSet<String> sourceServiceNames = new TreeSet<String>();
-  private Request request;
+  private List<Request> requests = new LinkedList<Request>();
 
   private CacheAdapter caching;
   private String descriptor;
@@ -70,7 +72,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     if (isNotBlank(serviceName)) {
       this.sourceServiceNames.add(serviceName);
     }
-    this.request = request;
+    this.requests.add(request);
 
     this.caching = caching;
     this.descriptor = isNotBlank(request.url()) ? "GET(" + request.url() + ")" : "EMPTY()";
@@ -85,7 +87,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   private JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
-    clone.request = this.request;
+    clone.requests.addAll(this.requests);
 
     clone.caching = this.caching;
     clone.descriptor = this.descriptor;
@@ -182,11 +184,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline addCachePoint(CacheStrategy strategy) {
 
     // skip all caching logic if the expiry time or refresh interval for this request is 0
-    if (strategy.getStorageTime(request) == 0 || strategy.getRefreshInterval(request) == 0) {
+    if (strategy.getStorageTime(requests) == 0 || strategy.getRefreshInterval(requests) == 0) {
       return this;
     }
 
-    CachePointTransformer transformer = new CachePointTransformer(caching, request, descriptor, sourceServiceNames, strategy);
+    CachePointTransformer transformer = new CachePointTransformer(caching, requests, descriptor, sourceServiceNames, strategy);
     Observable<JsonPipelineOutput> cachingObservable = observable.compose(transformer);
 
     return cloneWith(cachingObservable, null);

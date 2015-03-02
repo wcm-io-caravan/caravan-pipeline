@@ -23,6 +23,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.pipeline.JsonPipeline;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
@@ -92,17 +93,17 @@ public final class CacheStrategies {
     }
 
     @Override
-    public int getRefreshInterval(Request request) {
+    public int getRefreshInterval(Collection<Request> requests) {
       return this.refreshInterval;
     }
 
     @Override
-    public int getStorageTime(Request request) {
+    public int getStorageTime(Collection<Request> requests) {
       return this.storageTime;
     }
 
     @Override
-    public boolean isExtendStorageTimeOnGet(Request request) {
+    public boolean isExtendStorageTimeOnGet(Collection<Request> requests) {
       return this.extendStorageTimeOnGet;
     }
   }
