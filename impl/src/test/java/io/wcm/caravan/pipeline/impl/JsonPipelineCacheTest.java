@@ -25,6 +25,7 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import io.wcm.caravan.io.http.request.Request;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -37,6 +38,7 @@ import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
 
+import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
@@ -222,7 +224,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new TreeSet<String>(), null, null);
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new TreeSet<String>(), new LinkedList<Request>(), null, null);
     cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
 
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
+import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.request.RequestTemplate;
 import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.TreeSet;
 
 import org.apache.commons.io.IOUtils;
@@ -133,7 +135,8 @@ public class AbstractJsonPipelineTest {
 
   static Observable<String> cachedContent(String json, int ageInSeconds) {
 
-    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new TreeSet<String>(), "cacheKey", "descriptor");
+    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new TreeSet<String>(), new LinkedList<Request>(), "cacheKey",
+        "descriptor");
     envelope.setGeneratedDate(CacheDateUtils.formatRelativeTime(-ageInSeconds));
 
     return Observable.just(envelope.getEnvelopeString());
