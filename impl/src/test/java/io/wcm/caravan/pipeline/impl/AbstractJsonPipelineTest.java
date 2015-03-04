@@ -19,10 +19,14 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
 import io.wcm.caravan.io.http.request.RequestTemplate;
 import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
@@ -55,6 +59,10 @@ public class AbstractJsonPipelineTest {
   protected Observer<String> stringObserver;
   @Mock
   protected Observer<BooksDocument> booksObserver;
+
+  public AbstractJsonPipelineTest() {
+    super();
+  }
 
   @BeforeClass
   public static void initJsonPath() {
@@ -104,7 +112,7 @@ public class AbstractJsonPipelineTest {
 
   static String getJsonString(String resourcePath) {
     try {
-      return IOUtils.toString(JsonPipelineImplTest.class.getResourceAsStream(resourcePath));
+      return IOUtils.toString(JsonPipelineAddCachePointTest.class.getResourceAsStream(resourcePath));
     }
     catch (IOException ex) {
       throw new RuntimeException("Failed to read json response from " + resourcePath);
@@ -122,9 +130,6 @@ public class AbstractJsonPipelineTest {
     return Response.create(statusCode, "Ok", headers, content, Charsets.UTF_8);
   }
 
-  public AbstractJsonPipelineTest() {
-    super();
-  }
 
   static Observable<String> cachedContent(String json, int ageInSeconds) {
 
@@ -132,5 +137,31 @@ public class AbstractJsonPipelineTest {
     envelope.setGeneratedDate(CacheDateUtils.formatRelativeTime(-ageInSeconds));
 
     return Observable.just(envelope.getEnvelopeString());
+  }
+
+  final class ExceptionExpectingObserver implements Observer<String> {
+
+    private final Exception expected;
+
+    protected ExceptionExpectingObserver(Exception expected) {
+      this.expected = expected;
+    }
+
+    @Override
+    public void onNext(String t) {
+      fail("Only onError should be called");
+    }
+
+    @Override
+    public void onCompleted() {
+      fail("Only onError should be called");
+    }
+
+    @Override
+    public void onError(Throwable e) {
+      assertTrue(e instanceof JsonPipelineInputException);
+      assertEquals(500, ((JsonPipelineInputException)e).getStatusCode());
+      assertEquals(e.getCause(), expected);
+    }
   }
 }
