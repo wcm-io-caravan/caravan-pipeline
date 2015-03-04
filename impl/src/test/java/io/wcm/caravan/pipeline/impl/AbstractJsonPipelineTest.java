@@ -112,7 +112,7 @@ public class AbstractJsonPipelineTest {
 
   static String getJsonString(String resourcePath) {
     try {
-      return IOUtils.toString(JsonPipelineAddCachePointTest.class.getResourceAsStream(resourcePath));
+      return IOUtils.toString(AbstractJsonPipelineTest.class.getResourceAsStream(resourcePath));
     }
     catch (IOException ex) {
       throw new RuntimeException("Failed to read json response from " + resourcePath);
