@@ -20,8 +20,10 @@
 package io.wcm.caravan.pipeline;
 
 import io.wcm.caravan.io.http.ResilientHttp;
+import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
+import java.util.List;
 import java.util.SortedSet;
 
 import rx.Observable;
@@ -59,6 +61,11 @@ public interface JsonPipeline {
    * @return all logical service names that were used in generating the pipeline's result
    */
   SortedSet<String> getSourceServices();
+
+  /**
+   * @return all resilient HTTP requests involved in producing the pipeline's output
+   */
+  List<Request> getRequests();
 
   /**
    * a simple way to raise an exception in case that expected content is not present in the pipeline's JSON

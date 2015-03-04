@@ -75,7 +75,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.requests.add(request);
 
     this.caching = caching;
-    this.descriptor = isNotBlank(request.url()) ? "GET(" + request.url() + ")" : "EMPTY()";
+    this.descriptor = isNotBlank(request.url()) ? "GET(//" + serviceName + request.url() + ")" : "EMPTY()";
 
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url()));
   }
@@ -107,6 +107,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public SortedSet<String> getSourceServices() {
     return this.sourceServiceNames;
+  }
+
+  @Override
+  public List<Request> getRequests() {
+    return this.requests;
   }
 
   @Override
@@ -150,6 +155,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc);
     mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
+    mergedPipeline.requests.addAll(secondarySource.getRequests());
     return mergedPipeline;
   }
 

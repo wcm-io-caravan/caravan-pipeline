@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.SortedSet;
@@ -230,7 +231,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           int storageTime = strategy.getStorageTime(requests);
           int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
 
-          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), sourceServiceNames, cacheKey, descriptor);
+          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), sourceServiceNames, requests, cacheKey, descriptor);
           caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
 
           // everything else is just forwarding to the subscriber to the cachedSource
@@ -253,7 +254,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
               int storageTime = strategy.getStorageTime(requests);
 
-              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), sourceServiceNames, cacheKey, descriptor);
+              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), sourceServiceNames, requests, cacheKey, descriptor);
               caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
             }
           }
@@ -312,10 +313,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param pipelineDescriptor
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from200Response(JsonNode contentNode, SortedSet<String> sourceServiceNames, String cacheKey,
+    public static CacheEnvelope from200Response(JsonNode contentNode, SortedSet<String> sourceServiceNames, List<Request> requests, String cacheKey,
         String pipelineDescriptor) {
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, sourceServiceNames, cacheKey, pipelineDescriptor, null);
+      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, sourceServiceNames, requests, cacheKey, pipelineDescriptor, null);
       return new CacheEnvelope(envelope);
     }
 
@@ -327,16 +328,18 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param pipelineDescriptor
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from404Response(String reason, SortedSet<String> sourceServiceNames, String cacheKey, String pipelineDescriptor) {
+    public static CacheEnvelope from404Response(String reason, SortedSet<String> sourceServiceNames, List<Request> requests, String cacheKey,
+        String pipelineDescriptor) {
 
       JsonNode contentNode = JacksonFunctions.emptyObject();
       int statusCode = HttpStatus.SC_NOT_FOUND;
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, sourceServiceNames, cacheKey, pipelineDescriptor, reason);
+      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, sourceServiceNames, requests, cacheKey, pipelineDescriptor, reason);
       return new CacheEnvelope(envelope);
     }
 
-    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, SortedSet<String> sourceServiceNames, String cacheKey,
+    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, SortedSet<String> sourceServiceNames, List<Request> requests,
+        String cacheKey,
         String pipelineDescriptor, String reason) {
 
       ObjectNode envelope = JacksonFunctions.emptyObject();
@@ -348,6 +351,13 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       metadata.put("generated", CacheDateUtils.formatCurrentTime());
 
       metadata.put("statusCode", statusCode);
+
+      List<String> sourcePaths = new ArrayList<String>();
+      for (Request req : requests) {
+        sourcePaths.add(StringUtils.substringBefore(req.url(), "?"));
+      }
+      metadata.set("sourcePaths", JacksonFunctions.pojoToNode(sourcePaths));
+
 
       if (StringUtils.isNotBlank(reason)) {
         metadata.put("reason", reason);
