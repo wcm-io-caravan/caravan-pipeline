@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -44,6 +45,24 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
     super();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void extractNullTargetPropertyException() {
+
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    pipeline.extract("$.a", null);
+    fail();
+
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void extractEmptyTargetPropertyException() {
+
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    pipeline.extract("$.a", "");
+    fail();
+
+  }
+
   @Test
   public void extractObject() throws JSONException {
 
@@ -62,7 +81,7 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
 
     // test extraction of a single *Object* property *without specify a target property*
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
-    JsonPipeline extracted = pipeline.extract("$.a", "");
+    JsonPipeline extracted = pipeline.extract("$.a");
 
     String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ label: 'abc' }", output, JSONCompareMode.STRICT);
@@ -88,7 +107,7 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
 
     // test extraction of a single *Array* property *without specify a target property*
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }}");
-    JsonPipeline extracted = pipeline.extract("$.a.numbers", "");
+    JsonPipeline extracted = pipeline.extract("$.a.numbers");
 
     String output = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("[1,2,3,4]", output, JSONCompareMode.STRICT);

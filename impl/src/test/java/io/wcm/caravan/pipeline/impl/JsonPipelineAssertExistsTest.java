@@ -72,7 +72,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
     // check that assertExist also fails with an exception if the pipeline's result is null because of a preceding extract
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
-        .extract("$[?(@.a==456)]", null) // this will *not* match the root object, so the pipeline's output is null
+        .extract("$[?(@.a==456)]") // this will *not* match the root object, so the pipeline's output is null
         .assertExists("$.a", 404, "a not found"); // this used to fail with an InvalidArgumentException within JsonPathSelector, that is now avoided
 
     pipeline.getStringOutput().subscribe(stringObserver);

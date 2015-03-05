@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -43,6 +44,24 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
     super();
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void collectNullTargetPropertyException() {
+
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
+    pipeline.collect("$..label", null);
+    fail();
+
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void collectEmptyTargetPropertyException() {
+
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
+    pipeline.collect("$..label", "");
+    fail();
+
+  }
+
   @Test
   public void collectStrings() throws JSONException {
 
@@ -61,7 +80,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
     // test extraction of a multiple *String* properties
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
-    JsonPipeline collected = pipeline.collect("$..label", "");
+    JsonPipeline collected = pipeline.collect("$..label");
 
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("['abc', 'def']", output, JSONCompareMode.STRICT);
@@ -113,7 +132,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
     // test extraction of multiple items with an *Array*
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
-    JsonPipeline collected = pipeline.collect("$..numbers[3]", "");
+    JsonPipeline collected = pipeline.collect("$..numbers[3]");
 
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("[4,8]", output, JSONCompareMode.STRICT);

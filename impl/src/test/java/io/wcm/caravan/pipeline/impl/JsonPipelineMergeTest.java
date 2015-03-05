@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
 
@@ -37,6 +38,15 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
 
   public JsonPipelineMergeTest() {
     super();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void mergeNullTargetPropertyException() {
+
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    a.merge(b, null);
+    fail();
   }
 
   @Test
@@ -63,7 +73,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
 
-    JsonPipeline merged = a.merge(b, null);
+    JsonPipeline merged = a.merge(b);
 
     assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
     assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());

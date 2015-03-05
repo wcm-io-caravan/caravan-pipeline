@@ -77,35 +77,60 @@ public interface JsonPipeline {
   JsonPipeline assertExists(String jsonPath, int statusCode, String msg);
 
   /**
-   * Select a single property from the pipeline's response by specifying a JSON path.
-   * If targetProperty is null or blank, the pipeline's response will return the (first) result of the JSONPath
-   * expression. If a targetProperty is specified, the output of will be an object with a single property containing the
-   * result.
-   * @param jsonPath a jsonPath expression that matches a single leaf in the source JSON
-   * @param targetProperty the name of the single property in new response JSON object (can be null or empty)
-   * @return a new pipeline that will only emit a single JSON object with a single Object property containing the
-   *         (first) result of the JSON path expression
+   * Extracts a single (first) property from the pipeline's response by specifying a JSONPath expression. An extraction
+   * result is saved as a single JSON property in the root node of the result JSON object.
+   * @param jsonPath a JSONPath expression that matches a single leaf in the source JSON object
+   * @return a new pipeline that will only emit a single JSON object with the extraction result
+   */
+  JsonPipeline extract(String jsonPath);
+
+  /**
+   * Extracts a single (first) property from the pipeline's response by specifying a JSONPath expression. An extraction
+   * result is saved as a single JSON property in a new node of the result JSON object and named by the targetProperty
+   * parameter.
+   * @param jsonPath a JSONPath expression that matches a single leaf in the source JSON object
+   * @param targetProperty the name of the single property to save extraction results in a response JSON object
+   * @return a new pipeline that will only emit a single JSON object with the extraction result
    */
   JsonPipeline extract(String jsonPath, String targetProperty);
 
   /**
-   * Select multiple properties (or individual entries from a property array!) from the pipeline's response by
-   * specifying a JSON path. If targetProperty is null or blank, the pipeline's response will return an array with the
-   * results of the JSONPath expression. If a targetProperty is specified, the output of will be an object with a single
-   * property containing the result array.
-   * @param jsonPath a jsonPath expression that can match multiple items in the source JSON
-   * @param targetProperty the name of the single property in new response JSON object (can be null or empty)
-   * @return a new pipeline that will only emit a single JSON object with a single array property containing the results
-   *         of the JSON path expression
+   * Extracts multiple properties (or individual entries from a property array!) from the pipeline's response by
+   * specifying a JSONPath expression. An extraction result is saved as a JSON array in the root node of the result JSON
+   * object.
+   * @param jsonPath a JSONPath expression that can match multiple items in the source JSON object
+   * @return a new pipeline that will only emit a single JSON object with the extraction result
+   */
+  JsonPipeline collect(String jsonPath);
+
+  /**
+   * Extracts multiple properties (or individual entries from a property array!) from the pipeline's response by
+   * specifying a JSONPath expression. An extraction result is saved as a JSON array in a new node of the result JSON
+   * object and named by the targetProperty parameter.
+   * @param jsonPath a jsonPath expression that can match multiple items in the source JSON object
+   * @param targetProperty the name of the single node to save extraction results in a response JSON object
+   * @return a new pipeline that will only emit a single JSON object with the extraction result
    */
   JsonPipeline collect(String jsonPath, String targetProperty);
 
   /**
-   * Merges/Zips the JSON response object from another Pipeline into the response object from this pipeline.
-   * @param secondarySource another pipeline that returns a single JSON object
-   * @param targetProperty the property to add to the primary source, which will contain all content of the secondary
-   *          source
-   * @return a new pipeline with the merged response
+   * Merges/Zips the JSON response objects of this pipeline and another pipeline, specifying by secondarySource
+   * parameter. A merge result is a new JSON object, where the JSON object of this pipeline and the JSON object of the
+   * secondary source are saved on the root node level.
+   * @param secondarySource another pipeline that returns a single JSON object to be merged
+   * @return a new pipeline that will emit a single JSON object with the merge result
+   */
+  JsonPipeline merge(JsonPipeline secondarySource);
+
+  /**
+   * Merges/Zips the JSON response objects of this pipeline and another pipeline, specifying by secondarySource
+   * parameter. A merge result is a new JSON object, where the JSON object of this pipeline is saved on the root node
+   * level. The JSON object of the secondary source is saved as a new node in the result JSON object and named by the
+   * targetProperty parameter.
+   * @param secondarySource another pipeline that returns a single JSON object to be merged
+   * @param targetProperty the name of the single node to save the content of the secondary source in merged JSON
+   *          object
+   * @return a new pipeline that will emit a single JSON object with the merge result
    */
   JsonPipeline merge(JsonPipeline secondarySource, String targetProperty);
 

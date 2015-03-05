@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.Validate.isTrue;
 import io.wcm.caravan.io.http.ResilientHttp;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.response.Response;
@@ -123,39 +124,75 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
-  public JsonPipeline extract(String jsonPath, String targetProperty) {
+  public JsonPipeline extract(String jsonPath) {
 
-    Observable<JsonPipelineOutput> extractingObservable = observable.lift(new ExtractOperator(jsonPath, targetProperty));
-
-    String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
-    String transformationDesc = "EXTRACT(" + jsonPath + targetSuffix + ")";
+    Observable<JsonPipelineOutput> extractingObservable = observable.lift(new ExtractOperator(jsonPath, null));
+    String transformationDesc = "EXTRACT(" + jsonPath + ")";
 
     return cloneWith(extractingObservable, transformationDesc);
   }
 
   @Override
-  public JsonPipeline collect(String jsonPath, String targetProperty) {
+  public JsonPipeline extract(String jsonPath, String targetProperty) {
 
-    Observable<JsonPipelineOutput> collectingObservable = observable.lift(new CollectOperator(jsonPath, targetProperty));
+    isTrue(isNotBlank(targetProperty), "Target property is '" + targetProperty
+        + "'. Please provide meaningfull targetProperty or use another extract method wothout targetProperty parameter, if any targetProperty isn't required.");
 
-    String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
-    String transformationDesc = "COLLECT(" + jsonPath + targetSuffix + ")";
+    Observable<JsonPipelineOutput> extractingObservable = observable.lift(new ExtractOperator(jsonPath, targetProperty));
+    String transformationDesc = "EXTRACT(" + jsonPath + " INTO " + targetProperty + ")";
+
+    return cloneWith(extractingObservable, transformationDesc);
+  }
+
+  @Override
+  public JsonPipeline collect(String jsonPath) {
+
+    Observable<JsonPipelineOutput> collectingObservable = observable.lift(new CollectOperator(jsonPath, null));
+    String transformationDesc = "COLLECT(" + jsonPath + ")";
 
     return cloneWith(collectingObservable, transformationDesc);
   }
 
   @Override
-  public JsonPipeline merge(JsonPipeline secondarySource, String targetProperty) {
+  public JsonPipeline collect(String jsonPath, String targetProperty) {
 
-    MergeTransformer transformer = new MergeTransformer(descriptor, secondarySource.getOutput(), targetProperty);
+    isTrue(isNotBlank(targetProperty), "Target property is '" + targetProperty
+        + "'. Please provide meaningfull targetProperty or use another collect method wothout targetProperty parameter, if any targetProperty isn't required.");
+
+    Observable<JsonPipelineOutput> collectingObservable = observable.lift(new CollectOperator(jsonPath, targetProperty));
+    String transformationDesc = "COLLECT(" + jsonPath + " INTO " + targetProperty + ")";
+
+    return cloneWith(collectingObservable, transformationDesc);
+  }
+
+  @Override
+  public JsonPipeline merge(JsonPipeline secondarySource) {
+
+    MergeTransformer transformer = new MergeTransformer(descriptor, secondarySource.getOutput(), null);
     Observable<JsonPipelineOutput> mergedObservable = observable.compose(transformer);
-
-    String targetSuffix = isNotBlank(targetProperty) ? " INTO " + targetProperty : "";
-    String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + targetSuffix + ")";
+    String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + ")";
 
     JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc);
     mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
     mergedPipeline.requests.addAll(secondarySource.getRequests());
+
+    return mergedPipeline;
+  }
+
+  @Override
+  public JsonPipeline merge(JsonPipeline secondarySource, String targetProperty) {
+
+    isTrue(isNotBlank(targetProperty), "Target property is '" + targetProperty
+        + "'. Please provide meaningfull targetProperty or use another merge method wothout targetProperty parameter, if any targetProperty isn't required.");
+
+    MergeTransformer transformer = new MergeTransformer(descriptor, secondarySource.getOutput(), targetProperty);
+    Observable<JsonPipelineOutput> mergedObservable = observable.compose(transformer);
+    String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + " INTO " + targetProperty + ")";
+
+    JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc);
+    mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
+    mergedPipeline.requests.addAll(secondarySource.getRequests());
+
     return mergedPipeline;
   }
 
