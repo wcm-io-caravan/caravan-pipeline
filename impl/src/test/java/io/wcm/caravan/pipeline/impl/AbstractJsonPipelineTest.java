@@ -47,6 +47,8 @@ import org.mockito.Mock;
 import rx.Observable;
 import rx.Observer;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.jayway.jsonpath.Configuration;
 
@@ -130,6 +132,15 @@ public class AbstractJsonPipelineTest {
     }
 
     return Response.create(statusCode, "Ok", headers, content, Charsets.UTF_8);
+  }
+
+  static JsonNode getJsonNode(String jsonText) {
+    try {
+      return new ObjectMapper().readTree(jsonText);
+    }
+    catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
 
