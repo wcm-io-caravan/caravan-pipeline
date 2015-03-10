@@ -25,6 +25,7 @@ import io.wcm.caravan.io.http.ResilientHttp;
 import io.wcm.caravan.io.http.request.Request;
 import io.wcm.caravan.io.http.response.Response;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
@@ -197,6 +198,15 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
+  public JsonPipeline applyAction(JsonPipelineAction action) {
+    String actionDesc = "ACTION(" + action.getId() + ")";
+
+    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output));
+
+    return cloneWith(transformedObservable, actionDesc);
+  }
+
+  @Override
   public JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping) {
 
     Observable<JsonPipelineOutput> transformedObservable = observable.map(output -> {
@@ -213,13 +223,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline followedBy(String transformationId, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryMethod) {
 
     Observable<JsonPipelineOutput> followUpObservable = observable.flatMap(output -> {
-
       JsonPipeline followUpPipeline = pipelineFactoryMethod.call(output);
-
       return followUpPipeline.getOutput();
     });
 
     String transformationDesc = "FOLLOWEDBY(" + transformationId + ")";
+
     return cloneWith(followUpObservable, transformationDesc);
   }
 
@@ -260,8 +269,4 @@ public final class JsonPipelineImpl implements JsonPipeline {
     return getJsonOutput().map(JacksonFunctions::nodeToString);
   }
 
-  @Override
-  public <T> Observable<T> getTypedOutput(Class<T> clazz) {
-    return getJsonOutput().map(JacksonFunctions.nodeToPojo(clazz));
-  }
 }

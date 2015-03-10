@@ -19,17 +19,11 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
-import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
-import io.wcm.caravan.pipeline.impl.testdata.BooksDocument.Bicycle;
-import io.wcm.caravan.pipeline.impl.testdata.BooksDocument.Book;
 
 import java.io.FileNotFoundException;
 
@@ -70,43 +64,6 @@ public class JsonPipelineOutputTest extends AbstractJsonPipelineTest {
   }
 
   @Test
-  public void plainPipelineTypedOutput() {
-
-    // check that the book.json is also properly mapped to the BooksDocument pojo
-    JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString());
-
-    BooksDocument doc = pipeline.getTypedOutput(BooksDocument.class).toBlocking().single();
-
-    assertEquals("number of books", 4, doc.getStore().getBook().size());
-    assertNotNull("existence of bike", doc.getStore().getBicycle());
-
-    Book firstBook = doc.getStore().getBook().get(0);
-    assertEquals("book category", "reference", firstBook.getCategory());
-    assertEquals("book author", "Nigel Rees", firstBook.getAuthor());
-    assertEquals("book title", "Sayings of the Century", firstBook.getTitle());
-    assertNull("book isbn", firstBook.getIsbn());
-    assertEquals("book price", firstBook.getPrice(), 8.95, 0.0);
-
-    Bicycle bike = doc.getStore().getBicycle();
-    assertEquals("bicycle colour", "red", bike.getColor());
-    assertEquals("bicycle price", 19.95, bike.getPrice(), 0.0);
-  }
-
-  @Test
-  public void plainPipelineTypedOutputUnknownProperty() {
-
-    //check handling of property "frame" which is not available in the Bicycle class
-    String json = "{store: { bicycle: { color: 'black', price: 100.0, frame: 'steel'}}}";
-
-    JsonPipeline pipeline = newPipelineWithResponseBody(json);
-    pipeline.getTypedOutput(BooksDocument.class).subscribe(booksObserver);
-
-    // make sure that only #error was called, and there was no other interaction with the obsever or cache
-    verify(booksObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(booksObserver, caching);
-  }
-
-  @Test
   public void plainPipelineTransportError() {
 
     // tests that errors from the transport layers are properly handled
@@ -144,16 +101,5 @@ public class JsonPipelineOutputTest extends AbstractJsonPipelineTest {
     verifyNoMoreInteractions(stringObserver, caching);
   }
 
-  @Test
-  public void plainPipelineParseErrorTypedOutput() {
-
-    // tests that invalid JSOn in the response is properly handled
-    JsonPipeline pipeline = newPipelineWithResponseBody("<this> is not json</this>");
-    pipeline.getTypedOutput(BooksDocument.class).subscribe(booksObserver);
-
-    // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(booksObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(booksObserver, caching);
-  }
 
 }

@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * A pipeline that aids consuming/orchestrating services to transform, merge and cache JSON responses from a
+ * A pipeline aids consuming/orchestrating services to transform, merge and cache JSON responses from a
  * {@link ResilientHttp} and allows to
  * <ul>
  * <li>select only specific parts of the JSON tree with a JsonPath expression (using {@link #collect(String, String)})</li>
@@ -51,9 +51,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public interface JsonPipeline {
 
   /**
-   * Provides a string representation of all the actions executed by this pipeline. This is supposed to help create
-   * understandable logging messages, and can also be used to generate cache keys.
-   * @return e.g. "GET(serviceName/path)+SELECT($..someProperty into targetPeropty)"
+   * Provides a string representation of all the actions executed by this pipeline. Description is supposed to help
+   * in creation of understandable logging messages. It could be also used to generate cache keys.
+   * See samble of action description belowe: "GET(serviceName/path)+SELECT($..someProperty into targetPeropty)"
+   * @return description of pipeline actions
    */
   String getDescriptor();
 
@@ -68,7 +69,7 @@ public interface JsonPipeline {
   List<Request> getRequests();
 
   /**
-   * a simple way to raise an exception in case that expected content is not present in the pipeline's JSON
+   * Raises an exception in case, if expected content is not present in the actual JSON node of this pipeline.
    * @param jsonPath a JSONPath expression
    * @param statusCode the appropriate status code to send to the client if the assumption fails
    * @param msg the expression to look for
@@ -135,25 +136,38 @@ public interface JsonPipeline {
   JsonPipeline merge(JsonPipeline secondarySource, String targetProperty);
 
   /**
-   * Applies a custom transformation on this pipeline's JSON content (e.g. a HAL representation)
-   * @param transformationId an id that is unique for the given transformation.
-   * @param mapping a function that is given the root node of the Json output, and will return the new root
+   * Applies a custom transformation on the JSON node (e.g. a HAL representation) of this pipeline, specifying the
+   * function as transformation mechanism. Function receives JSON node as parameter, which should be
+   * applied on the actual JSON node, and returns a new JSON node with the transformation result.
+   * @param transformationId an unique id of the actual transformation
+   * @param mapping a function that provides transformation algorithm
    * @return a new pipeline that will emit the result of the transformation
    */
+  @Deprecated
   JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping);
 
   /**
-   * Chain another pipeline that needs the input of this pipeline to be constructed/parameterized.
-   * @param descriptorSuffix an id to append to this pipeline's descriptor to generate a unique cache key
-   * @param pipelineFactoryFunc a function that is given the outpot of this pipeline when it is available, and must
+   * Applies custom action of the JSON object of this pipeline, specifying by the function as mechanism. Function
+   * receives pipeline output as parameter and returns a new pipeline with the action result.
+   * @param actionId an unique id of the actual activity
+   * @param pipelineFactoryFunc a function that is given the output of this pipeline when it is available, and must
    *          return the new pipeline to execute
-   * @return a new pipeline that you can subscribe to immediately that will emit the output of the dependeant pipeline
+   * @return a new pipeline that you can subscribe to immediately that will emit the output of the dependent pipeline
    *         created by the given factory method
    */
-  JsonPipeline followedBy(String descriptorSuffix, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryFunc);
+  @Deprecated
+  JsonPipeline followedBy(String actionId, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryFunc);
 
   /**
-   * Make the result of the current pipeline cacheable
+   * Applies an action on this pipeline, specifying an algorithm by the implementation of {@link JsonPipelineAction}.
+   * @param action a JSON pipeline action, that provides the actual algorithm
+   * @return a new pipeline that emits the result of the action execution
+   */
+  JsonPipeline applyAction(JsonPipelineAction action);
+
+
+  /**
+   * Makes the result of the current pipeline cacheable.
    * @param strategy - specifies details for the caching behavior
    * @return a new cache-aware pipeline with the same response as the current pipeline
    */
@@ -174,35 +188,26 @@ public interface JsonPipeline {
   JsonPipeline handleException(JsonPipelineExceptionHandler exceptionHandler);
 
   /**
-   * allows to subscribe to the full pipeline output that consists of a {@link JsonNode} payload and some additional
-   * metadata.
+   * Subscribes asynchronous client to the full pipeline output that consists of a {@link JsonNode} payload and some
+   * additional metadata. Any first subscription calls a pipeline to execute listed in it operations.
    * @return an Observable that will emit a single JsonPipelineOutput
    */
   Observable<JsonPipelineOutput> getOutput();
 
   /**
-   * Allows to subscribe only to the payload of the pipeline (if you're not interested in metadata)
+   * Subscribes asynchronous client to the JSON payload of the pipeline. Use it for the subscription, if you're not
+   * interested in metadata. Any first subscription calls a pipeline to execute listed in it operations.
    * @return an Observable that will emit a single JSON node (of type {@link ObjectNode} or {@link ArrayNode}) when the
    *         response has been fetched (and processed by all stages of the pipeline)
    */
   Observable<JsonNode> getJsonOutput();
 
   /**
-   * Allows to subscribe only to the serialized payload of the pipeline (if you're not interested in metadata)
+   * Subscribes asynchronous client to the serialized payload of the pipeline. Use it for the subscription, if you're
+   * not interested in metadata. Any first subscription calls a pipeline to execute listed in it operations.
    * @return an Observable that will emit a single JSON String when the response has been fetched (and processed by all
    *         stages of the pipeline)
    */
   Observable<String> getStringOutput();
-
-  /**
-   * Can be used to convert the JSON response from this pipeline into a Java object (if a simple mapping is possible)
-   * TODO: remove this method to clean-up the interface? default mapping to java object with jackson is trivial to do
-   * anyway
-   * @param clazz a POJO class that is suitable for automatic Json-to-Object Mapping
-   * @return an Observable that will emit a single object when the response has been retrieved
-   * @param <T> Mapping type
-   */
-  <T> Observable<T> getTypedOutput(Class<T> clazz);
-
 
 }
