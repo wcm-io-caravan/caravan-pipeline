@@ -52,15 +52,31 @@ public class JsonPipelineActionsTest {
   private JsonNode jsonNodeTransformation;
 
   @Mock
-  private Func1<JsonNode, JsonNode> function;
+  private Func1<?, ?> mockFunction;
 
   @Test
-  public void testTimeToLive() {
+  public void testSimpleTransformation() {
+    Func1<JsonNode, JsonNode> function = (Func1<JsonNode, JsonNode>)mockFunction;
     when(jsonPipelineOutputPrevious.getPayload()).thenReturn(jsonNodeInput);
     when(function.call(jsonNodeInput)).thenReturn(jsonNodeTransformation);
     when(jsonPipelineOutputPrevious.withPayload(jsonNodeTransformation)).thenReturn(jsonPipelineOutputResult);
 
     JsonPipelineAction action = JsonPipelineActions.simpleTransformation("transformationId", function);
+    assertNotNull(action.getId());
+    assertEquals("transformationId", action.getId());
+
+    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious);
+    assertNotNull(result);
+    JsonPipelineOutput resultOutput = result.toBlocking().single();
+    assertEquals(jsonPipelineOutputResult, resultOutput);
+  }
+
+  @Test
+  public void testSimpleOutputTransformation() {
+    Func1<JsonPipelineOutput, JsonPipelineOutput> function = (Func1<JsonPipelineOutput, JsonPipelineOutput>)mockFunction;
+    when(function.call(jsonPipelineOutputPrevious)).thenReturn(jsonPipelineOutputResult);
+
+    JsonPipelineAction action = JsonPipelineActions.pipelineOutputFunction("transformationId", function);
     assertNotNull(action.getId());
     assertEquals("transformationId", action.getId());
 
