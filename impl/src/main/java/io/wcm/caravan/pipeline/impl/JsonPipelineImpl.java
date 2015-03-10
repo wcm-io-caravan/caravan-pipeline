@@ -46,7 +46,6 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.StringUtils;
 
 import rx.Observable;
-import rx.functions.Func1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -204,32 +203,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output));
 
     return cloneWith(transformedObservable, actionDesc);
-  }
-
-  @Override
-  public JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping) {
-
-    Observable<JsonPipelineOutput> transformedObservable = observable.map(output -> {
-      JsonNode newPayload = mapping.call(output.getPayload());
-      return output.withPayload(newPayload);
-    });
-
-    String transformationDesc = "TRANSFORM(" + transformationId + ")";
-
-    return cloneWith(transformedObservable, transformationDesc);
-  }
-
-  @Override
-  public JsonPipeline followedBy(String transformationId, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryMethod) {
-
-    Observable<JsonPipelineOutput> followUpObservable = observable.flatMap(output -> {
-      JsonPipeline followUpPipeline = pipelineFactoryMethod.call(output);
-      return followUpPipeline.getOutput();
-    });
-
-    String transformationDesc = "FOLLOWEDBY(" + transformationId + ")";
-
-    return cloneWith(followUpObservable, transformationDesc);
   }
 
   @Override

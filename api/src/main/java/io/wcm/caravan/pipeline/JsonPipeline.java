@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.SortedSet;
 
 import rx.Observable;
-import rx.functions.Func1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -136,35 +135,11 @@ public interface JsonPipeline {
   JsonPipeline merge(JsonPipeline secondarySource, String targetProperty);
 
   /**
-   * Applies a custom transformation on the JSON node (e.g. a HAL representation) of this pipeline, specifying the
-   * function as transformation mechanism. Function receives JSON node as parameter, which should be
-   * applied on the actual JSON node, and returns a new JSON node with the transformation result.
-   * @param transformationId an unique id of the actual transformation
-   * @param mapping a function that provides transformation algorithm
-   * @return a new pipeline that will emit the result of the transformation
-   */
-  @Deprecated
-  JsonPipeline applyTransformation(String transformationId, Func1<JsonNode, JsonNode> mapping);
-
-  /**
-   * Applies custom action of the JSON object of this pipeline, specifying by the function as mechanism. Function
-   * receives pipeline output as parameter and returns a new pipeline with the action result.
-   * @param actionId an unique id of the actual activity
-   * @param pipelineFactoryFunc a function that is given the output of this pipeline when it is available, and must
-   *          return the new pipeline to execute
-   * @return a new pipeline that you can subscribe to immediately that will emit the output of the dependent pipeline
-   *         created by the given factory method
-   */
-  @Deprecated
-  JsonPipeline followedBy(String actionId, Func1<JsonPipelineOutput, JsonPipeline> pipelineFactoryFunc);
-
-  /**
    * Applies an action on this pipeline, specifying an algorithm by the implementation of {@link JsonPipelineAction}.
    * @param action a JSON pipeline action, that provides the actual algorithm
    * @return a new pipeline that emits the result of the action execution
    */
   JsonPipeline applyAction(JsonPipelineAction action);
-
 
   /**
    * Makes the result of the current pipeline cacheable.

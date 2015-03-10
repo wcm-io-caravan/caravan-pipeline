@@ -23,6 +23,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineActions;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 
 import org.json.JSONException;
@@ -33,35 +34,35 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 @RunWith(MockitoJUnitRunner.class)
-public class JsonPipelineTransformTest extends AbstractJsonPipelineTest {
+public class JsonPipelineActionTransformTest extends AbstractJsonPipelineTest {
 
-  public JsonPipelineTransformTest() {
+  public JsonPipelineActionTransformTest() {
     super();
   }
 
   @Test
-  public void applyTransformation_success() throws JSONException {
+  public void transformationSuccess() throws JSONException {
     JsonPipeline fetchId = newPipelineWithResponseBody("{id: 123}");
 
     JsonPipeline fetchIdThenName =
-        fetchId.applyTransformation("fetchName", (fetchIdOutput) -> {
+        fetchId.applyAction(JsonPipelineActions.simpleTransformation("fetchName", (fetchIdOutput) -> {
           int id = fetchIdOutput.get("id").asInt();
           return getJsonNode("{\"id\": " + id + ", \"name\": \"abc\"}");
-        });
+        }));
 
     String output = fetchIdThenName.getStringOutput().toBlocking().first();
     JSONAssert.assertEquals("{id: 123, name: 'abc'}", output, JSONCompareMode.STRICT);
   }
 
   @Test
-  public void followedBy_firstPipelineFails() {
+  public void transformationPreviousPipelineFailed() {
     JsonPipeline fetchId = newPipelineWithResponseError(new RuntimeException());
 
     JsonPipeline fetchIdThenName =
-        fetchId.applyTransformation("fetchName", (fetchIdOutput) -> {
+        fetchId.applyAction(JsonPipelineActions.simpleTransformation("fetchName", (fetchIdOutput) -> {
           int id = fetchIdOutput.get("id").asInt();
           return getJsonNode("{\"id\": " + id + ", \"name\": \"abc\"}");
-        });
+        }));
 
     fetchIdThenName.getStringOutput().subscribe(stringObserver);
 
@@ -70,13 +71,13 @@ public class JsonPipelineTransformTest extends AbstractJsonPipelineTest {
   }
 
   @Test
-  public void followedBy_secondPipelineFails() {
+  public void transformationActualPipelineFailed() {
     JsonPipeline fetchId = newPipelineWithResponseBody("{id: 123}");
 
     JsonPipeline fetchIdThenName =
-        fetchId.followedBy("fetchName", (fetchIdOutput) -> {
+        fetchId.applyAction(JsonPipelineActions.simpleTransformation("fetchName", (fetchIdOutput) -> {
           throw new RuntimeException("An expected exception has occured");
-        });
+        }));
 
     fetchIdThenName.getStringOutput().subscribe(stringObserver);
 
