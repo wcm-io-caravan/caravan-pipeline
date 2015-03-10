@@ -23,9 +23,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
-import io.wcm.caravan.io.http.request.Request;
-import io.wcm.caravan.io.http.request.RequestTemplate;
-import io.wcm.caravan.io.http.response.Response;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
@@ -34,9 +34,6 @@ import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelop
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.TreeSet;
 
@@ -50,6 +47,8 @@ import rx.Observer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 import com.jayway.jsonpath.Configuration;
 
 
@@ -82,8 +81,8 @@ public class AbstractJsonPipelineTest {
    * @return pipeline for the given input content
    */
   protected JsonPipeline newPipelineWithResponseBody(String json) {
-    Response response = getJsonResponse(200, json, -1);
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
+    CaravanHttpResponse response = getJsonResponse(200, json, -1);
+    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.just(response), caching);
   }
 
   /**
@@ -91,8 +90,8 @@ public class AbstractJsonPipelineTest {
    * @return pipeline for the given input content
    */
   protected JsonPipeline newPipelineWithResponseBodyAndMaxAge(String json, int maxAge) {
-    Response response = getJsonResponse(200, json, maxAge);
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
+    CaravanHttpResponse response = getJsonResponse(200, json, maxAge);
+    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.just(response), caching);
   }
 
   /**
@@ -102,8 +101,8 @@ public class AbstractJsonPipelineTest {
   protected JsonPipeline newPipelineWithResponseCode(int code) {
     // we are using some valid JSON as response body, because one of the purpose of this methods is to ensure that
     // the content is not parsed when there is a >200 response code
-    Response response = getJsonResponse(code, "{ responseCode:" + code + "}", -1);
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.just(response), caching);
+    CaravanHttpResponse response = getJsonResponse(code, "{ responseCode:" + code + "}", -1);
+    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.just(response), caching);
   }
 
   /**
@@ -111,7 +110,7 @@ public class AbstractJsonPipelineTest {
    * @return pipeline that will fail when getting its input data
    */
   protected JsonPipeline newPipelineWithResponseError(Throwable t) {
-    return new JsonPipelineImpl(SERVICE_NAME, new RequestTemplate().append("/path").request(), Observable.error(t), caching);
+    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.error(t), caching);
   }
 
   static String getJsonString(String resourcePath) {
@@ -123,22 +122,22 @@ public class AbstractJsonPipelineTest {
     }
   }
 
-  static Response getJsonResponse(int statusCode, String content, int maxAge) {
+  static CaravanHttpResponse getJsonResponse(int statusCode, String content, int maxAge) {
 
     // the cache-control unit-tests expect the content to be cacheable
-    HashMap<String, Collection<String>> headers = new HashMap<String, Collection<String>>();
+    Multimap<String, String> headers = LinkedHashMultimap.create();
     if (maxAge > 0 && statusCode == 200) {
-      headers.put("Cache-Control", Arrays.asList("max-age: " + maxAge));
+      headers.put("Cache-Control", "max-age: " + maxAge);
     }
 
-    return Response.create(statusCode, "Ok", headers, content, Charsets.UTF_8);
+    return CaravanHttpResponse.create(statusCode, "Ok", headers, content, Charsets.UTF_8);
   }
 
   static JsonNode getJsonNode(String jsonText) {
     try {
       return new ObjectMapper().readTree(jsonText);
     }
-    catch (Exception ex) {
+    catch (IOException ex) {
       throw new RuntimeException(ex);
     }
   }
@@ -146,8 +145,8 @@ public class AbstractJsonPipelineTest {
 
   static Observable<String> cachedContent(String json, int ageInSeconds) {
 
-    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new TreeSet<String>(), new LinkedList<Request>(), "cacheKey",
-        "descriptor");
+    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new TreeSet<String>(), new LinkedList<CaravanHttpRequest>(),
+        "cacheKey", "descriptor");
     envelope.setGeneratedDate(CacheDateUtils.formatRelativeTime(-ageInSeconds));
 
     return Observable.just(envelope.getEnvelopeString());

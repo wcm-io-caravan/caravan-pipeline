@@ -25,10 +25,10 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import io.wcm.caravan.io.http.request.Request;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
@@ -224,7 +224,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new TreeSet<String>(), new LinkedList<Request>(), null, null);
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new TreeSet<String>(), new LinkedList<CaravanHttpRequest>(), null, null);
     cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
 
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
@@ -254,10 +254,10 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     String cacheKey = "abcdef";
 
     when(caching.getCacheKey(SERVICE_NAME, a.getDescriptor()))
-        .thenReturn(cacheKey);
+    .thenReturn(cacheKey);
 
     when(caching.get(eq(cacheKey), anyBoolean(), anyInt()))
-        .thenReturn(cachedContent("{b: 456}}", 5));
+    .thenReturn(cachedContent("{b: 456}}", 5));
 
     String output = cached.getStringOutput().toBlocking().single();
 
@@ -281,10 +281,10 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     String cacheKey = "abcdef";
 
     when(caching.getCacheKey(SERVICE_NAME, a.getDescriptor()))
-        .thenReturn(cacheKey);
+    .thenReturn(cacheKey);
 
     when(caching.get(eq(cacheKey), anyBoolean(), anyInt()))
-        .thenReturn(Observable.empty());
+    .thenReturn(Observable.empty());
 
     String output = cached.getStringOutput().toBlocking().single();
 

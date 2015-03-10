@@ -21,9 +21,9 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.Validate.isTrue;
-import io.wcm.caravan.io.http.ResilientHttp;
-import io.wcm.caravan.io.http.request.Request;
-import io.wcm.caravan.io.http.response.Response;
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
@@ -56,7 +56,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public final class JsonPipelineImpl implements JsonPipeline {
 
   private SortedSet<String> sourceServiceNames = new TreeSet<String>();
-  private List<Request> requests = new LinkedList<Request>();
+  private List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
 
   private CacheAdapter caching;
   private String descriptor;
@@ -66,10 +66,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
   /**
    * @param serviceName the logical service name. Will be used as a namespace for cache keys
    * @param request the REST request that provides the soruce data
-   * @param responseObservable the response observable obtained by the {@link ResilientHttp}
+   * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param caching the caching layer to use
    */
-  JsonPipelineImpl(String serviceName, Request request, Observable<Response> responseObservable, CacheAdapter caching) {
+  JsonPipelineImpl(String serviceName, CaravanHttpRequest request, Observable<CaravanHttpResponse> responseObservable, CacheAdapter caching) {
 
     if (isNotBlank(serviceName)) {
       this.sourceServiceNames.add(serviceName);
@@ -112,7 +112,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   @Override
-  public List<Request> getRequests() {
+  public List<CaravanHttpRequest> getRequests() {
     return this.requests;
   }
 

@@ -19,8 +19,8 @@
  */
 package io.wcm.caravan.pipeline;
 
-import io.wcm.caravan.io.http.ResilientHttp;
-import io.wcm.caravan.io.http.request.Request;
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 
 /**
  * JSON Pipeline factory service interface.
@@ -28,13 +28,13 @@ import io.wcm.caravan.io.http.request.Request;
 public interface JsonPipelineFactory {
 
   /**
-   * Creates a new {@link JsonPipeline} to process the response from a {@link ResilientHttp} request for the given
+   * Creates a new {@link JsonPipeline} to process the response from a {@link CaravanHttpClient} request for the given
    * service
    * @param serviceName the logical service name (is mapped to configured real host names).
    * @param request the REST request to execute
    * @return the new pipeline
    */
-  JsonPipeline create(String serviceName, Request request);
+  JsonPipeline create(String serviceName, CaravanHttpRequest request);
 
   /**
    * Can be used to create an pipeline that can be used as a root to merge other pipeline's responses

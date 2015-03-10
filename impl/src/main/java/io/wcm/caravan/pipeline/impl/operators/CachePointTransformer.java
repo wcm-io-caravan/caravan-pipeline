@@ -19,7 +19,7 @@
  */
 package io.wcm.caravan.pipeline.impl.operators;
 
-import io.wcm.caravan.io.http.request.Request;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
@@ -29,7 +29,6 @@ import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.SortedSet;
 
@@ -55,7 +54,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private static final Logger log = LoggerFactory.getLogger(CachePointTransformer.class);
 
   private final CacheAdapter caching;
-  private final List<Request> requests;
+  private final List<CaravanHttpRequest> requests;
   private final String descriptor;
   private SortedSet<String> sourceServiceNames;
   private final CacheStrategy strategy;
@@ -67,7 +66,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
    * @param sourceServiceNames names of the services (for logging)
    * @param strategy the CacheStrategy to get storage time and refresh interval
    */
-  public CachePointTransformer(CacheAdapter caching, List<Request> requests, String descriptor, SortedSet<String> sourceServiceNames, CacheStrategy strategy) {
+  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, SortedSet<String> sourceServiceNames,
+      CacheStrategy strategy) {
     super();
     this.caching = caching;
     this.requests = requests;
@@ -85,8 +85,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     // if "no-cache" is set in the request headers, then ignore entries from cache
     // and instead act as if there was an cache-miss, i.e. fetch the resource and put into the cache
-    Collection<String> cacheControl = requests.get(0).headers().get("Cache-Control");
-    boolean ignoreCache = (cacheControl != null && cacheControl.contains("no-cache"));
+    boolean ignoreCache = requests.get(0).getHeaderAsMap("Cache-Control").containsKey("no-cache");
 
     // the code within the lambda passed to Observable#create will be executed when subscribe is called on the "cachedSource" observable
     Observable<JsonPipelineOutput> cachedSource = Observable.create((subscriber) -> {
@@ -313,7 +312,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param pipelineDescriptor
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from200Response(JsonNode contentNode, SortedSet<String> sourceServiceNames, List<Request> requests, String cacheKey,
+    public static CacheEnvelope from200Response(JsonNode contentNode, SortedSet<String> sourceServiceNames, List<CaravanHttpRequest> requests, String cacheKey,
         String pipelineDescriptor) {
 
       ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, sourceServiceNames, requests, cacheKey, pipelineDescriptor, null);
@@ -328,7 +327,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param pipelineDescriptor
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from404Response(String reason, SortedSet<String> sourceServiceNames, List<Request> requests, String cacheKey,
+    public static CacheEnvelope from404Response(String reason, SortedSet<String> sourceServiceNames, List<CaravanHttpRequest> requests, String cacheKey,
         String pipelineDescriptor) {
 
       JsonNode contentNode = JacksonFunctions.emptyObject();
@@ -338,7 +337,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       return new CacheEnvelope(envelope);
     }
 
-    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, SortedSet<String> sourceServiceNames, List<Request> requests,
+    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, SortedSet<String> sourceServiceNames, List<CaravanHttpRequest> requests,
         String cacheKey,
         String pipelineDescriptor, String reason) {
 
@@ -353,7 +352,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       metadata.put("statusCode", statusCode);
 
       List<String> sourcePaths = new ArrayList<String>();
-      for (Request req : requests) {
+      for (CaravanHttpRequest req : requests) {
         sourcePaths.add(StringUtils.substringBefore(req.url(), "?"));
       }
       metadata.set("sourcePaths", JacksonFunctions.pojoToNode(sourcePaths));

@@ -19,9 +19,9 @@
  */
 package io.wcm.caravan.pipeline.impl.operators;
 
+import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
-import io.wcm.caravan.io.http.ResilientHttp;
-import io.wcm.caravan.io.http.response.Response;
+import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
@@ -30,8 +30,8 @@ import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.ws.Response;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +43,11 @@ import rx.exceptions.Exceptions;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Operator that converts {@link Response} emissions from the {@link ResilientHttp} layer into
+ * Operator that converts {@link Response} emissions from the {@link CaravanHttpClient} layer into
  * {@link JsonPipelineOutput} objects. All recoverable exceptions are wrapped in a {@link JsonPipelineInputException}
  * before they are forwarded to the subscriber's onNext method
  */
-public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Response> {
+public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, CaravanHttpResponse> {
 
   private static final Logger log = LoggerFactory.getLogger(ResponseHandlingOperator.class);
 
@@ -61,8 +61,8 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Re
   }
 
   @Override
-  public Subscriber<? super Response> call(Subscriber<? super JsonPipelineOutput> subscriber) {
-    return new Subscriber<Response>() {
+  public Subscriber<? super CaravanHttpResponse> call(Subscriber<? super JsonPipelineOutput> subscriber) {
+    return new Subscriber<CaravanHttpResponse>() {
 
       @Override
       public void onCompleted() {
@@ -82,7 +82,7 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Re
       }
 
       @Override
-      public void onNext(Response response) {
+      public void onNext(CaravanHttpResponse response) {
         try {
           final int statusCode = response.status();
           log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + url);
@@ -90,20 +90,10 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Re
 
             JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
             JsonPipelineOutput model = new JsonPipelineOutputImpl(payload);
-
-            if (response.headers() != null && response.headers().get("Cache-Control") != null) {
-              // TODO: this extracting of specific cache-control should be moved into Response class
-              for (String cacheControl : response.headers().get("Cache-Control")) {
-                if (cacheControl.startsWith("max-age:")) {
-                  // if the response already contain a max-age header then respect that value
-                  int maxAge = NumberUtils.toInt(StringUtils.substringAfter(cacheControl, ":").trim());
-                  if (maxAge > 0) {
-                    model = model.withMaxAge(maxAge);
-                  }
-                }
-              }
+            int maxAge = NumberUtils.toInt((String)response.getHeaderAsMap("Cache-Control").get("max-age"));
+            if (maxAge > 0) {
+              model = model.withMaxAge(maxAge);
             }
-
             subscriber.onNext(model);
           }
           else {

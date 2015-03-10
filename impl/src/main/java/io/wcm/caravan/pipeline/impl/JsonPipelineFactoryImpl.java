@@ -19,18 +19,15 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
-import io.wcm.caravan.io.http.ResilientHttp;
-import io.wcm.caravan.io.http.request.Request;
-import io.wcm.caravan.io.http.request.RequestTemplate;
-import io.wcm.caravan.io.http.response.Response;
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.felix.scr.annotations.Component;
@@ -38,6 +35,8 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 
 import rx.Observable;
+
+import com.google.common.collect.ImmutableListMultimap;
 
 /**
  * Default implementation of {@link JsonPipelineFactory}.
@@ -47,17 +46,17 @@ import rx.Observable;
 public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
   @Reference
-  private ResilientHttp transport;
+  private CaravanHttpClient transport;
 
   @Reference
   private CacheAdapter cacheAdapter;
 
   @Override
-  public JsonPipeline create(String serviceName, Request request) {
+  public JsonPipeline create(String serviceName, CaravanHttpRequest request) {
 
     // note that #execute will *not* actually start the request, but just create an observable that will initiate
     // the request when #subscribe is called on the pipeline's output observable
-    Observable<Response> response = transport.execute(serviceName, request);
+    Observable<CaravanHttpResponse> response = transport.execute(serviceName, request);
 
     return new JsonPipelineImpl(serviceName, request, response, cacheAdapter);
   }
@@ -65,14 +64,13 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   @Override
   public JsonPipeline createEmpty() {
 
-    Request dummyRequest = new RequestTemplate().request();
+    CaravanHttpRequest dummyRequest = new CaravanHttpRequestBuilder().build();
 
     // make sure to set a Cache-Control header to mark the empty response as indefinitely cacheable,
     // otherwise the default max-age value of zero would become effective
-    HashMap<String, Collection<String>> headers = new HashMap<String, Collection<String>>();
-    headers.put("Cache-Control", Arrays.asList("max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(365))));
+    ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(365)));
 
-    Response emptyJsonResponse = Response.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
+    CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
     return new JsonPipelineImpl("", dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter);
   }

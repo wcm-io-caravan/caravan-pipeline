@@ -19,7 +19,7 @@
  */
 package io.wcm.caravan.pipeline.cache;
 
-import io.wcm.caravan.io.http.request.Request;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipeline;
 
 import java.util.Collection;
@@ -40,7 +40,7 @@ public interface CacheStrategy {
    * @param requests the REST requests that were used to obtain the data to be stored in the cache
    * @return the duration in seconds until a cached response is considered stale, and should be re-validated
    */
-  int getRefreshInterval(Collection<Request> requests);
+  int getRefreshInterval(Collection<CaravanHttpRequest> requests);
 
   /**
    * Defines the time (in seconds) for which the response to the given request should be at least stored in the cache.
@@ -49,7 +49,7 @@ public interface CacheStrategy {
    * @param requests the REST requests that were used to obtain the data to be stored in the cache
    * @return the minimum duration in seconds to keep the response in the cache
    */
-  int getStorageTime(Collection<Request> requests);
+  int getStorageTime(Collection<CaravanHttpRequest> requests);
 
   /**
    * Determines whether to automatically extend the storage time (to the duration returned by
@@ -59,5 +59,5 @@ public interface CacheStrategy {
    * @param requests the REST requests that were used to obtain the data to be stored in the cache
    * @return true if the storage value for this request should be extended on every cache hit
    */
-  boolean isExtendStorageTimeOnGet(Collection<Request> requests);
+  boolean isExtendStorageTimeOnGet(Collection<CaravanHttpRequest> requests);
 }

@@ -19,8 +19,8 @@
  */
 package io.wcm.caravan.pipeline;
 
-import io.wcm.caravan.io.http.ResilientHttp;
-import io.wcm.caravan.io.http.request.Request;
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
 import java.util.List;
@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * A pipeline aids consuming/orchestrating services to transform, merge and cache JSON responses from a
- * {@link ResilientHttp} and allows to
+ * {@link CaravanHttpClient} and allows to
  * <ul>
  * <li>select only specific parts of the JSON tree with a JsonPath expression (using {@link #collect(String, String)})</li>
  * <li>merge all content of another pipeline into a new property of its own result document (using
@@ -66,7 +66,7 @@ public interface JsonPipeline {
   /**
    * @return all resilient HTTP requests involved in producing the pipeline's output
    */
-  List<Request> getRequests();
+  List<CaravanHttpRequest> getRequests();
 
   /**
    * Raises an exception in case, if expected content is not present in the actual JSON node of this pipeline.
