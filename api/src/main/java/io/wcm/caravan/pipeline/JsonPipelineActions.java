@@ -58,4 +58,27 @@ public final class JsonPipelineActions {
 
     };
   }
+
+
+  /**
+   * @param transformationId
+   * @param transformation
+   * @return
+   */
+  public static JsonPipelineAction pipelineOutputTransformation(String transformationId, Func1<JsonPipelineOutput, JsonPipelineOutput> transformation) {
+    return new JsonPipelineAction() {
+
+      @Override
+      public String getId() {
+        return transformationId;
+      }
+
+      @Override
+      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput) {
+        JsonPipelineOutput transformedOutput = transformation.call(previousStepOutput);
+        return Observable.just(transformedOutput);
+      }
+
+    };
+  }
 }
