@@ -52,11 +52,11 @@ public class JsonPipelineActionsTest {
   private JsonNode jsonNodeTransformation;
 
   @Mock
-  private Func1 mockFunction;
+  private Func1<JsonNode, JsonNode> mockFunction;
 
   @Test
   public void testSimpleTransformation() {
-    @SuppressWarnings("unchecked")
+
     Func1<JsonNode, JsonNode> function = mockFunction;
     when(jsonPipelineOutputPrevious.getPayload()).thenReturn(jsonNodeInput);
     when(function.call(jsonNodeInput)).thenReturn(jsonNodeTransformation);

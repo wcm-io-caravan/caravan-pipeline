@@ -39,7 +39,6 @@ import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
 
 import java.util.LinkedList;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.BaseMatcher;
@@ -77,7 +76,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int timeToLiveSeconds = 60;
 
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
-    .thenReturn(Observable.empty());
+        .thenReturn(Observable.empty());
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}")
         .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
@@ -87,6 +86,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     // the max-age must match the expiry time from the cache strategy
     assertEquals(timeToLiveSeconds, output.getMaxAge());
   }
+
 
   @Test
   public void cacheMissMaxAgeFromResponseIsHigher() {
@@ -224,7 +224,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new TreeSet<String>(), new LinkedList<CaravanHttpRequest>(), null, null);
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null);
     cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
 
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))

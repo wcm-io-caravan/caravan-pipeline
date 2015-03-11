@@ -31,6 +31,7 @@ import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -56,28 +57,33 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private final CacheAdapter caching;
   private final List<CaravanHttpRequest> requests;
   private final String descriptor;
-  private SortedSet<String> sourceServiceNames;
+
   private final CacheStrategy strategy;
 
   /**
    * @param caching the cache adapter to use
    * @param requests the outgoing REST request(s) used to obtain the JSON data to be cached
    * @param descriptor the unique id of the pipeline (to build a cache key)
-   * @param sourceServiceNames names of the services (for logging)
    * @param strategy the CacheStrategy to get storage time and refresh interval
    */
-  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, SortedSet<String> sourceServiceNames,
-      CacheStrategy strategy) {
+  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy) {
     super();
     this.caching = caching;
     this.requests = requests;
     this.descriptor = descriptor;
-    this.sourceServiceNames = sourceServiceNames;
     this.strategy = strategy;
   }
 
+  private static SortedSet<String> getSourceServiceNames(List<CaravanHttpRequest> requests) {
+    SortedSet<String> sourceServiceNames = new TreeSet<String>();
+    for (CaravanHttpRequest request : requests) {
+      sourceServiceNames.add(request.getServiceName());
+    }
+    return sourceServiceNames;
+  }
+
   private String getSourceServicePrefix() {
-    return StringUtils.join(sourceServiceNames, '+');
+    return StringUtils.join(getSourceServiceNames(requests), '+');
   }
 
   @Override
@@ -230,7 +236,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           int storageTime = strategy.getStorageTime(requests);
           int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
 
-          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), sourceServiceNames, requests, cacheKey, descriptor);
+          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor);
           caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
 
           // everything else is just forwarding to the subscriber to the cachedSource
@@ -253,7 +259,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
               int storageTime = strategy.getStorageTime(requests);
 
-              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), sourceServiceNames, requests, cacheKey, descriptor);
+              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor);
               caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
             }
           }
@@ -307,37 +313,35 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     /**
      * Create a new CacheEnvelope to store in the couchbase cache
      * @param contentNode
-     * @param sourceServiceNames
      * @param cacheKey
      * @param pipelineDescriptor
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from200Response(JsonNode contentNode, SortedSet<String> sourceServiceNames, List<CaravanHttpRequest> requests, String cacheKey,
+    public static CacheEnvelope from200Response(JsonNode contentNode, List<CaravanHttpRequest> requests, String cacheKey,
         String pipelineDescriptor) {
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, sourceServiceNames, requests, cacheKey, pipelineDescriptor, null);
+      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, requests, cacheKey, pipelineDescriptor, null);
       return new CacheEnvelope(envelope);
     }
 
     /**
      * Create a new CacheEnvelope to store in the couchbase cache
      * @param reason
-     * @param sourceServiceNames
      * @param cacheKey
      * @param pipelineDescriptor
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from404Response(String reason, SortedSet<String> sourceServiceNames, List<CaravanHttpRequest> requests, String cacheKey,
+    public static CacheEnvelope from404Response(String reason, List<CaravanHttpRequest> requests, String cacheKey,
         String pipelineDescriptor) {
 
       JsonNode contentNode = JacksonFunctions.emptyObject();
       int statusCode = HttpStatus.SC_NOT_FOUND;
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, sourceServiceNames, requests, cacheKey, pipelineDescriptor, reason);
+      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, requests, cacheKey, pipelineDescriptor, reason);
       return new CacheEnvelope(envelope);
     }
 
-    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, SortedSet<String> sourceServiceNames, List<CaravanHttpRequest> requests,
+    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, List<CaravanHttpRequest> requests,
         String cacheKey,
         String pipelineDescriptor, String reason) {
 
@@ -345,7 +349,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
 
       metadata.put("cacheKey", cacheKey);
-      metadata.set("sources", JacksonFunctions.pojoToNode(sourceServiceNames));
+      metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServiceNames(requests)));
       metadata.put("pipeline", pipelineDescriptor);
       metadata.put("generated", CacheDateUtils.formatCurrentTime());
 

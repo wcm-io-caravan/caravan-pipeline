@@ -35,7 +35,6 @@ import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
 
 import java.io.IOException;
 import java.util.LinkedList;
-import java.util.TreeSet;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
@@ -145,7 +144,7 @@ public class AbstractJsonPipelineTest {
 
   static Observable<String> cachedContent(String json, int ageInSeconds) {
 
-    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new TreeSet<String>(), new LinkedList<CaravanHttpRequest>(),
+    CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new LinkedList<CaravanHttpRequest>(),
         "cacheKey", "descriptor");
     envelope.setGeneratedDate(CacheDateUtils.formatRelativeTime(-ageInSeconds));
 
