@@ -19,11 +19,13 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.io.FileNotFoundException;
 
@@ -64,6 +66,17 @@ public class JsonPipelineOutputTest extends AbstractJsonPipelineTest {
   }
 
   @Test
+  public void plainPipelineHasMaxAgeFromResponse() {
+
+    // setup a JsonPipeline with a response that contains a Cache-Control/max-age of 10 seconds
+    JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{}", 10);
+
+    // and assure the value is properly transferred to the JsonPipelineOutput metadata
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+    assertEquals(10, output.getMaxAge());
+  }
+
+  @Test
   public void plainPipelineTransportError() {
 
     // tests that errors from the transport layers are properly handled
@@ -100,6 +113,5 @@ public class JsonPipelineOutputTest extends AbstractJsonPipelineTest {
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, caching);
   }
-
 
 }
