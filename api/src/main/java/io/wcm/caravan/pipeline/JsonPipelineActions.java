@@ -58,30 +58,4 @@ public final class JsonPipelineActions {
 
     };
   }
-
-
-  /**
-   * Applies function on the JSON pipeline output of this pipeline. Specifies a function implementation with the
-   * declaration of input and output conditions as JsonPipelineOutput.
-   * Please replace this function call with a meaningful implementation.
-   * @param actionId an unique id of the actual transformation
-   * @param function a function that provides transformation algorithm
-   * @return a new pipeline that will emit the result of the transformation
-   */
-  public static JsonPipelineAction pipelineOutputFunction(String actionId, Func1<JsonPipelineOutput, JsonPipelineOutput> function) {
-    return new JsonPipelineAction() {
-
-      @Override
-      public String getId() {
-        return actionId;
-      }
-
-      @Override
-      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput) {
-        JsonPipelineOutput transformedOutput = function.call(previousStepOutput);
-        return Observable.just(transformedOutput);
-      }
-
-    };
-  }
 }
