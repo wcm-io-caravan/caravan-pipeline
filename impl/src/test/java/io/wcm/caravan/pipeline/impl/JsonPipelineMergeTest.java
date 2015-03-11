@@ -20,7 +20,6 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
 
@@ -46,7 +45,6 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
     a.merge(b, null);
-    fail();
   }
 
   @Test

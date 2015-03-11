@@ -58,7 +58,6 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
     pipeline.collect("$..label", "");
-    fail();
 
   }
 

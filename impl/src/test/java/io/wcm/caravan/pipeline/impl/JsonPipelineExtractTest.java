@@ -50,7 +50,6 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     pipeline.extract("$.a", null);
-    fail();
 
   }
 
