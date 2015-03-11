@@ -52,19 +52,19 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   private CacheAdapter cacheAdapter;
 
   @Override
-  public JsonPipeline create(String serviceName, CaravanHttpRequest request) {
+  public JsonPipeline create(final CaravanHttpRequest request) {
 
     // note that #execute will *not* actually start the request, but just create an observable that will initiate
     // the request when #subscribe is called on the pipeline's output observable
-    Observable<CaravanHttpResponse> response = transport.execute(serviceName, request);
+    Observable<CaravanHttpResponse> response = transport.execute(request);
 
-    return new JsonPipelineImpl(serviceName, request, response, cacheAdapter);
+    return new JsonPipelineImpl(request, response, cacheAdapter);
   }
 
   @Override
   public JsonPipeline createEmpty() {
 
-    CaravanHttpRequest dummyRequest = new CaravanHttpRequestBuilder().build();
+    CaravanHttpRequest dummyRequest = new CaravanHttpRequestBuilder("").build();
 
     // make sure to set a Cache-Control header to mark the empty response as indefinitely cacheable,
     // otherwise the default max-age value of zero would become effective
@@ -72,7 +72,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
-    return new JsonPipelineImpl("", dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter);
+    return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter);
   }
 
 }

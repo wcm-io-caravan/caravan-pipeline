@@ -82,7 +82,7 @@ public class AbstractJsonPipelineTest {
    */
   protected JsonPipeline newPipelineWithResponseBody(String json) {
     CaravanHttpResponse response = getJsonResponse(200, json, -1);
-    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.just(response), caching);
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), caching);
   }
 
   /**
@@ -91,7 +91,7 @@ public class AbstractJsonPipelineTest {
    */
   protected JsonPipeline newPipelineWithResponseBodyAndMaxAge(String json, int maxAge) {
     CaravanHttpResponse response = getJsonResponse(200, json, maxAge);
-    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.just(response), caching);
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), caching);
   }
 
   /**
@@ -102,7 +102,7 @@ public class AbstractJsonPipelineTest {
     // we are using some valid JSON as response body, because one of the purpose of this methods is to ensure that
     // the content is not parsed when there is a >200 response code
     CaravanHttpResponse response = getJsonResponse(code, "{ responseCode:" + code + "}", -1);
-    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.just(response), caching);
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), caching);
   }
 
   /**
@@ -110,7 +110,7 @@ public class AbstractJsonPipelineTest {
    * @return pipeline that will fail when getting its input data
    */
   protected JsonPipeline newPipelineWithResponseError(Throwable t) {
-    return new JsonPipelineImpl(SERVICE_NAME, new CaravanHttpRequestBuilder().append("/path").build(), Observable.error(t), caching);
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.error(t), caching);
   }
 
   static String getJsonString(String resourcePath) {

@@ -57,7 +57,7 @@ public class CachePointTransformerTest {
 
   @Test
   public void test_ignoreCache() {
-    CaravanHttpRequest request = new CaravanHttpRequestBuilder().headers(ImmutableListMultimap.of("Cache-Control", "no-cache")).build();
+    CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "no-cache")).build();
     CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", null, cacheStrategy);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
@@ -67,7 +67,7 @@ public class CachePointTransformerTest {
 
   @Test
   public void test_useCache() {
-    CaravanHttpRequest request = new CaravanHttpRequestBuilder().headers(ImmutableListMultimap.of("Cache-Control", "max-age: 100")).build();
+    CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "max-age: 100")).build();
     CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", null, cacheStrategy);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();

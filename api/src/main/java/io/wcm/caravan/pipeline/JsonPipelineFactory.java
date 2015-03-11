@@ -30,11 +30,10 @@ public interface JsonPipelineFactory {
   /**
    * Creates a new {@link JsonPipeline} to process the response from a {@link CaravanHttpClient} request for the given
    * service
-   * @param serviceName the logical service name (is mapped to configured real host names).
    * @param request the REST request to execute
    * @return the new pipeline
    */
-  JsonPipeline create(String serviceName, CaravanHttpRequest request);
+  JsonPipeline create(final CaravanHttpRequest request);
 
   /**
    * Can be used to create an pipeline that can be used as a root to merge other pipeline's responses

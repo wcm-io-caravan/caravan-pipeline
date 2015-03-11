@@ -63,20 +63,19 @@ public final class JsonPipelineImpl implements JsonPipeline {
   private Observable<JsonPipelineOutput> observable;
 
   /**
-   * @param serviceName the logical service name. Will be used as a namespace for cache keys
    * @param request the REST request that provides the soruce data
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param caching the caching layer to use
    */
-  JsonPipelineImpl(String serviceName, CaravanHttpRequest request, Observable<CaravanHttpResponse> responseObservable, CacheAdapter caching) {
+  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching) {
 
-    if (isNotBlank(serviceName)) {
-      this.sourceServiceNames.add(serviceName);
+    if (isNotBlank(request.getServiceName())) {
+      this.sourceServiceNames.add(request.getServiceName());
     }
     this.requests.add(request);
 
     this.caching = caching;
-    this.descriptor = isNotBlank(request.url()) ? "GET(//" + serviceName + request.url() + ")" : "EMPTY()";
+    this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
 
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url()));
   }
