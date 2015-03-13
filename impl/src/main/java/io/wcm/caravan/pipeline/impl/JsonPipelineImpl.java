@@ -77,7 +77,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.caching = caching;
     this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
 
-    this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url()));
+    this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url())).cache();
   }
 
   private JsonPipelineImpl() {
@@ -95,7 +95,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       clone.descriptor += "+" + descriptorSuffix;
     }
 
-    clone.observable = newObservable;
+    clone.observable = newObservable.cache();
     return clone;
   }
 

@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,7 +33,8 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,6 +58,12 @@ import rx.Subscriber;
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineTest {
 
+  private JsonPipeline firstStep;
+
+  private JsonPipeline secondStep;
+
+  private JsonPipeline thirdStep;
+
   @Mock
   protected JsonPipelineAction action;
 
@@ -66,21 +74,21 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
 
   @Test
   public void twoSubscriptions() {
-    JsonPipeline firstStep = newPipelineWithResponseBody("{id:123}");
+    firstStep = newPipelineWithResponseBody("{id:123}");
     assertNotNull(firstStep);
-    Observable<JsonPipelineOutput> fristSubscriber = firstStep.getOutput();
+    Observable<JsonPipelineOutput> firstSubscriber = firstStep.getOutput();
     Observable<JsonPipelineOutput> secondSubscriber = firstStep.getOutput();
-    assertFalse(fristSubscriber.equals(secondSubscriber));
-    assertFalse(fristSubscriber.toBlocking().equals(secondSubscriber.toBlocking()));
-    assertFalse(fristSubscriber.toBlocking().first().equals(secondSubscriber.toBlocking().first()));
+    assertFalse(firstSubscriber.equals(secondSubscriber));
+    assertTrue(firstSubscriber.toBlocking().first().equals(secondSubscriber.toBlocking().first()));
   }
 
   @Test
   public void concurrentSubscriptions() {
-    JsonPipeline pipeline = newPipelineWithResponseBody("{id:123}");
-    ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<String>();
+    firstStep = newPipelineWithResponseBody("{id:123}");
+    Set<JsonPipelineOutput> actualOutputs = new HashSet<JsonPipelineOutput>();
     CountDownLatch countDown = new CountDownLatch(100);
     ExecutorService executorService = Executors.newCachedThreadPool();
+
     for (int i = 0; i < 100; i++) {
       executorService.execute(new Runnable() {
 
@@ -94,8 +102,8 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
           }
 
           try {
-            JSONAssert.assertEquals("{id: 123}", pipeline.getStringOutput().toBlocking().first(), JSONCompareMode.STRICT);
-            queue.add(pipeline.getStringOutput().toBlocking().first());
+            JSONAssert.assertEquals("{id: 123}", firstStep.getStringOutput().toBlocking().first(), JSONCompareMode.STRICT);
+            actualOutputs.add(firstStep.getOutput().toBlocking().single());
           }
           catch (JSONException ex) {
             ex.printStackTrace();
@@ -113,59 +121,26 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
     catch (InterruptedException ex) {
       ex.printStackTrace();
     }
-    assertEquals(queue.size(), 100);
+    assertEquals(1, actualOutputs.size());
   }
-
-  @Test
-  public void testTwoPipelineActionCalls() {
-    JsonPipeline firstStep = newPipelineWithResponseBody("{id:123}");
-    JsonPipeline nextStep = firstStep.applyAction(action);
-    when(action.execute(any())).thenReturn(firstStep.getOutput());
-    Observable<JsonPipelineOutput> fristSubscriber = nextStep.getOutput();
-    Observable<JsonPipelineOutput> secondSubscriber = nextStep.getOutput();
-    fristSubscriber.toBlocking().single();
-    secondSubscriber.toBlocking().single();
-    verify(action, times(2)).execute(any());
-  }
-
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testTwoStepPipelineActionCalls() {
-
-    final AtomicInteger subscribeCount = new AtomicInteger();
-
-    Observable<CaravanHttpResponse> sourceObservable = Observable.create(new OnSubscribe<CaravanHttpResponse>() {
-
-      @Override
-      public void call(Subscriber<? super CaravanHttpResponse> t1) {
-        subscribeCount.incrementAndGet();
-
-        // if we uncomment this, this method gets called three times which makes the test fail
-        // TODO: investigate why this is happening
-        //t1.onNext(getJsonResponse(200, "{}", 0));
-        //t1.onCompleted();
-      }
-    });
-
-    JsonPipeline firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching);
-    JsonPipeline nextStep = firstStep.applyAction(action);
+  public void testTwoPipelineActionCalls() {
+    firstStep = newPipelineWithResponseBody("{id:123}");
+    secondStep = firstStep.applyAction(action);
     when(action.execute(any())).thenReturn(firstStep.getOutput());
-
-    // TODO: check if both observers onNext are called with the pipeline output
     Observer<JsonPipelineOutput> firstObserver = Mockito.mock(Observer.class);
     Observer<JsonPipelineOutput> secondObserver = Mockito.mock(Observer.class);
-
-    firstStep.getOutput().subscribe(firstObserver);
-    nextStep.getOutput().subscribe(secondObserver);
-
-    assertEquals(2, subscribeCount.get());
+    secondStep.getOutput().subscribe(firstObserver);
+    secondStep.getOutput().subscribe(secondObserver);
+    verify(action, times(1)).execute(any());
   }
 
   @Test
   public void testConcurrentPipelineActionCalls() {
-    JsonPipeline firstStep = newPipelineWithResponseBody("{id:123}");
-    JsonPipeline nextStep = firstStep.applyAction(action);
+    firstStep = newPipelineWithResponseBody("{id:123}");
+    secondStep = firstStep.applyAction(action);
     when(action.execute(any())).thenReturn(firstStep.getOutput());
     CountDownLatch countDown = new CountDownLatch(100);
     ExecutorService executorService = Executors.newCachedThreadPool();
@@ -180,7 +155,8 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
           catch (InterruptedException ex) {
             ex.printStackTrace();
           }
-          nextStep.getOutput().toBlocking().single();
+          Observer<JsonPipelineOutput> observer = Mockito.mock(Observer.class);
+          secondStep.getOutput().subscribe(observer);
         }
       });
       countDown.countDown();
@@ -194,7 +170,78 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
     catch (InterruptedException ex) {
       ex.printStackTrace();
     }
-    verify(action, times(100)).execute(any());
+    verify(action, times(1)).execute(any());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void test3StepPipelineActionCalls() {
+
+    final AtomicInteger subscribeCount = new AtomicInteger();
+    initPipelines(subscribeCount);
+
+    Observer<JsonPipelineOutput> firstObserver = Mockito.mock(Observer.class);
+    Observer<JsonPipelineOutput> secondObserver = Mockito.mock(Observer.class);
+    Observer<JsonPipelineOutput> thirdObserver = Mockito.mock(Observer.class);
+
+    firstStep.getOutput().subscribe(firstObserver);
+    secondStep.getOutput().subscribe(secondObserver);
+    thirdStep.getOutput().subscribe(thirdObserver);
+
+    assertEquals(1, subscribeCount.get());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void test3StepPipelineActionCallsReversedOrder() {
+
+    final AtomicInteger subscribeCount = new AtomicInteger();
+    initPipelines(subscribeCount);
+
+    Observer<JsonPipelineOutput> firstObserver = Mockito.mock(Observer.class);
+    Observer<JsonPipelineOutput> secondObserver = Mockito.mock(Observer.class);
+    Observer<JsonPipelineOutput> thirdObserver = Mockito.mock(Observer.class);
+
+    thirdStep.getOutput().subscribe(thirdObserver);
+    secondStep.getOutput().subscribe(secondObserver);
+    firstStep.getOutput().subscribe(firstObserver);
+
+    assertEquals(1, subscribeCount.get());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void test3StepPipelineActionCallsMixedOrder() {
+
+    final AtomicInteger subscribeCount = new AtomicInteger();
+    initPipelines(subscribeCount);
+
+    Observer<JsonPipelineOutput> firstObserver = Mockito.mock(Observer.class);
+    Observer<JsonPipelineOutput> secondObserver = Mockito.mock(Observer.class);
+    Observer<JsonPipelineOutput> thirdObserver = Mockito.mock(Observer.class);
+
+    secondStep.getOutput().subscribe(secondObserver);
+    firstStep.getOutput().subscribe(firstObserver);
+    thirdStep.getOutput().subscribe(thirdObserver);
+
+    assertEquals(1, subscribeCount.get());
+  }
+
+  private void initPipelines(AtomicInteger subscribeCount) {
+    Observable<CaravanHttpResponse> sourceObservable = Observable.create(new OnSubscribe<CaravanHttpResponse>() {
+
+      @Override
+      public void call(Subscriber<? super CaravanHttpResponse> t1) {
+        subscribeCount.incrementAndGet();
+        t1.onNext(getJsonResponse(200, "{}", 0));
+        t1.onCompleted();
+      }
+    });
+
+    firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching);
+    secondStep = firstStep.applyAction(action);
+    thirdStep = secondStep.merge(newPipelineWithResponseBody("{name:'abc'}"));
+    when(action.execute(any())).thenReturn(firstStep.getOutput());
   }
 }
 
