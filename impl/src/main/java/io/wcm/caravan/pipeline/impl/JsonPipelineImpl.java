@@ -51,6 +51,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Default implementation of {@link JsonPipeline}.
+ * Each new JsonPipeline instance created by this implementation provides a reuse of data, received after the first
+ * subscription call. Reuse should reduce the number of actual calls to external resources while execution of pipeline
+ * by multiple subscribers.
  */
 public final class JsonPipelineImpl implements JsonPipeline {
 
@@ -63,7 +66,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   private Observable<JsonPipelineOutput> observable;
 
   /**
-   * @param request the REST request that provides the soruce data
+   * @param request the REST request that provides the source data
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param caching the caching layer to use
    */
