@@ -20,13 +20,14 @@
 package io.wcm.caravan.pipeline.cache.couchbase.impl;
 
 import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
+import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
+import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.felix.scr.annotations.Activate;
@@ -40,14 +41,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
-import rx.Observable.Operator;
 import rx.Observer;
-import rx.Subscriber;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.codahale.metrics.Timer.Context;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.couchbase.client.java.AsyncBucket;
@@ -148,8 +146,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     }
 
     return fromCache
-        .lift(new MetricTimerOperator<RawJsonDocument>(getLatencyTimer))
-        .lift(new HitsAndMissesOperator<RawJsonDocument>(hitsCounter, missesCounter))
+        .lift(new TimerMetricsOperator<RawJsonDocument>(getLatencyTimer))
+        .lift(new HitsAndMissesCountingMetricsOperator<RawJsonDocument>(hitsCounter, missesCounter))
         .map(doc -> {
           String content = doc.content();
           log.trace("Succesfully retrieved document with id {}: {}", doc.id(), doc.content());
@@ -166,7 +164,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);
 
     insertionObservable
-    .lift(new MetricTimerOperator<RawJsonDocument>(putLatencyTimer))
+    .lift(new TimerMetricsOperator<RawJsonDocument>(putLatencyTimer))
     .subscribe(new Observer<RawJsonDocument>() {
 
       @Override
@@ -199,79 +197,6 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
       throw new RuntimeException("Failed to create sha1 Hash from " + message, ex);
     }
-  }
-
-  private static final class MetricTimerOperator<R> implements Operator<R, R> {
-
-    private final Timer timer;
-
-    private MetricTimerOperator(final Timer timer) {
-      this.timer = timer;
-    }
-
-
-    @Override
-    public Subscriber<? super R> call(final Subscriber<? super R> subscriber) {
-      final Context ctx = timer.time();
-      return new Subscriber<R>() {
-
-        @Override
-        public void onCompleted() {
-          ctx.stop();
-          subscriber.onCompleted();
-        }
-
-        @Override
-        public void onError(final Throwable e) {
-          ctx.stop();
-          subscriber.onError(e);
-        }
-
-        @Override
-        public void onNext(final R next) {
-          subscriber.onNext(next);
-        }
-      };
-    }
-
-  }
-
-  private static final class HitsAndMissesOperator<R> implements Operator<R, R> {
-
-    private final Counter hitsCounter;
-    private final Counter missesCounter;
-
-    private HitsAndMissesOperator(final Counter hitsCounter, final Counter missesCounter) {
-      this.hitsCounter = hitsCounter;
-      this.missesCounter = missesCounter;
-    }
-
-    @Override
-    public Subscriber<? super R> call(final Subscriber<? super R> subscriber) {
-
-      final AtomicBoolean hit = new AtomicBoolean();
-
-      return new Subscriber<R>() {
-
-        @Override
-        public void onCompleted() {
-          (hit.get() ? hitsCounter : missesCounter).inc();
-          subscriber.onCompleted();
-        }
-
-        @Override
-        public void onError(final Throwable e) {
-          subscriber.onError(e);
-        }
-
-        @Override
-        public void onNext(final R next) {
-          hit.set(true);
-          subscriber.onNext(next);
-        }
-      };
-    }
-
   }
 
 }
