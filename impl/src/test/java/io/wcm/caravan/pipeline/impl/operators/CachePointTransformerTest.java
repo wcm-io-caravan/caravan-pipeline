@@ -19,12 +19,19 @@
  */
 package io.wcm.caravan.pipeline.impl.operators;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.pipeline.AbstractCaravanTestCase;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
+
+import java.util.LinkedList;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -37,13 +44,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import rx.Observable;
 
-import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.MetricRegistry;import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
 
 @RunWith(MockitoJUnitRunner.class)
-public class CachePointTransformerTest {
+public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
   @Mock
   private CacheAdapter cacheAdapter;
@@ -63,7 +70,7 @@ public class CachePointTransformerTest {
   @Test
   public void test_ignoreCache() {
     CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "no-cache")).build();
-    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry);
+    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry, getcacheMetadataProperties());
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
@@ -73,10 +80,39 @@ public class CachePointTransformerTest {
   @Test
   public void test_useCache() {
     CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "max-age: 100")).build();
-    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry);
+    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry, getcacheMetadataProperties());
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
     Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyInt());
+  }
+
+  @Test
+  public void testCacheEnvelopeAvailabilityAt404() {
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getcacheMetadataProperties());
+    JsonNode node404 = JacksonFunctions.stringToNode(cached404.getEnvelopeString());
+    JsonNode properties = node404.path("metadata").path("properties");
+    assertNotNull(properties);
+    assertEquals("123-id", properties.get("id").asText());
+    assertEquals(404, node404.path("metadata").path("statusCode").asInt());
+    assertEquals("original reason", node404.path("metadata").path("reason").asText());
+    assertEquals("null", node404.path("metadata").path("cacheKey").asText());
+    assertEquals("null", node404.path("metadata").path("pipeline").asText());
+
+  }
+
+  @Test
+  public void testCacheEnvelopeAvailabilityAt200() {
+    CacheEnvelope cached200 = CacheEnvelope.from200Response(JacksonFunctions.stringToNode("{}"), new LinkedList<CaravanHttpRequest>(),
+        "cacheKey", "descriptor", getcacheMetadataProperties());
+
+    JsonNode node200 = JacksonFunctions.stringToNode(cached200.getEnvelopeString());
+    JsonNode properties = node200.path("metadata").path("properties");
+    assertNotNull(properties);
+    assertEquals("123-id", properties.get("id").asText());
+    assertEquals(200, node200.path("metadata").path("statusCode").asInt());
+    assertEquals("cacheKey", node200.path("metadata").path("cacheKey").asText());
+    assertEquals("descriptor", node200.path("metadata").path("pipeline").asText());
+
   }
 }

@@ -133,7 +133,7 @@ public final class JacksonFunctions {
 
   /**
    * Create a JSON tree with the same structure as the given map
-   * @param object that can be properly mapped to JSOn with Jackson (e.g. a POJO or Map)
+   * @param object that can be properly mapped to JSON with Jackson (e.g. a POJO or Map)
    * @return an {@link ObjectNode}
    * @throws JsonPipelineInputException if the input is not valid JSON
    */

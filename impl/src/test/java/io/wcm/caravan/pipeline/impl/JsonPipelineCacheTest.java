@@ -76,7 +76,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int timeToLiveSeconds = 60;
 
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))
-        .thenReturn(Observable.empty());
+    .thenReturn(Observable.empty());
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}")
         .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
@@ -224,7 +224,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null);
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getcacheMetadataProperties());
     cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
 
     Mockito.when(caching.get(anyString(), anyBoolean(), anyInt()))

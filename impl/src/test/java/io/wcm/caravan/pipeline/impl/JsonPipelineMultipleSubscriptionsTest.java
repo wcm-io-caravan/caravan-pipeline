@@ -211,8 +211,8 @@ public class JsonPipelineMultipleSubscriptionsTest extends AbstractJsonPipelineT
       subscriber.onCompleted();
     });
 
-    firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching, metricRegistry);
-    secondStep = firstStep.applyAction(action);
+    firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching, metricRegistry,getcacheMetadataProperties());
+	secondStep = firstStep.applyAction(action);
     thirdStep = secondStep.merge(newPipelineWithResponseBody("{name:'abc'}"));
     when(action.execute(any())).thenReturn(firstStep.getOutput());
   }

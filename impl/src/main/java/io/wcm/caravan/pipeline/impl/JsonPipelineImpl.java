@@ -40,6 +40,7 @@ import io.wcm.caravan.pipeline.impl.operators.ResponseHandlingOperator;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -63,6 +64,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private CacheAdapter caching;
   private String descriptor;
+  private Map<String, String> cacheMetadataProperties;
 
   private Observable<JsonPipelineOutput> observable;
   private MetricRegistry metricRegistry;
@@ -71,11 +73,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * @param request the REST request that provides the source data
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param caching the caching layer to use
-   * @param metricRegistry Metrics registry
+   * @param metricRegistry Metrics registry   * @param cacheMetadataProperties
    */
-  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching,
-      MetricRegistry metricRegistry) {
-
+  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching, MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
     if (isNotBlank(request.getServiceName())) {
       this.sourceServiceNames.add(request.getServiceName());
     }
@@ -83,6 +83,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     this.caching = caching;
     this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
+    this.cacheMetadataProperties = cacheMetadataProperties;
 
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url())).cache();
     this.metricRegistry = metricRegistry;
@@ -102,6 +103,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     if (StringUtils.isNotBlank(descriptorSuffix)) {
       clone.descriptor += "+" + descriptorSuffix;
     }
+    clone.cacheMetadataProperties = this.cacheMetadataProperties;
 
     clone.observable = newObservable.cache();
     clone.metricRegistry = metricRegistry;
@@ -221,7 +223,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       return this;
     }
 
-    CachePointTransformer transformer = new CachePointTransformer(caching, requests, descriptor, strategy, metricRegistry);
+    CachePointTransformer transformer = new CachePointTransformer(caching, requests, descriptor, strategy, metricRegistry, cacheMetadataProperties);
     Observable<JsonPipelineOutput> cachingObservable = observable.compose(transformer);
 
     return cloneWith(cachingObservable, null);

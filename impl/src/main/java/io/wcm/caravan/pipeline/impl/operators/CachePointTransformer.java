@@ -32,6 +32,7 @@ import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -63,23 +64,20 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private final List<CaravanHttpRequest> requests;
   private final String descriptor;
   private final CacheStrategy strategy;
-  private final MetricRegistry metricRegistry;
-
+  private final MetricRegistry metricRegistry;  private final Map<String, String> cacheMetadataProperties;
   /**
    * @param caching the cache adapter to use
    * @param requests the outgoing REST request(s) used to obtain the JSON data to be cached
    * @param descriptor the unique id of the pipeline (to build a cache key)
    * @param strategy the CacheStrategy to get storage time and refresh interval
-   * @param metricRegistry Metrics registry
+   * @param metricRegistry Metrics registry   * @param cacheMetadataProperties
    */
-  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy, MetricRegistry metricRegistry) {
-    super();
+  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy, MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {    super();
     this.caching = caching;
     this.requests = requests;
     this.descriptor = descriptor;
     this.strategy = strategy;
-    this.metricRegistry = metricRegistry;
-  }
+    this.metricRegistry = metricRegistry;    this.cacheMetadataProperties = cacheMetadataProperties;  }
 
   private static SortedSet<String> getSourceServiceNames(List<CaravanHttpRequest> requests) {
     SortedSet<String> sourceServiceNames = new TreeSet<String>();
@@ -252,7 +250,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           int storageTime = strategy.getStorageTime(requests);
           int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
 
-          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor);
+          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor, cacheMetadataProperties);
           caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
 
           // everything else is just forwarding to the subscriber to the cachedSource
@@ -275,7 +273,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
               int storageTime = strategy.getStorageTime(requests);
 
-              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor);
+              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, cacheMetadataProperties);
               caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
             }
           }
@@ -329,14 +327,16 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     /**
      * Create a new CacheEnvelope to store in the couchbase cache
      * @param contentNode
+     * @param requests
      * @param cacheKey
      * @param pipelineDescriptor
+     * @param cacheMetadataProperties
      * @return the new CacheEnvelope instance
      */
     public static CacheEnvelope from200Response(JsonNode contentNode, List<CaravanHttpRequest> requests, String cacheKey,
-        String pipelineDescriptor) {
+        String pipelineDescriptor, Map<String, String> cacheMetadataProperties) {
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, requests, cacheKey, pipelineDescriptor, null);
+      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, requests, cacheKey, pipelineDescriptor, null, cacheMetadataProperties);
       return new CacheEnvelope(envelope);
     }
 
@@ -345,21 +345,22 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param reason
      * @param cacheKey
      * @param pipelineDescriptor
+     * @param cacheMetadataProperties
      * @return the new CacheEnvelope instance
      */
     public static CacheEnvelope from404Response(String reason, List<CaravanHttpRequest> requests, String cacheKey,
-        String pipelineDescriptor) {
+        String pipelineDescriptor, Map<String, String> cacheMetadataProperties) {
 
       JsonNode contentNode = JacksonFunctions.emptyObject();
       int statusCode = HttpStatus.SC_NOT_FOUND;
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, requests, cacheKey, pipelineDescriptor, reason);
+      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, requests, cacheKey, pipelineDescriptor, reason, cacheMetadataProperties);
       return new CacheEnvelope(envelope);
     }
 
     private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, List<CaravanHttpRequest> requests,
         String cacheKey,
-        String pipelineDescriptor, String reason) {
+        String pipelineDescriptor, String reason, Map<String, String> cacheMetadataProperties) {
 
       ObjectNode envelope = JacksonFunctions.emptyObject();
       ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
@@ -368,7 +369,6 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServiceNames(requests)));
       metadata.put("pipeline", pipelineDescriptor);
       metadata.put("generated", CacheDateUtils.formatCurrentTime());
-
       metadata.put("statusCode", statusCode);
 
       List<String> sourcePaths = new ArrayList<String>();
@@ -381,8 +381,9 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       if (StringUtils.isNotBlank(reason)) {
         metadata.put("reason", reason);
       }
-
+      metadata.set("properties", JacksonFunctions.pojoToNode(cacheMetadataProperties));
       envelope.set(CACHE_CONTENT_PROPERTY, contentNode);
+
       return envelope;
     }
 

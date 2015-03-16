@@ -28,6 +28,8 @@ import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.felix.scr.annotations.Component;
@@ -57,16 +59,26 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
   @Override
   public JsonPipeline create(final CaravanHttpRequest request) {
+    return create(request, Collections.emptyMap());
+  }
+
+  @Override
+  public JsonPipeline create(final CaravanHttpRequest request, Map<String, String> cacheMetadataProperties) {
 
     // note that #execute will *not* actually start the request, but just create an observable that will initiate
     // the request when #subscribe is called on the pipeline's output observable
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
-    return new JsonPipelineImpl(request, response, cacheAdapter, metricRegistry);
+    return new JsonPipelineImpl(request, response, cacheAdapter, metricRegistry, cacheMetadataProperties);
   }
 
   @Override
   public JsonPipeline createEmpty() {
+    return createEmpty(Collections.emptyMap());
+  }
+
+  @Override
+  public JsonPipeline createEmpty(Map<String, String> cacheMetadataProperties) {
 
     CaravanHttpRequest dummyRequest = new CaravanHttpRequestBuilder("").build();
 
@@ -76,7 +88,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
-    return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter, metricRegistry);
+    return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter, metricRegistry, cacheMetadataProperties);
   }
 
 }
