@@ -33,6 +33,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -76,52 +77,45 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
   public void twoSubscriptions() {
     firstStep = newPipelineWithResponseBody("{id:123}");
     assertNotNull(firstStep);
-    Observable<JsonPipelineOutput> firstSubscriber = firstStep.getOutput();
-    Observable<JsonPipelineOutput> secondSubscriber = firstStep.getOutput();
-    assertFalse(firstSubscriber.equals(secondSubscriber));
-    assertTrue(firstSubscriber.toBlocking().first().equals(secondSubscriber.toBlocking().first()));
+
+    // if you call #getOutput twice, you get a different observable on each call
+    Observable<JsonPipelineOutput> firstOutput = firstStep.getOutput();
+    Observable<JsonPipelineOutput> secondOutput = firstStep.getOutput();
+    assertFalse(firstOutput.equals(secondOutput));
+
+    // but both observables should emit the same JsonPipelineOutput instance
+    assertTrue(firstOutput.toBlocking().first().equals(secondOutput.toBlocking().first()));
   }
 
   @Test
-  public void concurrentSubscriptions() {
+  public void concurrentSubscriptions() throws InterruptedException, JSONException {
     firstStep = newPipelineWithResponseBody("{id:123}");
-    Set<JsonPipelineOutput> actualOutputs = new HashSet<JsonPipelineOutput>();
-    CountDownLatch countDown = new CountDownLatch(100);
+
+    // use a synchronized set to collect the pipeline output from multiple threads
+    Set<JsonPipelineOutput> distinctOutputs = Collections.synchronizedSet(new HashSet<JsonPipelineOutput>());
+
     ExecutorService executorService = Executors.newCachedThreadPool();
+    CountDownLatch countDown = new CountDownLatch(100);
 
-    for (int i = 0; i < 100; i++) {
-      executorService.execute(new Runnable() {
+    while (countDown.getCount() > 0) {
 
-        @Override
-        public void run() {
-          try {
-            countDown.await();
-          }
-          catch (InterruptedException ex) {
-            ex.printStackTrace();
-          }
+      executorService.submit(() -> {
+        // wait until all executor threads have been started before accessing the pipeline output
+        countDown.await();
+        distinctOutputs.add(firstStep.getOutput().toBlocking().single());
 
-          try {
-            JSONAssert.assertEquals("{id: 123}", firstStep.getStringOutput().toBlocking().first(), JSONCompareMode.STRICT);
-            actualOutputs.add(firstStep.getOutput().toBlocking().single());
-          }
-          catch (JSONException ex) {
-            ex.printStackTrace();
-          }
-        }
+        return null; // this is required for the lambda to be considered a Callable<Void> and therefore be allowed to throw exceptions
       });
+
       countDown.countDown();
     }
+
     executorService.shutdown();
-    try {
-      while (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
-        // wait until all thread are terminated
-      }
-    }
-    catch (InterruptedException ex) {
-      ex.printStackTrace();
-    }
-    assertEquals(1, actualOutputs.size());
+    executorService.awaitTermination(1, TimeUnit.MINUTES);
+
+    // ensure all threads received the same JsonPipelineOutput instance with the expected JSON output
+    assertEquals(1, distinctOutputs.size());
+    JSONAssert.assertEquals("{id: 123}", firstStep.getStringOutput().toBlocking().first(), JSONCompareMode.STRICT);
   }
 
   @SuppressWarnings("unchecked")
