@@ -37,7 +37,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import rx.Observable;
 
@@ -80,6 +82,7 @@ public class CouchbaseCacheAdapterTest {
     context.registerService(HealthCheckRegistry.class, healthCheckRegistry);
     adapter = context.registerInjectActivateService(new CouchbaseCacheAdapter(), ImmutableMap.<String, Object>builder()
         .put(CouchbaseCacheAdapter.CACHE_KEY_PREFIX_PROPERTY, "prefix:")
+        .put(CouchbaseCacheAdapter.CACHE_TIMEOUT_PROPERTY, 100)
         .build());
   }
 
@@ -152,7 +155,7 @@ public class CouchbaseCacheAdapterTest {
   @Test
   public void testPut() throws Exception {
     Mockito.when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
-        .thenReturn(just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
+    .thenReturn(just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
 
     adapter.put(CACHE_KEY, JSON_DOC, 100);
 
@@ -172,5 +175,19 @@ public class CouchbaseCacheAdapterTest {
     return metricRegistry.getTimers().get(MetricRegistry.name(CouchbaseCacheAdapter.class, "latency", "put"));
   }
 
+  public void testGet_timeout() {
+    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class)).then(new Answer<Observable>() {
 
+      @Override
+      public Observable<RawJsonDocument> answer(InvocationOnMock invocation) {
+        return Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS);
+      }
+    });
+    String output = adapter.get(CACHE_KEY, false, 0).toBlocking().singleOrDefault(null);
+    assertNull(output);
+    assertEquals(0, getHitCounter().getCount());
+    assertEquals(1, getMissesCounter().getCount());
+    assertEquals(1, getGetLatencyTimer().getCount());
+    assertTrue(getGetLatencyTimer().getSnapshot().getMean() / 1000000 >= 100);
+  }
 }

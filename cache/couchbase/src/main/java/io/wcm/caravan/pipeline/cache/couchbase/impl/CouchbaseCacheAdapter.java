@@ -28,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.felix.scr.annotations.Activate;
@@ -64,6 +65,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_KEY_PREFIX_PROPERTY = "cacheKeyPrefix";
   private static final String CACHE_KEY_PREFIX_DEFAULT = "json-pipeline:";
 
+  @Property(label = "Cache Timeout", description = "Timeout in ms for Coucbase cache operations.")
+  static final String CACHE_TIMEOUT_PROPERTY = "cacheTimeout";
+  private static final int CACHE_TIMEOUT_DEFAULT = 1000;
+
   private static final int MAX_CACHE_KEY_LENGTH = 250;
 
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
@@ -82,10 +87,12 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private HealthCheckRegistry healthCheckRegistry;
 
   private String keyPrefix;
+  private int timeout;
 
   @Activate
   private void activate(Map<String, Object> config) {
     keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
+    timeout = PropertiesUtil.toInteger(config.get(CACHE_TIMEOUT_PROPERTY), CACHE_TIMEOUT_DEFAULT);
 
     getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
@@ -146,6 +153,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     }
 
     return fromCache
+        .timeout(timeout, TimeUnit.MILLISECONDS, Observable.create(f -> {
+          log.warn("Timeout accessing Couchbase cache");
+          f.onCompleted();
+        }))
         .lift(new TimerMetricsOperator<RawJsonDocument>(getLatencyTimer))
         .lift(new HitsAndMissesCountingMetricsOperator<RawJsonDocument>(hitsCounter, missesCounter))
         .map(doc -> {
