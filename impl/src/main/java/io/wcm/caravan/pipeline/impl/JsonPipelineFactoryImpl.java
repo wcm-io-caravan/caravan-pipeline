@@ -62,7 +62,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     return create(request, Collections.emptyMap());
   }
 
-  @Override
+
   public JsonPipeline create(final CaravanHttpRequest request, Map<String, String> cacheMetadataProperties) {
 
     // note that #execute will *not* actually start the request, but just create an observable that will initiate
@@ -77,7 +77,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     return createEmpty(Collections.emptyMap());
   }
 
-  @Override
+
   public JsonPipeline createEmpty(Map<String, String> cacheMetadataProperties) {
 
     CaravanHttpRequest dummyRequest = new CaravanHttpRequestBuilder("").build();

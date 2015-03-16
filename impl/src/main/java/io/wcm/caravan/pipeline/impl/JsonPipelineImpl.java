@@ -75,7 +75,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * @param caching the caching layer to use
    * @param metricRegistry Metrics registry   * @param cacheMetadataProperties
    */
-  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching, MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
+  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching,
+      MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
     if (isNotBlank(request.getServiceName())) {
       this.sourceServiceNames.add(request.getServiceName());
     }

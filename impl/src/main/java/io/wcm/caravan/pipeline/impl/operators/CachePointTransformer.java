@@ -64,7 +64,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private final List<CaravanHttpRequest> requests;
   private final String descriptor;
   private final CacheStrategy strategy;
-  private final MetricRegistry metricRegistry;  private final Map<String, String> cacheMetadataProperties;
+  private final MetricRegistry metricRegistry;
+  private final Map<String, String> cacheMetadataProperties;
   /**
    * @param caching the cache adapter to use
    * @param requests the outgoing REST request(s) used to obtain the JSON data to be cached
@@ -72,12 +73,16 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
    * @param strategy the CacheStrategy to get storage time and refresh interval
    * @param metricRegistry Metrics registry   * @param cacheMetadataProperties
    */
-  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy, MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {    super();
+  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy,
+      MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
+    super();
     this.caching = caching;
     this.requests = requests;
     this.descriptor = descriptor;
     this.strategy = strategy;
-    this.metricRegistry = metricRegistry;    this.cacheMetadataProperties = cacheMetadataProperties;  }
+    this.metricRegistry = metricRegistry;
+    this.cacheMetadataProperties = cacheMetadataProperties;
+  }
 
   private static SortedSet<String> getSourceServiceNames(List<CaravanHttpRequest> requests) {
     SortedSet<String> sourceServiceNames = new TreeSet<String>();
