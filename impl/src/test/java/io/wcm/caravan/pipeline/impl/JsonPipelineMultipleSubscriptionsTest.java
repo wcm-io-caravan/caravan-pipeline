@@ -56,7 +56,7 @@ import rx.Observer;
 import rx.observers.Subscribers;
 
 @RunWith(MockitoJUnitRunner.class)
-public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineTest {
+public class JsonPipelineMultipleSubscriptionsTest extends AbstractJsonPipelineTest {
 
   private JsonPipeline firstStep;
 
@@ -68,7 +68,7 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
   protected JsonPipelineAction action;
 
 
-  public JsonPipelineMultipleSubscribtionsTest() {
+  public JsonPipelineMultipleSubscriptionsTest() {
     super();
   }
 
