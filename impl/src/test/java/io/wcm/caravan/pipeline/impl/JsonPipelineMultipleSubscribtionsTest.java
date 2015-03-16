@@ -155,6 +155,7 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
           catch (InterruptedException ex) {
             ex.printStackTrace();
           }
+          @SuppressWarnings("unchecked")
           Observer<JsonPipelineOutput> observer = Mockito.mock(Observer.class);
           secondStep.getOutput().subscribe(observer);
         }
@@ -238,7 +239,7 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
       }
     });
 
-    firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching);
+    firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching, metricRegistry);
     secondStep = firstStep.applyAction(action);
     thirdStep = secondStep.merge(newPipelineWithResponseBody("{name:'abc'}"));
     when(action.execute(any())).thenReturn(firstStep.getOutput());

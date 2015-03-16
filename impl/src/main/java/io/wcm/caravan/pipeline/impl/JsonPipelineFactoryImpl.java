@@ -36,6 +36,7 @@ import org.apache.felix.scr.annotations.Service;
 
 import rx.Observable;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableListMultimap;
 
 /**
@@ -51,6 +52,9 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   @Reference
   private CacheAdapter cacheAdapter;
 
+  @Reference
+  private MetricRegistry metricRegistry;
+
   @Override
   public JsonPipeline create(final CaravanHttpRequest request) {
 
@@ -58,7 +62,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     // the request when #subscribe is called on the pipeline's output observable
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
-    return new JsonPipelineImpl(request, response, cacheAdapter);
+    return new JsonPipelineImpl(request, response, cacheAdapter, metricRegistry);
   }
 
   @Override
@@ -72,7 +76,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
-    return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter);
+    return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse), cacheAdapter, metricRegistry);
   }
 
 }

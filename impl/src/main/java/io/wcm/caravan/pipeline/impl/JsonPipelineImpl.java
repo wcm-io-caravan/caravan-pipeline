@@ -47,6 +47,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import rx.Observable;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -57,20 +58,23 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public final class JsonPipelineImpl implements JsonPipeline {
 
-  private SortedSet<String> sourceServiceNames = new TreeSet<String>();
-  private List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
+  private final SortedSet<String> sourceServiceNames = new TreeSet<String>();
+  private final List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
 
   private CacheAdapter caching;
   private String descriptor;
 
   private Observable<JsonPipelineOutput> observable;
+  private MetricRegistry metricRegistry;
 
   /**
    * @param request the REST request that provides the source data
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param caching the caching layer to use
+   * @param metricRegistry Metrics registry
    */
-  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching) {
+  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching,
+      MetricRegistry metricRegistry) {
 
     if (isNotBlank(request.getServiceName())) {
       this.sourceServiceNames.add(request.getServiceName());
@@ -81,6 +85,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
 
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url())).cache();
+    this.metricRegistry = metricRegistry;
   }
 
   private JsonPipelineImpl() {
@@ -99,6 +104,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     }
 
     clone.observable = newObservable.cache();
+    clone.metricRegistry = metricRegistry;
     return clone;
   }
 
@@ -215,7 +221,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       return this;
     }
 
-    CachePointTransformer transformer = new CachePointTransformer(caching, requests, descriptor, strategy);
+    CachePointTransformer transformer = new CachePointTransformer(caching, requests, descriptor, strategy, metricRegistry);
     Observable<JsonPipelineOutput> cachingObservable = observable.compose(transformer);
 
     return cloneWith(cachingObservable, null);

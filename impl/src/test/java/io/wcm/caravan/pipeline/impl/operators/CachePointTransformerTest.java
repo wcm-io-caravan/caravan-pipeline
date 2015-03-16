@@ -29,6 +29,7 @@ import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -36,6 +37,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import rx.Observable;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
@@ -49,6 +51,9 @@ public class CachePointTransformerTest {
   @Mock
   private CacheStrategy cacheStrategy;
 
+  @Mock(answer = Answers.RETURNS_MOCKS)
+  private MetricRegistry metricRegistry;
+
   @Before
   public void setUp() {
     Mockito.when(cacheAdapter.getCacheKey(Matchers.anyString(), Matchers.anyString())).thenReturn("test-cache-key");
@@ -58,7 +63,7 @@ public class CachePointTransformerTest {
   @Test
   public void test_ignoreCache() {
     CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "no-cache")).build();
-    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy);
+    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
@@ -68,7 +73,7 @@ public class CachePointTransformerTest {
   @Test
   public void test_useCache() {
     CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "max-age: 100")).build();
-    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy);
+    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
