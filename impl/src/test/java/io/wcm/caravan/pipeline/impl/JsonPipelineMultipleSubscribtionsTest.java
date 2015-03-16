@@ -52,9 +52,8 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import rx.Observable;
-import rx.Observable.OnSubscribe;
 import rx.Observer;
-import rx.Subscriber;
+import rx.observers.Subscribers;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineTest {
@@ -74,7 +73,7 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
   }
 
   @Test
-  public void twoSubscriptions() {
+  public void subscribeTwiceToPlainPipelineOutputs() {
     firstStep = newPipelineWithResponseBody("{id:123}");
     assertNotNull(firstStep);
 
@@ -88,19 +87,20 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
   }
 
   @Test
-  public void concurrentSubscriptions() throws InterruptedException, JSONException {
+  public void subscribeConcurrentlyToPlainPipelineOutputs() throws InterruptedException, JSONException {
     firstStep = newPipelineWithResponseBody("{id:123}");
 
     // use a synchronized set to collect the pipeline output from multiple threads
     Set<JsonPipelineOutput> distinctOutputs = Collections.synchronizedSet(new HashSet<JsonPipelineOutput>());
 
+    // create multiple simultaneous threads that subscribe to the same pipeline output
+    // and use a CountDownLatch to delay the subscription until all threads have been started
     ExecutorService executorService = Executors.newCachedThreadPool();
     CountDownLatch countDown = new CountDownLatch(100);
-
     while (countDown.getCount() > 0) {
 
       executorService.submit(() -> {
-        // wait until all executor threads have been started before accessing the pipeline output
+
         countDown.await();
         distinctOutputs.add(firstStep.getOutput().toBlocking().single());
 
@@ -118,59 +118,41 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
     JSONAssert.assertEquals("{id: 123}", firstStep.getStringOutput().toBlocking().first(), JSONCompareMode.STRICT);
   }
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testTwoPipelineActionCalls() {
-    firstStep = newPipelineWithResponseBody("{id:123}");
-    secondStep = firstStep.applyAction(action);
-    when(action.execute(any())).thenReturn(firstStep.getOutput());
-    Observer<JsonPipelineOutput> firstObserver = Mockito.mock(Observer.class);
-    Observer<JsonPipelineOutput> secondObserver = Mockito.mock(Observer.class);
-    secondStep.getOutput().subscribe(firstObserver);
-    secondStep.getOutput().subscribe(secondObserver);
-    verify(action, times(1)).execute(any());
-  }
 
   @Test
-  public void testConcurrentPipelineActionCalls() {
+  public void subscribeConcurrentlyToTransformedPipelineOutputs() throws InterruptedException {
+
+    // this test verifies that pipelines actions are only executed once, even if there are multiple concurrent subscribers
     firstStep = newPipelineWithResponseBody("{id:123}");
     secondStep = firstStep.applyAction(action);
     when(action.execute(any())).thenReturn(firstStep.getOutput());
+
+    // create multiple simultaneous threads that subscribe to the same pipeline output
+    // and use a CountDownLatch to delay the subscription until all threads have been started
     CountDownLatch countDown = new CountDownLatch(100);
     ExecutorService executorService = Executors.newCachedThreadPool();
-    for (int i = 0; i < 100; i++) {
-      executorService.execute(new Runnable() {
+    while (countDown.getCount() > 0) {
 
-        @Override
-        public void run() {
-          try {
-            countDown.await();
-          }
-          catch (InterruptedException ex) {
-            ex.printStackTrace();
-          }
-          @SuppressWarnings("unchecked")
-          Observer<JsonPipelineOutput> observer = Mockito.mock(Observer.class);
-          secondStep.getOutput().subscribe(observer);
-        }
+      executorService.submit(() -> {
+
+        countDown.await();
+        secondStep.getOutput().subscribe(Subscribers.empty());
+
+        return null; // this is required for the lambda to be considered a Callable<Void> and therefore be allowed to throw exceptions
       });
+
       countDown.countDown();
     }
+
     executorService.shutdown();
-    try {
-      while (!executorService.awaitTermination(1, TimeUnit.MINUTES)) {
-        // wait until all thread are terminated
-      }
-    }
-    catch (InterruptedException ex) {
-      ex.printStackTrace();
-    }
+    executorService.awaitTermination(1, TimeUnit.MINUTES);
+
     verify(action, times(1)).execute(any());
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void test3StepPipelineActionCalls() {
+  public void subscribeToThreeRelatedPipelineOutputs() {
 
     final AtomicInteger subscribeCount = new AtomicInteger();
     initPipelines(subscribeCount);
@@ -223,14 +205,10 @@ public class JsonPipelineMultipleSubscribtionsTest extends AbstractJsonPipelineT
   }
 
   private void initPipelines(AtomicInteger subscribeCount) {
-    Observable<CaravanHttpResponse> sourceObservable = Observable.create(new OnSubscribe<CaravanHttpResponse>() {
-
-      @Override
-      public void call(Subscriber<? super CaravanHttpResponse> t1) {
-        subscribeCount.incrementAndGet();
-        t1.onNext(getJsonResponse(200, "{}", 0));
-        t1.onCompleted();
-      }
+    Observable<CaravanHttpResponse> sourceObservable = Observable.create(subscriber -> {
+      subscribeCount.incrementAndGet();
+      subscriber.onNext(getJsonResponse(200, "{}", 0));
+      subscriber.onCompleted();
     });
 
     firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, caching, metricRegistry);
