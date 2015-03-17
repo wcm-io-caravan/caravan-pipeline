@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
+import io.wcm.caravan.pipeline.impl.JsonPipelineContext;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.ArrayList;
@@ -60,28 +61,23 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
   private static final Logger log = LoggerFactory.getLogger(CachePointTransformer.class);
 
-  private final CacheAdapter caching;
+  private JsonPipelineContext context;
   private final List<CaravanHttpRequest> requests;
   private final String descriptor;
   private final CacheStrategy strategy;
-  private final MetricRegistry metricRegistry;
-  private final Map<String, String> cacheMetadataProperties;
+
   /**
-   * @param caching the cache adapter to use
+   * @param context a context of the actual JSON pipeline
    * @param requests the outgoing REST request(s) used to obtain the JSON data to be cached
    * @param descriptor the unique id of the pipeline (to build a cache key)
    * @param strategy the CacheStrategy to get storage time and refresh interval
-   * @param metricRegistry Metrics registry   * @param cacheMetadataProperties
    */
-  public CachePointTransformer(CacheAdapter caching, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy,
-      MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
+  public CachePointTransformer(JsonPipelineContext context, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy) {
     super();
-    this.caching = caching;
+    this.context = context;
     this.requests = requests;
     this.descriptor = descriptor;
     this.strategy = strategy;
-    this.metricRegistry = metricRegistry;
-    this.cacheMetadataProperties = cacheMetadataProperties;
   }
 
   private static SortedSet<String> getSourceServiceNames(List<CaravanHttpRequest> requests) {
@@ -108,16 +104,18 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       // construct a unique cache key from the pipeline's descriptor
       String sourceServicePrefix = getSourceServicePrefix();
-      final String cacheKey = caching.getCacheKey(sourceServicePrefix, descriptor);
+      CacheAdapter cacheAdapter = context.getCacheAdapter();
+      final String cacheKey = cacheAdapter.getCacheKey(sourceServicePrefix, descriptor);
 
       // the caching strategy determines if the storage time should be extended for cache hits(i.e. Time-to-Idle behaviour)
       boolean extendStorageTime = strategy.isExtendStorageTimeOnGet(requests);
       int storageTime = strategy.getStorageTime(requests);
 
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggested to ignore cache)
-      Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : caching.get(cacheKey, extendStorageTime, storageTime));
+      Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : cacheAdapter.get(cacheKey, extendStorageTime, storageTime));
 
       // create service specific metrics
+      MetricRegistry metricRegistry = context.getMetricRegistry();
       Timer timer = metricRegistry.timer(MetricRegistry.name(getClass(), sourceServicePrefix, "latency", "get"));
       Counter hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), sourceServicePrefix, "hits"));
       Counter missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), sourceServicePrefix, "misses"));
@@ -133,7 +131,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   }
 
   /**
-   * an observer that is subscribed to the {@link Observable} returned by {@link CacheAdapter#get(String, boolean, int)}
+   * An observer that is subscribed to the {@link Observable} returned by {@link CacheAdapter#get(String, boolean, int)}
    * , and is responsible for
    * <ul>
    * <li>unwrapping the JSON content from the caching envelope if it was successfully retrieved from cache</li>
@@ -255,8 +253,9 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           int storageTime = strategy.getStorageTime(requests);
           int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
 
-          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor, cacheMetadataProperties);
-          caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
+          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor,
+              context.getCacheMetadataProperties());
+          context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
 
           // everything else is just forwarding to the subscriber to the cachedSource
           backendResponseSubscriber.onNext(fetchedModel.withMaxAge(refreshInterval));
@@ -278,8 +277,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
               int storageTime = strategy.getStorageTime(requests);
 
-              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, cacheMetadataProperties);
-              caching.put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
+              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getCacheMetadataProperties());
+              context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
             }
           }
           backendResponseSubscriber.onError(e);

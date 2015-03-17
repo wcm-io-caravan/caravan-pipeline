@@ -26,7 +26,6 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.AbstractCaravanTestCase;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
@@ -36,7 +35,6 @@ import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Answers;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -44,7 +42,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import rx.Observable;
 
-import com.codahale.metrics.MetricRegistry;import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
@@ -52,14 +50,12 @@ import com.google.common.collect.Lists;
 @RunWith(MockitoJUnitRunner.class)
 public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
-  @Mock
-  private CacheAdapter cacheAdapter;
+
 
   @Mock
   private CacheStrategy cacheStrategy;
 
-  @Mock(answer = Answers.RETURNS_MOCKS)
-  private MetricRegistry metricRegistry;
+
 
   @Before
   public void setUp() {
@@ -70,7 +66,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   @Test
   public void test_ignoreCache() {
     CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "no-cache")).build();
-    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry, getcacheMetadataProperties());
+    CachePointTransformer transformer = new CachePointTransformer(getJsonPipelineContext(), Lists.newArrayList(request), "test-descriptor", cacheStrategy);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
@@ -80,7 +76,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   @Test
   public void test_useCache() {
     CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "max-age: 100")).build();
-    CachePointTransformer transformer = new CachePointTransformer(cacheAdapter, Lists.newArrayList(request), "test-descriptor", cacheStrategy, metricRegistry, getcacheMetadataProperties());
+    CachePointTransformer transformer = new CachePointTransformer(getJsonPipelineContext(), Lists.newArrayList(request), "test-descriptor", cacheStrategy);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 

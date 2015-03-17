@@ -67,7 +67,7 @@ public class JsonPipelineActionTransformTest extends AbstractJsonPipelineTest {
     fetchIdThenName.getStringOutput().subscribe(stringObserver);
 
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
   @Test
@@ -82,7 +82,7 @@ public class JsonPipelineActionTransformTest extends AbstractJsonPipelineTest {
     fetchIdThenName.getStringOutput().subscribe(stringObserver);
 
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
 }

@@ -19,11 +19,26 @@
  */
 package io.wcm.caravan.pipeline;
 
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.JsonPipelineContext;
+
 import java.util.HashMap;
 import java.util.Map;
 
+import org.mockito.Answers;
+import org.mockito.Mock;
+
+import com.codahale.metrics.MetricRegistry;
+
+
 
 public abstract class AbstractCaravanTestCase {
+
+  @Mock
+  protected CacheAdapter cacheAdapter;
+
+  @Mock(answer = Answers.RETURNS_MOCKS)
+  protected MetricRegistry metricRegistry;
 
   public AbstractCaravanTestCase() {
     super();
@@ -33,6 +48,10 @@ public abstract class AbstractCaravanTestCase {
     Map<String, String> cacheMetadataProperties = new HashMap<String, String>();
     cacheMetadataProperties.put("id", "123-id");
     return cacheMetadataProperties;
+  }
+
+  protected JsonPipelineContext getJsonPipelineContext() {
+    return new JsonPipelineContext(cacheAdapter, metricRegistry, getcacheMetadataProperties());
   }
 
 }

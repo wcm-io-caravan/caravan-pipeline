@@ -30,7 +30,6 @@ import io.wcm.caravan.pipeline.AbstractCaravanTestCase;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
 import io.wcm.caravan.pipeline.impl.testdata.BooksDocument;
 
@@ -39,13 +38,11 @@ import java.util.LinkedList;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
-import org.mockito.Answers;
 import org.mockito.Mock;
 
 import rx.Observable;
 import rx.Observer;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
@@ -59,13 +56,9 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
   protected static final String SERVICE_NAME = "testService";
 
   @Mock
-  protected CacheAdapter caching;
-  @Mock
   protected Observer<String> stringObserver;
   @Mock
   protected Observer<BooksDocument> booksObserver;
-  @Mock(answer = Answers.RETURNS_MOCKS)
-  protected MetricRegistry metricRegistry;
 
   public AbstractJsonPipelineTest() {
     super();
@@ -86,7 +79,7 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
    */
   protected JsonPipeline newPipelineWithResponseBody(String json) {
     CaravanHttpResponse response = getJsonResponse(200, json, -1);
-    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), caching, metricRegistry, getcacheMetadataProperties());
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), getJsonPipelineContext());
   }
 
   /**
@@ -95,7 +88,7 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
    */
   protected JsonPipeline newPipelineWithResponseBodyAndMaxAge(String json, int maxAge) {
     CaravanHttpResponse response = getJsonResponse(200, json, maxAge);
-    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), caching, metricRegistry, getcacheMetadataProperties());
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), getJsonPipelineContext());
   }
 
   /**
@@ -106,7 +99,7 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
     // we are using some valid JSON as response body, because one of the purpose of this methods is to ensure that
     // the content is not parsed when there is a >200 response code
     CaravanHttpResponse response = getJsonResponse(code, "{ responseCode:" + code + "}", -1);
-    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), caching, metricRegistry, getcacheMetadataProperties());
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.just(response), getJsonPipelineContext());
   }
 
   /**
@@ -114,7 +107,7 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
    * @return pipeline that will fail when getting its input data
    */
   protected JsonPipeline newPipelineWithResponseError(Throwable t) {
-    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.error(t), caching, metricRegistry, getcacheMetadataProperties());
+    return new JsonPipelineImpl(new CaravanHttpRequestBuilder(SERVICE_NAME).append("/path").build(), Observable.error(t), getJsonPipelineContext());
   }
 
   static String getJsonString(String resourcePath) {

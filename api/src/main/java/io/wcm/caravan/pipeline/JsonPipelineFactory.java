@@ -22,6 +22,8 @@ package io.wcm.caravan.pipeline;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 
+import java.util.Map;
+
 /**
  * JSON Pipeline factory service interface.
  */
@@ -36,9 +38,26 @@ public interface JsonPipelineFactory {
   JsonPipeline create(final CaravanHttpRequest request);
 
   /**
-   * Can be used to create an pipeline that can be used as a root to merge other pipeline's responses
+   * Creates a new {@link JsonPipeline} to process the response from a {@link CaravanHttpClient} request for the given
+   * service and predefined cache meta data.
+   * @param request the REST request to execute
+   * @param cacheMetadataProperties a map with cache meta data
+   * @return the new pipeline
+   */
+  JsonPipeline create(final CaravanHttpRequest request, Map<String, String> cacheMetadataProperties);
+
+  /**
+   * Creates an empty pipeline. It could be used as a root to merge other pipeline's responses
    * @return a new {@link JsonPipeline} that produces an empty JSON object
    */
   JsonPipeline createEmpty();
+
+  /**
+   * Creates an empty pipeline with predefined cache meta data. It could be used as a root to merge other pipeline's
+   * responses.
+   * @param cacheMetadataProperties a map with cache meta data
+   * @return a new {@link JsonPipeline} that produces an empty JSON object
+   */
+  JsonPipeline createEmpty(Map<String, String> cacheMetadataProperties);
 
 }

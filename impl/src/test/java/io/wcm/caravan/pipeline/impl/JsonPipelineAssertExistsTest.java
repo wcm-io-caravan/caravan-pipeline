@@ -63,7 +63,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
   @Test
@@ -79,7 +79,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
   @Test
@@ -93,7 +93,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
     verify(stringObserver).onError(any(InvalidPathException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
 }

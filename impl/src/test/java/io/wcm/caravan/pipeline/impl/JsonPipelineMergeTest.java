@@ -95,7 +95,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
 
     merged.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
-    verifyNoMoreInteractions(caching);
+    verifyNoMoreInteractions(cacheAdapter);
   }
 
   @Test
@@ -111,7 +111,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
     merged.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
-    verifyNoMoreInteractions(caching);
+    verifyNoMoreInteractions(cacheAdapter);
   }
 
 }

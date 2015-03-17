@@ -94,7 +94,7 @@ public class JsonPipelineActionTest extends AbstractJsonPipelineTest {
     result.getStringOutput().subscribe(stringObserver);
 
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
   @Test
@@ -106,7 +106,7 @@ public class JsonPipelineActionTest extends AbstractJsonPipelineTest {
     result.getStringOutput().subscribe(stringObserver);
 
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
 

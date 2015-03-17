@@ -161,7 +161,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
     // make sure that only #onError was called with a PathNotFoundException
     verify(stringObserver).onError(any(PathNotFoundException.class));
-    verifyNoMoreInteractions(stringObserver, caching);
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
   @Test
@@ -175,7 +175,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
     // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
     pipeline.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
 
-    verifyNoMoreInteractions(caching);
+    verifyNoMoreInteractions(cacheAdapter);
   }
 
 }

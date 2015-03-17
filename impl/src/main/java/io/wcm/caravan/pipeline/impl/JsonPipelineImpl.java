@@ -29,7 +29,6 @@ import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.operators.AssertExistsOperator;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer;
 import io.wcm.caravan.pipeline.impl.operators.CollectOperator;
@@ -40,7 +39,6 @@ import io.wcm.caravan.pipeline.impl.operators.ResponseHandlingOperator;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -48,7 +46,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import rx.Observable;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -61,33 +58,23 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private final SortedSet<String> sourceServiceNames = new TreeSet<String>();
   private final List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
-
-  private CacheAdapter caching;
+  private JsonPipelineContext context;
   private String descriptor;
-  private Map<String, String> cacheMetadataProperties;
-
   private Observable<JsonPipelineOutput> observable;
-  private MetricRegistry metricRegistry;
 
   /**
    * @param request the REST request that provides the source data
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
-   * @param caching the caching layer to use
-   * @param metricRegistry Metrics registry   * @param cacheMetadataProperties
+   * @param context preinitialized JSON pipeline context
    */
-  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final CacheAdapter caching,
-      MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
+  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final JsonPipelineContext context) {
     if (isNotBlank(request.getServiceName())) {
       this.sourceServiceNames.add(request.getServiceName());
     }
     this.requests.add(request);
-
-    this.caching = caching;
     this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
-    this.cacheMetadataProperties = cacheMetadataProperties;
-
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url())).cache();
-    this.metricRegistry = metricRegistry;
+    this.context = context;
   }
 
   private JsonPipelineImpl() {
@@ -99,15 +86,13 @@ public final class JsonPipelineImpl implements JsonPipeline {
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
     clone.requests.addAll(this.requests);
 
-    clone.caching = this.caching;
     clone.descriptor = this.descriptor;
     if (StringUtils.isNotBlank(descriptorSuffix)) {
       clone.descriptor += "+" + descriptorSuffix;
     }
-    clone.cacheMetadataProperties = this.cacheMetadataProperties;
 
     clone.observable = newObservable.cache();
-    clone.metricRegistry = metricRegistry;
+    clone.context = context;
     return clone;
   }
 
@@ -224,7 +209,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       return this;
     }
 
-    CachePointTransformer transformer = new CachePointTransformer(caching, requests, descriptor, strategy, metricRegistry, cacheMetadataProperties);
+    CachePointTransformer transformer = new CachePointTransformer(context, requests, descriptor, strategy);
     Observable<JsonPipelineOutput> cachingObservable = observable.compose(transformer);
 
     return cloneWith(cachingObservable, null);
