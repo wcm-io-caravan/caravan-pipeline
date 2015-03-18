@@ -136,8 +136,10 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline extracted = pipeline.extract("$.a[?(@.label=='def')]");
 
+    // make sure that only MissingNode is returned when a no result found
     JsonNode output = extracted.getJsonOutput().toBlocking().single();
     assertTrue(output.isMissingNode());
+    // make sure that JsonPipelineOutputException is thrown, when user tries to serialize MissingNode as String
     extracted.getStringOutput().toBlocking().single();
   }
 
@@ -151,6 +153,7 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
     // make sure that only MissingNode is returned when a PathNotFoundException is thrown
     JsonNode output = extracted.getJsonOutput().toBlocking().single();
     assertTrue(output.get("extracted").isMissingNode());
+    // make sure a JsonObject is serialized and deserialized with the null value parameter
     String stringOutput = extracted.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: null }", stringOutput, JSONCompareMode.STRICT);
   }
@@ -166,6 +169,8 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
     // make sure that only MissingNode is returned when a PathNotFoundException is thrown
     JsonNode output = extracted.getJsonOutput().toBlocking().single();
     assertTrue(output.isMissingNode());
+
+    // make sure that JsonPipelineOutputException is thrown, when user tries to serialize MissingNode as String
     extracted.getStringOutput().toBlocking().single();
   }
 

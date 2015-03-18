@@ -73,7 +73,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
   @Test
   public void collectStringsNoTargetProperty() throws JSONException {
 
-    // test extraction of a multiple *String* properties
+    // test extraction of a multiple *String* properties as ArrayNode without specified targetProperty
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
     JsonPipeline collected = pipeline.collect("$..label");
 
@@ -99,7 +99,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
   @Test
   public void collectArraysNoTargetProperty() throws JSONException {
 
-    // test extraction of a multiple *Array* properties
+    // test extraction of a multiple *Array* properties as ArrayNode without specified targetProperty
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
     JsonPipeline collected = pipeline.collect("$..numbers");
 
@@ -125,7 +125,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
   @Test
   public void collectAllArrayEntriesNoTargetProperty() throws JSONException {
 
-    // test extraction of all items from multiple arrays
+    // test extraction of all items from multiple arrays as ArrayNode without specified targetProperty
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
     JsonPipeline collected = pipeline.collect("$..numbers[*]");
 
@@ -151,7 +151,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
   @Test
   public void collectArrayEntriesNoTargetProperty() throws JSONException {
 
-    // test extraction of multiple items with an *Array*
+    // test extraction of multiple items with an *Array* as ArrayNode without specified targetProperty
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { numbers: [1,2,3,4] }, b: { numbers: [5,6,7,8] }}");
     JsonPipeline collected = pipeline.collect("$..numbers[3]");
 
@@ -168,6 +168,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline collected = pipeline.collect("$.a[?(@.label=='def')]", "extracted");
 
+    // make sure that only empty ArrayNode is returned and saved in ObjectNode with specified targetProperty when no result is found
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [] }", output, JSONCompareMode.STRICT);
   }
@@ -179,6 +180,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline collected = pipeline.collect("$.a[?(@.label=='def')]");
 
+    // make sure that only empty ArrayNode is returned when no result is found
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("[]", output, JSONCompareMode.STRICT);
   }
@@ -190,7 +192,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline collected = pipeline.collect("$a.numbers", "extracted");
 
-    // make sure that only empty ArrayNode is returned when a PathNotFoundException is thrown
+    // make sure that only empty ArrayNode is returned and saved in ObjectNode with specified targetProperty when a PathNotFoundException is thrown
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{ extracted: [] }", output, JSONCompareMode.STRICT);
   }
