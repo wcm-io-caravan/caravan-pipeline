@@ -44,17 +44,14 @@ import rx.Observable;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
 
-
   @Mock
   private CacheStrategy cacheStrategy;
-
 
 
   @Before
@@ -65,7 +62,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
   @Test
   public void test_ignoreCache() {
-    CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "no-cache")).build();
+    CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").header("Cache-Control", "no-cache").build();
     CachePointTransformer transformer = new CachePointTransformer(getJsonPipelineContext(), Lists.newArrayList(request), "test-descriptor", cacheStrategy);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
@@ -75,7 +72,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
   @Test
   public void test_useCache() {
-    CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").headers(ImmutableListMultimap.of("Cache-Control", "max-age: 100")).build();
+    CaravanHttpRequest request = new CaravanHttpRequestBuilder("test-service").header("Cache-Control", "max-age: 100").build();
     CachePointTransformer transformer = new CachePointTransformer(getJsonPipelineContext(), Lists.newArrayList(request), "test-descriptor", cacheStrategy);
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
