@@ -44,14 +44,14 @@ public abstract class AbstractCaravanTestCase {
     super();
   }
 
-  protected static Map<String, String> getcacheMetadataProperties() {
+  protected static Map<String, String> getContextProperties() {
     Map<String, String> cacheMetadataProperties = new HashMap<String, String>();
     cacheMetadataProperties.put("id", "123-id");
     return cacheMetadataProperties;
   }
 
   protected JsonPipelineContext getJsonPipelineContext() {
-    return new JsonPipelineContext(cacheAdapter, metricRegistry, getcacheMetadataProperties());
+    return new JsonPipelineContext(cacheAdapter, metricRegistry, getContextProperties());
   }
 
 }

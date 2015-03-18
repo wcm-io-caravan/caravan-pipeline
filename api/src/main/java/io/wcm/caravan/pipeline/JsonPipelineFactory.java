@@ -41,10 +41,10 @@ public interface JsonPipelineFactory {
    * Creates a new {@link JsonPipeline} to process the response from a {@link CaravanHttpClient} request for the given
    * service and predefined cache meta data.
    * @param request the REST request to execute
-   * @param cacheMetadataProperties a map with cache meta data
+   * @param contextProperties a map with cache meta data
    * @return the new pipeline
    */
-  JsonPipeline create(final CaravanHttpRequest request, Map<String, String> cacheMetadataProperties);
+  JsonPipeline create(final CaravanHttpRequest request, Map<String, String> contextProperties);
 
   /**
    * Creates an empty pipeline. It could be used as a root to merge other pipeline's responses
@@ -55,9 +55,9 @@ public interface JsonPipelineFactory {
   /**
    * Creates an empty pipeline with predefined cache meta data. It could be used as a root to merge other pipeline's
    * responses.
-   * @param cacheMetadataProperties a map with cache meta data
+   * @param contextProperties a map with cache meta data
    * @return a new {@link JsonPipeline} that produces an empty JSON object
    */
-  JsonPipeline createEmpty(Map<String, String> cacheMetadataProperties);
+  JsonPipeline createEmpty(Map<String, String> contextProperties);
 
 }

@@ -63,14 +63,14 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   }
 
   @Override
-  public JsonPipeline create(final CaravanHttpRequest request, Map<String, String> cacheMetadataProperties) {
+  public JsonPipeline create(final CaravanHttpRequest request, Map<String, String> contextProperties) {
 
     // note that #execute will *not* actually start the request, but just create an observable that will initiate
     // the request when #subscribe is called on the pipeline's output observable
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
     return new JsonPipelineImpl(request, response,
-        new JsonPipelineContext(cacheAdapter, metricRegistry, cacheMetadataProperties));
+        new JsonPipelineContext(cacheAdapter, metricRegistry, contextProperties));
   }
 
   @Override
@@ -79,7 +79,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   }
 
   @Override
-  public JsonPipeline createEmpty(Map<String, String> cacheMetadataProperties) {
+  public JsonPipeline createEmpty(Map<String, String> contextProperties) {
 
     CaravanHttpRequest dummyRequest = new CaravanHttpRequestBuilder("").build();
 
@@ -90,7 +90,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
-        new JsonPipelineContext(cacheAdapter, metricRegistry, cacheMetadataProperties));
+        new JsonPipelineContext(cacheAdapter, metricRegistry, contextProperties));
   }
 
 }

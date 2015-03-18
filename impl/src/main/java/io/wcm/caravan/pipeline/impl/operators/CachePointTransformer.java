@@ -254,7 +254,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
 
           CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor,
-              context.getCacheMetadataProperties());
+              context.getProperties());
           context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
 
           // everything else is just forwarding to the subscriber to the cachedSource
@@ -277,7 +277,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
               int storageTime = strategy.getStorageTime(requests);
 
-              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getCacheMetadataProperties());
+              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getProperties());
               context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
             }
           }
@@ -334,13 +334,13 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param requests
      * @param cacheKey
      * @param pipelineDescriptor
-     * @param cacheMetadataProperties
+     * @param contextProperties
      * @return the new CacheEnvelope instance
      */
     public static CacheEnvelope from200Response(JsonNode contentNode, List<CaravanHttpRequest> requests, String cacheKey,
-        String pipelineDescriptor, Map<String, String> cacheMetadataProperties) {
+        String pipelineDescriptor, Map<String, String> contextProperties) {
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, requests, cacheKey, pipelineDescriptor, null, cacheMetadataProperties);
+      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, requests, cacheKey, pipelineDescriptor, null, contextProperties);
       return new CacheEnvelope(envelope);
     }
 
@@ -349,22 +349,21 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param reason
      * @param cacheKey
      * @param pipelineDescriptor
-     * @param cacheMetadataProperties
+     * @param contextProperties
      * @return the new CacheEnvelope instance
      */
     public static CacheEnvelope from404Response(String reason, List<CaravanHttpRequest> requests, String cacheKey,
-        String pipelineDescriptor, Map<String, String> cacheMetadataProperties) {
+        String pipelineDescriptor, Map<String, String> contextProperties) {
 
       JsonNode contentNode = JacksonFunctions.emptyObject();
       int statusCode = HttpStatus.SC_NOT_FOUND;
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, requests, cacheKey, pipelineDescriptor, reason, cacheMetadataProperties);
+      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, requests, cacheKey, pipelineDescriptor, reason, contextProperties);
       return new CacheEnvelope(envelope);
     }
 
     private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, List<CaravanHttpRequest> requests,
-        String cacheKey,
-        String pipelineDescriptor, String reason, Map<String, String> cacheMetadataProperties) {
+        String cacheKey, String pipelineDescriptor, String reason, Map<String, String> contextProperties) {
 
       ObjectNode envelope = JacksonFunctions.emptyObject();
       ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
@@ -385,7 +384,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       if (StringUtils.isNotBlank(reason)) {
         metadata.put("reason", reason);
       }
-      metadata.set("properties", JacksonFunctions.pojoToNode(cacheMetadataProperties));
+      metadata.set("contextProperties", JacksonFunctions.pojoToNode(contextProperties));
       envelope.set(CACHE_CONTENT_PROPERTY, contentNode);
 
       return envelope;

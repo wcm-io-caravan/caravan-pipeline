@@ -143,7 +143,7 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
   static Observable<String> cachedContent(String json, int ageInSeconds) {
 
     CacheEnvelope envelope = CacheEnvelope.from200Response(JacksonFunctions.stringToNode(json), new LinkedList<CaravanHttpRequest>(),
-        "cacheKey", "descriptor", getcacheMetadataProperties());
+        "cacheKey", "descriptor", getContextProperties());
     envelope.setGeneratedDate(CacheDateUtils.formatRelativeTime(-ageInSeconds));
 
     return Observable.just(envelope.getEnvelopeString());

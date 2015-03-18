@@ -45,12 +45,12 @@ public class JsonPipelineContext {
   /**
    * @param cacheAdapter a caching layer / cache adapter to use
    * @param metricRegistry metrics registry
-   * @param cacheMetadataProperties cache meta data
+   * @param contextProperties additional metadata in string property form
    */
-  public JsonPipelineContext(CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> cacheMetadataProperties) {
+  public JsonPipelineContext(CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
     this.cacheAdapter = cacheAdapter;
     this.metricRegistry = metricRegistry;
-    this.cacheMetadataProperties = cacheMetadataProperties;
+    this.cacheMetadataProperties = contextProperties;
   }
 
   public JsonPipelineFactory getFactory() {
@@ -61,15 +61,12 @@ public class JsonPipelineContext {
     return this.cacheAdapter;
   }
 
-
   public MetricRegistry getMetricRegistry() {
     return this.metricRegistry;
   }
 
-
-  public Map<String, String> getCacheMetadataProperties() {
+  public Map<String, String> getProperties() {
     return this.cacheMetadataProperties;
   }
-
 
 }

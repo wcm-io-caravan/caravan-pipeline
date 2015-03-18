@@ -82,9 +82,9 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
   @Test
   public void testCacheEnvelopeAvailabilityAt404() {
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getcacheMetadataProperties());
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getContextProperties());
     JsonNode node404 = JacksonFunctions.stringToNode(cached404.getEnvelopeString());
-    JsonNode properties = node404.path("metadata").path("properties");
+    JsonNode properties = node404.path("metadata").path("contextProperties");
     assertNotNull(properties);
     assertEquals("123-id", properties.get("id").asText());
     assertEquals(404, node404.path("metadata").path("statusCode").asInt());
@@ -97,10 +97,10 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   @Test
   public void testCacheEnvelopeAvailabilityAt200() {
     CacheEnvelope cached200 = CacheEnvelope.from200Response(JacksonFunctions.stringToNode("{}"), new LinkedList<CaravanHttpRequest>(),
-        "cacheKey", "descriptor", getcacheMetadataProperties());
+        "cacheKey", "descriptor", getContextProperties());
 
     JsonNode node200 = JacksonFunctions.stringToNode(cached200.getEnvelopeString());
-    JsonNode properties = node200.path("metadata").path("properties");
+    JsonNode properties = node200.path("metadata").path("contextProperties");
     assertNotNull(properties);
     assertEquals("123-id", properties.get("id").asText());
     assertEquals(200, node200.path("metadata").path("statusCode").asInt());
