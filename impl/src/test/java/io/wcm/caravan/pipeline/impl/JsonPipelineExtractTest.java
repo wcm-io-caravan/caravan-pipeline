@@ -20,12 +20,14 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
+import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 
 import java.io.FileNotFoundException;
 
@@ -36,7 +38,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
-import com.jayway.jsonpath.PathNotFoundException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
@@ -121,22 +123,50 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline extracted = pipeline.extract("$.a[?(@.label=='def')]", "extracted");
 
-    String output = extracted.getStringOutput().toBlocking().single();
-    JSONAssert.assertEquals("{ extracted: null }", output, JSONCompareMode.STRICT);
+    JsonNode output = extracted.getJsonOutput().toBlocking().single();
+    assertTrue(output.get("extracted").isMissingNode());
+    String stringOutput = extracted.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{ extracted: null }", stringOutput, JSONCompareMode.STRICT);
+  }
+
+  @Test(expected = JsonPipelineOutputException.class)
+  public void extractNoResultNoTargetProperty() {
+
+    // test handling of a valid JSONPath for the given structure that has no results
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline extracted = pipeline.extract("$.a[?(@.label=='def')]");
+
+    JsonNode output = extracted.getJsonOutput().toBlocking().single();
+    assertTrue(output.isMissingNode());
+    extracted.getStringOutput().toBlocking().single();
   }
 
   @Test
-  public void extractJsonPathNotFound() {
+  public void extractJsonPathNotFound() throws JSONException {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
     JsonPipeline extracted = pipeline.extract("$a.numbers", "extracted");
 
-    extracted.getStringOutput().subscribe(stringObserver);
+    // make sure that only MissingNode is returned when a PathNotFoundException is thrown
+    JsonNode output = extracted.getJsonOutput().toBlocking().single();
+    assertTrue(output.get("extracted").isMissingNode());
+    String stringOutput = extracted.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{ extracted: null }", stringOutput, JSONCompareMode.STRICT);
+  }
 
-    // make sure that only #onError was called, with the FileNotFoundException thrown from the transport layer
-    verify(stringObserver).onError(any(PathNotFoundException.class));
-    verifyNoMoreInteractions(stringObserver, cacheAdapter);
+  @Test(expected = JsonPipelineOutputException.class)
+  public void extractJsonPathNotFoundNoTargetProperty() {
+
+    // test error handling if a property has been used in the JSONPath that does not exist in the whole document
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline extracted = pipeline.extract("$a.numbers");
+
+
+    // make sure that only MissingNode is returned when a PathNotFoundException is thrown
+    JsonNode output = extracted.getJsonOutput().toBlocking().single();
+    assertTrue(output.isMissingNode());
+    extracted.getStringOutput().toBlocking().single();
   }
 
   @Test

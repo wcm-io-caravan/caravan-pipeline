@@ -63,7 +63,6 @@ public class CollectOperator implements Operator<JsonPipelineOutput, JsonPipelin
 
       @Override
       public void onNext(JsonPipelineOutput output) {
-
         JsonNode extractedPayload = new JsonPathSelector(jsonPath).call(output.getPayload());
 
         if (isNotBlank(targetProperty)) {

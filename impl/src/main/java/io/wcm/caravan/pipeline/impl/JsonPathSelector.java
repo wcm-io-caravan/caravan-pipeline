@@ -28,12 +28,13 @@ import rx.functions.Func1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.base.Stopwatch;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Configuration.ConfigurationBuilder;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.PathNotFoundException;
 
 /**
  * Function that evaluates a JSONpath expression on a Jackson {@link JsonNode} tree, and returns an {@link ArrayNode}
@@ -56,13 +57,19 @@ public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
   }
 
   @Override
-  public ArrayNode call(JsonNode inputData) throws PathNotFoundException {
+  public ArrayNode call(JsonNode inputData) {
     Stopwatch watch = Stopwatch.createStarted();
+    ArrayNode arrayNode = null;
+    try {
+      arrayNode = JsonPath
+          .using(config)
+          .parse(inputData)
+          .read(jsonPath, ArrayNode.class);
+    }
+    catch (InvalidPathException pnfException) {
+      arrayNode = JsonNodeFactory.instance.arrayNode();
+    }
 
-    ArrayNode arrayNode = JsonPath
-        .using(config)
-        .parse(inputData)
-        .read(jsonPath, ArrayNode.class);
 
     log.debug("selected " + arrayNode.size() + " matches in " + watch.elapsed(MILLISECONDS) + " ms by applying jsonPath " + this.jsonPath);
     return arrayNode;

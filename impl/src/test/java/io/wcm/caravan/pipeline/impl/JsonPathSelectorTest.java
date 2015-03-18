@@ -32,7 +32,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.PathNotFoundException;
 
 /** Tests for the {@link JsonPathSelector} functions */
 @RunWith(MockitoJUnitRunner.class)
@@ -114,7 +113,7 @@ public class JsonPathSelectorTest {
     assertEquals(0, result.size());
   }
 
-  @Test(expected = PathNotFoundException.class)
+  @Test
   public void testExtractArrayPathNotFound() {
 
     // if the query includes a property that does not exist at all in the data, a PathNotFoundException is thrown

@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 
 import java.io.FileNotFoundException;
 
@@ -42,6 +43,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
   @Test(expected = IllegalArgumentException.class)
   public void mergeNullTargetPropertyException() {
 
+    // test throw of IllegalArgumentException by null target property argument
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
     a.merge(b, null);
@@ -50,7 +52,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
   @Test
   public void mergedPipelineSuccess() throws JSONException {
 
-    // test successful merging of one pipeline into the other
+    // test successful merge of one pipeline into the other
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
 
@@ -65,9 +67,9 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
   }
 
   @Test
-  public void mergedPipelineNoTargetProperty() throws JSONException {
+  public void mergePipelineNoTargetProperty() throws JSONException {
 
-    // test successful merging of one pipeline into the other *without adding another property*
+    // test successful merge of one pipeline into the other *without adding another property*
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
 
@@ -79,6 +81,125 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
     String output = merged.getStringOutput().toBlocking().single();
 
     JSONAssert.assertEquals("{a: 123, b: 456}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void mergePipelineExtractedNodeIntoTargetProperty() throws JSONException {
+
+    // test successful merge of one extracted results of pipeline into another pipeline node with specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.extract("b");
+
+    JsonPipeline merged = a.merge(c, "next node");
+
+    assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
+    assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
+
+    String output = merged.getStringOutput().toBlocking().single();
+
+    JSONAssert.assertEquals("{a: 123, next node: 456}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test(expected = JsonPipelineOutputException.class)
+  public void mergePipelineExtractedNodeNoTargetProperty() {
+
+    // test throw of JsonPipelineOutputException by merge of extracted node value into other pipeline node without specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.extract("b");
+
+    JsonPipeline merged = a.merge(c);
+    merged.getStringOutput().toBlocking().single();
+  }
+
+  @Test
+  public void mergePipelineMissingNodeIntoTargetProperty() throws JSONException {
+
+    // test successful merge of an extracted missing node into another pipeline node with specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.extract("c");
+
+    JsonPipeline merged = a.merge(c, "next node");
+
+    assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
+    assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
+
+    String output = merged.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{a: 123, next node: null}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test(expected = JsonPipelineOutputException.class)
+  public void mergePipelineMissingNodeNoTargetProperty() {
+
+    // test throw of JsonPipelineOutputException by merge of extracted missing node into other pipeline node without specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.extract("c");
+
+    JsonPipeline merged = a.merge(c);
+    merged.getStringOutput().toBlocking().single();
+  }
+
+  @Test(expected = JsonPipelineOutputException.class)
+  public void mergePipelineEmptyArrayNodeNoTargetProperty() {
+
+    // test throw of JsonPipelineOutputException by merge of a collected empty array node into other pipeline node without specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.collect("c");
+
+    JsonPipeline merged = a.merge(c);
+    merged.getStringOutput().toBlocking().single();
+  }
+
+  @Test(expected = JsonPipelineOutputException.class)
+  public void mergePipelineArrayNodeNoTargetProperty() {
+
+    // test throw of JsonPipelineOutputException by merge of a collected array node into other pipeline node without specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.collect("b");
+
+    JsonPipeline merged = a.merge(c);
+    merged.getStringOutput().toBlocking().single();
+  }
+
+  @Test
+  public void mergePipelineEmptyArrayNodeIntoTargetProperty() throws JSONException {
+
+    // test successful merge of a collected empty array node into another pipeline node with specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.collect("c");
+
+    JsonPipeline merged = a.merge(c, "arrayNode");
+
+    assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
+    assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
+
+    String output = merged.getStringOutput().toBlocking().single();
+
+    JSONAssert.assertEquals("{a: 123, arrayNode: []}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void mergePipelineCollectedArrayNodeIntoTargetProperty() throws JSONException {
+
+    // test successful merge of a collected array node into another pipeline node with specifying of target property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}");
+    JsonPipeline c = b.collect("b");
+
+    JsonPipeline merged = a.merge(c, "arrayNode");
+
+    assertNotEquals("descriptor has been updated?", a.getDescriptor(), merged.getDescriptor());
+    assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
+
+    String output = merged.getStringOutput().toBlocking().single();
+
+    JSONAssert.assertEquals("{a: 123, arrayNode: [456]}", output, JSONCompareMode.STRICT);
   }
 
   @Test

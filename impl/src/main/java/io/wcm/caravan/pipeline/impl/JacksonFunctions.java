@@ -101,6 +101,10 @@ public final class JacksonFunctions {
    * @throws JsonPipelineOutputException if the given node can not be serialized
    */
   public static String nodeToString(JsonNode node) {
+    if (node.isMissingNode()) {
+      throw new JsonPipelineOutputException(
+          "Received a MissingNode from the JSON pipeline output. Please do not serialize this result as a String and handle MissingNode in your client.");
+    }
     try {
       StringWriter writer = new StringWriter();
       JsonGenerator generator = jsonFactory.createGenerator(writer);

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,12 +23,13 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPathSelector;
-import rx.Subscriber;
 import rx.Observable.Operator;
+import rx.Subscriber;
 import rx.exceptions.Exceptions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 
 /**
  * An operator that evaluates a JSONPath expression on the pipeline's JSON output and extracts the first result
@@ -66,7 +67,7 @@ public class ExtractOperator implements Operator<JsonPipelineOutput, JsonPipelin
       public void onNext(JsonPipelineOutput output) {
         ArrayNode result = new JsonPathSelector(jsonPath).call(output.getPayload());
 
-        JsonNode extractedPayload = result.size() == 0 ? null : result.get(0);
+        JsonNode extractedPayload = result.size() == 0 ? MissingNode.getInstance() : result.get(0);
 
         if (isNotBlank(targetProperty)) {
           extractedPayload = JacksonFunctions.wrapInObject(targetProperty, extractedPayload);
