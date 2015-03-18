@@ -50,7 +50,7 @@ public final class JsonPipelineActions {
       }
 
       @Override
-      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput) {
+      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory) {
         JsonNode transformedPayload = transformation.call(previousStepOutput.getPayload());
         JsonPipelineOutput transformedOutput = previousStepOutput.withPayload(transformedPayload);
         return Observable.just(transformedOutput);

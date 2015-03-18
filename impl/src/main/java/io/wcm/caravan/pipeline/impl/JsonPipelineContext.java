@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.Map;
@@ -32,6 +33,8 @@ import com.codahale.metrics.MetricRegistry;
  * life cycle. Temporary objects or primitives should not be a part of context.
  */
 public class JsonPipelineContext {
+
+  private JsonPipelineFactory factory;
 
   private CacheAdapter cacheAdapter;
 
@@ -50,6 +53,9 @@ public class JsonPipelineContext {
     this.cacheMetadataProperties = cacheMetadataProperties;
   }
 
+  public JsonPipelineFactory getFactory() {
+    return factory;
+  }
 
   public CacheAdapter getCacheAdapter() {
     return this.cacheAdapter;

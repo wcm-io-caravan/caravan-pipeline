@@ -125,7 +125,7 @@ public class JsonPipelineMultipleSubscriptionsTest extends AbstractJsonPipelineT
     // this test verifies that pipelines actions are only executed once, even if there are multiple concurrent subscribers
     firstStep = newPipelineWithResponseBody("{id:123}");
     secondStep = firstStep.applyAction(action);
-    when(action.execute(any())).thenReturn(firstStep.getOutput());
+    when(action.execute(any(), any())).thenReturn(firstStep.getOutput());
 
     // create multiple simultaneous threads that subscribe to the same pipeline output
     // and use a CountDownLatch to delay the subscription until all threads have been started
@@ -147,7 +147,7 @@ public class JsonPipelineMultipleSubscriptionsTest extends AbstractJsonPipelineT
     executorService.shutdown();
     executorService.awaitTermination(1, TimeUnit.MINUTES);
 
-    verify(action, times(1)).execute(any());
+    verify(action, times(1)).execute(any(), any());
   }
 
   @SuppressWarnings("unchecked")
@@ -214,7 +214,7 @@ public class JsonPipelineMultipleSubscriptionsTest extends AbstractJsonPipelineT
     firstStep = new JsonPipelineImpl(new CaravanHttpRequestBuilder().build(), sourceObservable, getJsonPipelineContext());
     secondStep = firstStep.applyAction(action);
     thirdStep = secondStep.merge(newPipelineWithResponseBody("{name:'abc'}"));
-    when(action.execute(any())).thenReturn(firstStep.getOutput());
+    when(action.execute(any(), any())).thenReturn(firstStep.getOutput());
   }
 }
 

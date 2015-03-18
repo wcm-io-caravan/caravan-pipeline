@@ -51,6 +51,6 @@ public interface JsonPipelineAction {
    * @param previousStepOutput a JSON pipeline output provided after pipeline has executed previous steps
    * @return a subscription the result JSON pipeline output
    */
-  Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput);
+  Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory);
 
 }

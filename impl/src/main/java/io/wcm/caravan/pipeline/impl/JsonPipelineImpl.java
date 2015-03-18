@@ -196,7 +196,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline applyAction(JsonPipelineAction action) {
     String actionDesc = "ACTION(" + action.getId() + ")";
 
-    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output));
+    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output, context.getFactory()));
 
     return cloneWith(transformedObservable, actionDesc);
   }

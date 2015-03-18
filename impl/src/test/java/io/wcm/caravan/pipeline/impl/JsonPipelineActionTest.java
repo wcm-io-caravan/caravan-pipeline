@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
@@ -55,7 +56,7 @@ public class JsonPipelineActionTest extends AbstractJsonPipelineTest {
   public void applyActionSuccess() throws JSONException {
     JsonPipeline previousStep = newPipelineWithResponseBody("{id:123}");
     JsonPipeline nextStep = newPipelineWithResponseBody("{name:'abc'}");
-    when(action.execute(any())).thenReturn(nextStep.getOutput());
+    when(action.execute(any(), any())).thenReturn(nextStep.getOutput());
 
     JsonPipeline result = previousStep.applyAction(action);
     assertNotNull(result);
@@ -74,7 +75,7 @@ public class JsonPipelineActionTest extends AbstractJsonPipelineTest {
       }
 
       @Override
-      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput) {
+      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory) {
         ObjectNode nextObject = previousStepOutput.getPayload().deepCopy();
         nextObject.put("name", "abc");
         JsonPipelineOutput transformedOutput = previousStepOutput.withPayload(nextObject);
@@ -100,7 +101,7 @@ public class JsonPipelineActionTest extends AbstractJsonPipelineTest {
   @Test
   public void applyActionActualPipelineFailed() {
     JsonPipeline previousStep = newPipelineWithResponseBody("{id: 123}");
-    when(action.execute(any())).thenThrow(new RuntimeException());
+    when(action.execute(any(), any())).thenThrow(new RuntimeException());
 
     JsonPipeline result = previousStep.applyAction(action);
     result.getStringOutput().subscribe(stringObserver);

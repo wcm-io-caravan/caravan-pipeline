@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineActions;
+import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import org.junit.Test;
@@ -38,6 +39,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineActionsTest {
+
+  @Mock
+  private JsonPipelineFactory factory;
 
   @Mock
   private JsonPipelineOutput jsonPipelineOutputPrevious;
@@ -66,7 +70,7 @@ public class JsonPipelineActionsTest {
     assertNotNull(action.getId());
     assertEquals("transformationId", action.getId());
 
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious);
+    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, factory);
     assertNotNull(result);
     JsonPipelineOutput resultOutput = result.toBlocking().single();
     assertEquals(jsonPipelineOutputResult, resultOutput);
