@@ -99,7 +99,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   @Test
   public void assertExistsExtractIntoTargetProperty() throws JSONException {
 
-    // check that a fulfilled assertion will complete extraction result
+    // check that a fulfilled assertion completes for preceding extract operation
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").extract("a", "b")
         .assertExists("$..[?(@.b == 123)]", 500, "a not found");
 
@@ -110,7 +110,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   @Test
   public void assertExistsExtractNoResultIntoTargetProperty() {
 
-    // check that a fulfilled assertion will complete extraction result
+    // check that a fulfilled assertion fails for preceding extract operation because of extracted null
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").extract("a", "c")
         .assertExists("$..[?(@.b == 123)]", 500, "a not found");
 
@@ -123,7 +123,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   @Test
   public void assertExistsCollectIntoTargetProperty() throws JSONException {
 
-    // check that a fulfilled assertion will not influence the pipeline output
+    // check that a fulfilled assertion completes for preceding collect operation
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").collect("a", "b")
         .assertExists("$..[?(@.b[0] == 123)]", 500, "a not found");
 
@@ -134,7 +134,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   @Test
   public void assertExistsEmptyCollectIntoTargetProperty() {
 
-    // check that a fulfilled assertion will not influence the pipeline output
+    // check that a fulfilled assertion fails for preceding extract operation because an empty array is extracted
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").collect("c", "b")
         .assertExists("$..[@.b[0] == 123]", 404, "a not found");
 
