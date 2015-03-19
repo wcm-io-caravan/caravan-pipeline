@@ -31,8 +31,10 @@ import org.mockito.Mock;
 import com.codahale.metrics.MetricRegistry;
 
 
-
 public abstract class AbstractCaravanTestCase {
+
+  @Mock
+  protected JsonPipelineFactory jsonPipelineFactory;
 
   @Mock
   protected CacheAdapter cacheAdapter;
@@ -51,7 +53,7 @@ public abstract class AbstractCaravanTestCase {
   }
 
   protected JsonPipelineContext getJsonPipelineContext() {
-    return new JsonPipelineContext(cacheAdapter, metricRegistry, getContextProperties());
+    return new JsonPipelineContext(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties());
   }
 
 }

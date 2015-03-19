@@ -34,20 +34,21 @@ import com.codahale.metrics.MetricRegistry;
  */
 public class JsonPipelineContext {
 
-  private JsonPipelineFactory factory;
+  private final JsonPipelineFactory factory;
 
-  private CacheAdapter cacheAdapter;
+  private final CacheAdapter cacheAdapter;
 
-  private MetricRegistry metricRegistry;
+  private final MetricRegistry metricRegistry;
 
-  private Map<String, String> cacheMetadataProperties;
+  private final Map<String, String> cacheMetadataProperties;
 
   /**
    * @param cacheAdapter a caching layer / cache adapter to use
    * @param metricRegistry metrics registry
    * @param contextProperties additional metadata in string property form
    */
-  public JsonPipelineContext(CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
+  public JsonPipelineContext(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
+    this.factory = factory;
     this.cacheAdapter = cacheAdapter;
     this.metricRegistry = metricRegistry;
     this.cacheMetadataProperties = contextProperties;

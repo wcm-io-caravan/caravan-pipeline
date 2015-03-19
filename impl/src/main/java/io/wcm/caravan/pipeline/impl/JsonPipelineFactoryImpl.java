@@ -70,7 +70,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
     return new JsonPipelineImpl(request, response,
-        new JsonPipelineContext(cacheAdapter, metricRegistry, contextProperties));
+        new JsonPipelineContext(this, cacheAdapter, metricRegistry, contextProperties));
   }
 
   @Override
@@ -90,7 +90,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
-        new JsonPipelineContext(cacheAdapter, metricRegistry, contextProperties));
+        new JsonPipelineContext(this, cacheAdapter, metricRegistry, contextProperties));
   }
 
 }
