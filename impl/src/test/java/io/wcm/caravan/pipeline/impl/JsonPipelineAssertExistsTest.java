@@ -96,4 +96,53 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
+  @Test
+  public void assertExistsExtractIntoTargetProperty() throws JSONException {
+
+    // check that a fulfilled assertion will complete extraction result
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").extract("a", "b")
+        .assertExists("$..[?(@.b == 123)]", 500, "a not found");
+
+    String output = pipeline.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{b: 123}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void assertExistsExtractNoResultIntoTargetProperty() {
+
+    // check that a fulfilled assertion will complete extraction result
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").extract("a", "c")
+        .assertExists("$..[?(@.b == 123)]", 500, "a not found");
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(any(InvalidPathException.class));
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
+  }
+
+  @Test
+  public void assertExistsCollectIntoTargetProperty() throws JSONException {
+
+    // check that a fulfilled assertion will not influence the pipeline output
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").collect("a", "b")
+        .assertExists("$..[?(@.b[0] == 123)]", 500, "a not found");
+
+    String output = pipeline.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{b: [123]}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void assertExistsEmptyCollectIntoTargetProperty() {
+
+    // check that a fulfilled assertion will not influence the pipeline output
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}").collect("c", "b")
+        .assertExists("$..[@.b[0] == 123]", 404, "a not found");
+
+    pipeline.getStringOutput().subscribe(stringObserver);
+
+    verify(stringObserver).onError(any(InvalidPathException.class));
+    verifyNoMoreInteractions(stringObserver, cacheAdapter);
+  }
+
+
 }
