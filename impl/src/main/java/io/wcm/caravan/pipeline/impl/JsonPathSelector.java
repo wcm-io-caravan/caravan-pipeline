@@ -38,7 +38,8 @@ import com.jayway.jsonpath.Option;
 
 /**
  * Function that evaluates a JSONpath expression on a Jackson {@link JsonNode} tree, and returns an {@link ArrayNode}
- * with all matching results.
+ * with all results matching JSONPath expression or an empty {@link ArrayNode}, if no results were found or
+ * {@link InvalidPathException} was thrown because of invalid JSONPath expression.
  */
 public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
 
@@ -66,7 +67,7 @@ public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
           .parse(inputData)
           .read(jsonPath, ArrayNode.class);
     }
-    catch (InvalidPathException pnfException) {
+    catch (InvalidPathException exception) {
       arrayNode = JsonNodeFactory.instance.arrayNode();
     }
 
