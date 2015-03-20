@@ -32,7 +32,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 
 /**
- * An operator that evaluates a JSONPath expression on the pipeline's JSON output and extracts the first result
+ * An operator that evaluates a JSONPath expression on the pipeline's JSON output and extracts the first result.
+ * If any result is missing, Jackson {@link MissingNode} will be returned as an extraction result.
  */
 public class ExtractOperator implements Operator<JsonPipelineOutput, JsonPipelineOutput> {
 

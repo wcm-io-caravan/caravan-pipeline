@@ -28,9 +28,11 @@ import rx.Subscriber;
 import rx.exceptions.Exceptions;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
- * An operator that evaluates a JSONPath expression on the pipeline's JSON output and collects *ALL* results
+ * An operator that evaluates a JSONPath expression on the pipeline's JSON output and collects *ALL* results.
+ * Extraction results are always saved in Jackson {@link ArrayNode}, even if no results are found.
  */
 public class CollectOperator implements Operator<JsonPipelineOutput, JsonPipelineOutput> {
 
