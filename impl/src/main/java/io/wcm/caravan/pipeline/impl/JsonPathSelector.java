@@ -34,6 +34,7 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Configuration.ConfigurationBuilder;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.Option;
 
 /**
@@ -67,7 +68,7 @@ public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
           .parse(inputData)
           .read(jsonPath, ArrayNode.class);
     }
-    catch (InvalidPathException exception) {
+    catch (JsonPathException exception) {
       arrayNode = JsonNodeFactory.instance.arrayNode();
     }
 
