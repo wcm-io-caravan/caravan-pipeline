@@ -32,7 +32,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.base.Stopwatch;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Configuration.ConfigurationBuilder;
-import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.Option;
@@ -40,7 +39,7 @@ import com.jayway.jsonpath.Option;
 /**
  * Function that evaluates a JSONpath expression on a Jackson {@link JsonNode} tree, and returns an {@link ArrayNode}
  * with all results matching JSONPath expression or an empty {@link ArrayNode}, if no results were found or
- * {@link InvalidPathException} was thrown because of invalid JSONPath expression.
+ * {@link JsonPathException} was thrown because of invalid JSONPath expression.
  */
 public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
 
