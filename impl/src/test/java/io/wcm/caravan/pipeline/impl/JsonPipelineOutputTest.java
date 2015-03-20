@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 
 import java.io.FileNotFoundException;
 
@@ -112,6 +113,15 @@ public class JsonPipelineOutputTest extends AbstractJsonPipelineTest {
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
     verify(stringObserver).onError(any(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
+  }
+
+  @Test(expected = JsonPipelineOutputException.class)
+  public void plainPipelineOutputMissingNode() {
+
+    // check that pipelines string output throws JsonPipelineOutputException when MissingNode is a root node of the pipeline
+    JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString()).extract("unknown book");
+
+    pipeline.getStringOutput().toBlocking().single();
   }
 
 }
