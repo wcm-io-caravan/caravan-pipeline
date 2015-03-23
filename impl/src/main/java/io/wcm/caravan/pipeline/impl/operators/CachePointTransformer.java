@@ -25,6 +25,7 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
@@ -108,11 +109,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       final String cacheKey = cacheAdapter.getCacheKey(sourceServicePrefix, descriptor);
 
       // the caching strategy determines if the storage time should be extended for cache hits(i.e. Time-to-Idle behaviour)
-      boolean extendStorageTime = strategy.isExtendStorageTimeOnGet(requests);
-      int storageTime = strategy.getStorageTime(requests);
+      CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
 
       // try to asynchronously(!) fetch the response from the cache (or simulate a cache miss if the headers suggested to ignore cache)
-      Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : cacheAdapter.get(cacheKey, extendStorageTime, storageTime));
+      Observable<String> cachedJsonString = (ignoreCache ? Observable.empty() : cacheAdapter.get(cacheKey, options));
 
       // create service specific metrics
       MetricRegistry metricRegistry = context.getMetricRegistry();
@@ -171,7 +171,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       cacheHit = true;
 
       int responseAge = cacheEntry.getResponseAge();
-      int refreshInterval = strategy.getRefreshInterval(requests);
+      int refreshInterval = strategy.getCachePersistencyOptions(requests).getRefreshInterval();
 
       // check if the content from cache is fresh enough to serve it
       if (responseAge < refreshInterval) {
@@ -249,13 +249,12 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
         @Override
         public void onNext(JsonPipelineOutput fetchedModel) {
           log.debug("response for " + descriptor + " has been fetched and will be put in the cache");
-
-          int storageTime = strategy.getStorageTime(requests);
-          int refreshInterval = Math.max(strategy.getRefreshInterval(requests), fetchedModel.getMaxAge());
+          CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
+          int refreshInterval = Math.max(options.getRefreshInterval(), fetchedModel.getMaxAge());
 
           CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor,
               context.getProperties());
-          context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
+          context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), options);
 
           // everything else is just forwarding to the subscriber to the cachedSource
           backendResponseSubscriber.onNext(fetchedModel.withMaxAge(refreshInterval));
@@ -274,11 +273,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
             if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
 
               log.debug("404 response for " + descriptor + " will be stored in the cache");
-
-              int storageTime = strategy.getStorageTime(requests);
+              CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
 
               CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getProperties());
-              context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), storageTime);
+              context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), options);
             }
           }
           backendResponseSubscriber.onError(e);

@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.cache.guava.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +32,8 @@ import rx.Observable;
 public class GuavaCacheAdapterTest {
 
   private GuavaCacheAdapter cacheAdapter;
+
+  private CachePersistencyOptions options;
 
   @Before
   public void before() {
@@ -46,13 +49,13 @@ public class GuavaCacheAdapterTest {
 
   @Test
   public void testPut() {
-    cacheAdapter.put("key", "value", 0);
+    cacheAdapter.put("key", "value", options);
   }
 
   @Test
   public void testGet() {
-    cacheAdapter.put("key", "value", 0);
-    Observable<String> cachedValueObservable = cacheAdapter.get("key", false, 0);
+    cacheAdapter.put("key", "value", options);
+    Observable<String> cachedValueObservable = cacheAdapter.get("key", options);
     String value = cachedValueObservable.toBlocking().first();
     assertEquals("value", value);
   }

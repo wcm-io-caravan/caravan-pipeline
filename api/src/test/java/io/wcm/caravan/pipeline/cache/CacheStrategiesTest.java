@@ -33,27 +33,33 @@ public class CacheStrategiesTest {
   @Test
   public void testTimeToLive() {
     CacheStrategy underTest = CacheStrategies.timeToLive(55, TimeUnit.SECONDS);
-    assertEquals(55, underTest.getStorageTime(null));
-    assertEquals(55, underTest.getRefreshInterval(null));
-    assertFalse(underTest.isExtendStorageTimeOnGet(null));
+    assertTrue(underTest.usePersistentCache());
+    CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
+    assertFalse(options.isInvalidCachingLogic());
+    assertEquals(55, options.getStorageTime());
+    assertEquals(55, options.getRefreshInterval());
+    assertFalse(options.isExtendStorageTimeOnGet());
   }
 
   @Test
   public void testTimeToLive_Minutes() {
     CacheStrategy underTest = CacheStrategies.timeToLive(55, TimeUnit.MINUTES);
-    assertEquals(55 * 60, underTest.getStorageTime(null));
+    CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
+    assertEquals(55 * 60, options.getStorageTime());
   }
 
   @Test
   public void testTimeToLive_Hours() {
     CacheStrategy underTest = CacheStrategies.timeToLive(24, TimeUnit.HOURS);
-    assertEquals(24 * 60 * 60, underTest.getStorageTime(null));
+    CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
+    assertEquals(24 * 60 * 60, options.getStorageTime());
   }
 
   @Test
   public void testTimeToLive_Days() {
     CacheStrategy underTest = CacheStrategies.timeToLive(2, TimeUnit.DAYS);
-    assertEquals(2 * 24 * 60 * 60, underTest.getStorageTime(null));
+    CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
+    assertEquals(2 * 24 * 60 * 60, options.getStorageTime());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -74,16 +80,23 @@ public class CacheStrategiesTest {
   @Test
   public void testTimeToIdle() {
     CacheStrategy underTest = CacheStrategies.timeToIdle(55, TimeUnit.SECONDS);
-    assertEquals(DAYS.toSeconds(365), underTest.getRefreshInterval(null));
-    assertEquals(55, underTest.getStorageTime(null));
-    assertTrue(underTest.isExtendStorageTimeOnGet(null));
+    assertTrue(underTest.usePersistentCache());
+    CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
+    assertFalse(options.isInvalidCachingLogic());
+    assertEquals(DAYS.toSeconds(365), options.getRefreshInterval());
+    assertEquals(55, options.getStorageTime());
+    assertTrue(options.isExtendStorageTimeOnGet());
   }
 
   @Test
   public void testNoCache() {
     CacheStrategy underTest = CacheStrategies.noCache();
-    assertEquals(0, underTest.getStorageTime(null));
-    assertFalse(underTest.isExtendStorageTimeOnGet(null));
+    assertFalse(underTest.usePersistentCache());
+    CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
+    assertTrue(options.isInvalidCachingLogic());
+    assertEquals(0, options.getRefreshInterval());
+    assertEquals(0, options.getStorageTime());
+    assertFalse(options.isExtendStorageTimeOnGet());
   }
 
 }

@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline.cache.spi;
 
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import rx.Observable;
 
 /**
@@ -27,7 +28,7 @@ import rx.Observable;
 public interface CacheAdapter {
 
   /**
-   * Generate a unique cache key
+   * Generate a unique cache key.
    * @param servicePrefix logical name of the source service(s)
    * @param descriptor from the pipeline
    * @return the unique cache key
@@ -35,20 +36,19 @@ public interface CacheAdapter {
   String getCacheKey(String servicePrefix, String descriptor);
 
   /**
-   * retrieve an item from cache
+   * Retrieve an item from cache.
    * @param cacheKey Cache key
-   * @param extendExpiry whether to reset the expiry time for cache-hits, to achieve a "time-to-idle" caching behaviour
-   * @param expirySeconds the value to reset the expiry time to if extendExpiry is true
+   * @param options valid cache persistency options
    * @return an observable that will either emit the cached JSON string, or complete without emitting on a cache miss
    */
-  Observable<String> get(String cacheKey, boolean extendExpiry, int expirySeconds);
+  Observable<String> get(String cacheKey, CachePersistencyOptions options);
 
   /**
-   * store an item in the cache
+   * Store an item in the cache.
    * @param cacheKey Cache key
    * @param jsonString JSON data
-   * @param expirySeconds how long to keep the entry in the cache
+   * @param options valid cache persistency options
    */
-  void put(String cacheKey, String jsonString, int expirySeconds);
+  void put(String cacheKey, String jsonString, CachePersistencyOptions options);
 
 }

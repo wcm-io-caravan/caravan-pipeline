@@ -25,6 +25,7 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.AbstractCaravanTestCase;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
@@ -53,11 +54,15 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   @Mock
   private CacheStrategy cacheStrategy;
 
+  @Mock
+  private CachePersistencyOptions cachePersistencyOptions;
+
 
   @Before
   public void setUp() {
     Mockito.when(cacheAdapter.getCacheKey(Matchers.anyString(), Matchers.anyString())).thenReturn("test-cache-key");
-    Mockito.when(cacheAdapter.get(Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyInt())).thenReturn(Observable.just("{}"));
+    Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.anyCollection())).thenReturn(cachePersistencyOptions);
+    Mockito.when(cacheAdapter.get(Matchers.anyString(), Matchers.anyObject())).thenReturn(Observable.just("{}"));
   }
 
   @Test
@@ -67,7 +72,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
-    Mockito.verify(cacheAdapter, Mockito.never()).get(Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyInt());
+    Mockito.verify(cacheAdapter, Mockito.never()).get(Matchers.anyString(), Matchers.anyObject());
   }
 
   @Test
@@ -77,7 +82,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
     Observable<JsonPipelineOutput> outputObservable = Observable.just(new JsonPipelineOutputImpl(new ObjectMapper().createObjectNode()));
     transformer.call(outputObservable).toBlocking().first();
 
-    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyBoolean(), Matchers.anyInt());
+    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyObject());
   }
 
   @Test

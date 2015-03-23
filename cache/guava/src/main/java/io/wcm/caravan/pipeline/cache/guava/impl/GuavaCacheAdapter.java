@@ -19,13 +19,9 @@
  */
 package io.wcm.caravan.pipeline.cache.guava.impl;
 
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import org.apache.commons.lang3.CharEncoding;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Service;
 
@@ -43,8 +39,6 @@ description = "Configure pipeline caching in guava.")
 @Service(CacheAdapter.class)
 public class GuavaCacheAdapter implements CacheAdapter {
 
-  private static final int MAX_CACHE_KEY_LENGTH = 250;
-
   private Cache<String, String> guavaCache;
 
   /**
@@ -58,22 +52,12 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public String getCacheKey(String servicePrefix, String descriptor) {
+    return servicePrefix + descriptor;
 
-    String cacheKey = servicePrefix + descriptor;
-    if (cacheKey.length() < MAX_CACHE_KEY_LENGTH) {
-      return cacheKey;
-    }
-
-    int charactersToKeep = MAX_CACHE_KEY_LENGTH - servicePrefix.length() - 41;
-    String toKeep = descriptor.substring(0, charactersToKeep);
-    String toHash = descriptor.substring(charactersToKeep);
-    String hash = calculateHash(toHash);
-
-    return servicePrefix + toKeep + "#" + hash;
   }
 
   @Override
-  public Observable<String> get(String cacheKey, boolean extendExpiry, int expirySeconds) {
+  public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
 
     Observable<String> entryObservable = Observable.create(subscriber -> {
       subscriber.onNext(guavaCache.getIfPresent(cacheKey));
@@ -84,23 +68,8 @@ public class GuavaCacheAdapter implements CacheAdapter {
   }
 
   @Override
-  public void put(String cacheKey, String jsonString, int expirySeconds) {
+  public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
     guavaCache.put(cacheKey, jsonString);
-  }
-
-  private static String calculateHash(String message) {
-    try {
-
-      MessageDigest digest = MessageDigest.getInstance("SHA-1");
-      digest.update(message.getBytes(CharEncoding.UTF_8));
-      byte[] digestBytes = digest.digest();
-
-      return javax.xml.bind.DatatypeConverter.printHexBinary(digestBytes).toLowerCase();
-
-    }
-    catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
-      throw new RuntimeException("Failed to create sha1 Hash from " + message, ex);
-    }
   }
 
 }

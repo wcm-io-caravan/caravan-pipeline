@@ -47,7 +47,7 @@ public final class CacheStrategies {
    * @return Cache strategy
    */
   public static CacheStrategy timeToLive(int duration, TimeUnit unit) {
-    return new CacheStrategyImpl(toSeconds(duration, unit), toSeconds(duration, unit), false);
+    return new CacheStrategyImpl(toSeconds(duration, unit), toSeconds(duration, unit), false, true);
   }
 
   /**
@@ -58,7 +58,7 @@ public final class CacheStrategies {
    * @return Cache strategy
    */
   public static CacheStrategy timeToIdle(int duration, TimeUnit unit) {
-    return new CacheStrategyImpl(toSeconds(365, DAYS), toSeconds(duration, unit), true);
+    return new CacheStrategyImpl(toSeconds(365, DAYS), toSeconds(duration, unit), true, true);
   }
 
   private static int toSeconds(int duration, TimeUnit unit) {
@@ -77,7 +77,7 @@ public final class CacheStrategies {
    * @return Cache strategy
    */
   public static CacheStrategy noCache() {
-    return new CacheStrategyImpl(0, 0, false);
+    return new CacheStrategyImpl(0, 0, false, false);
   }
 
   private static class CacheStrategyImpl implements CacheStrategy {
@@ -85,26 +85,23 @@ public final class CacheStrategies {
     private final int refreshInterval;
     private final int storageTime;
     private final boolean extendStorageTimeOnGet;
+    private final boolean usePersistentCache;
 
-    public CacheStrategyImpl(int refreshInterval, int storageTime, boolean resetExpiryOnGet) {
+    public CacheStrategyImpl(int refreshInterval, int storageTime, boolean resetExpiryOnGet, boolean usePersistentCache) {
       this.refreshInterval = refreshInterval;
       this.storageTime = storageTime;
       this.extendStorageTimeOnGet = resetExpiryOnGet;
+      this.usePersistentCache = usePersistentCache;
     }
 
     @Override
-    public int getRefreshInterval(Collection<CaravanHttpRequest> requests) {
-      return this.refreshInterval;
+    public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
+      return new CachePersistencyOptions(refreshInterval, storageTime, extendStorageTimeOnGet);
     }
 
     @Override
-    public int getStorageTime(Collection<CaravanHttpRequest> requests) {
-      return this.storageTime;
-    }
-
-    @Override
-    public boolean isExtendStorageTimeOnGet(Collection<CaravanHttpRequest> requests) {
-      return this.extendStorageTimeOnGet;
+    public boolean usePersistentCache() {
+      return usePersistentCache;
     }
   }
 

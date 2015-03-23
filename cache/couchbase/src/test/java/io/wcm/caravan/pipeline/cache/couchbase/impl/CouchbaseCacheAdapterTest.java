@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
 import java.util.concurrent.TimeUnit;
 
@@ -66,6 +67,8 @@ public class CouchbaseCacheAdapterTest {
   @Mock
   private CouchbaseClientProvider couchbaseClientProvider;
 
+  private CachePersistencyOptions cachePersistencyOptions;
+
   private MetricRegistry metricRegistry;
 
   private HealthCheckRegistry healthCheckRegistry;
@@ -84,6 +87,7 @@ public class CouchbaseCacheAdapterTest {
         .put(CouchbaseCacheAdapter.CACHE_KEY_PREFIX_PROPERTY, "prefix:")
         .put(CouchbaseCacheAdapter.CACHE_TIMEOUT_PROPERTY, 100)
         .build());
+    cachePersistencyOptions = new CachePersistencyOptions(100, 0, false);
   }
 
   @Test
@@ -105,7 +109,7 @@ public class CouchbaseCacheAdapterTest {
     Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class))
     .thenReturn(Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
 
-    Observable<String> observable = adapter.get(CACHE_KEY, false, 0);
+    Observable<String> observable = adapter.get(CACHE_KEY, cachePersistencyOptions);
 
     assertEquals(0, getHitCounter().getCount());
     assertEquals(0, getMissesCounter().getCount());
@@ -135,10 +139,10 @@ public class CouchbaseCacheAdapterTest {
   @Test
   public void testGet_miss() throws Exception {
 
-    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class))
+    when(bucket.get(CACHE_KEY, RawJsonDocument.class))
     .thenReturn(Observable.<RawJsonDocument>empty().delay(50, TimeUnit.MILLISECONDS));
 
-    Observable<String> observable = adapter.get(CACHE_KEY, false, 0);
+    Observable<String> observable = adapter.get(CACHE_KEY, cachePersistencyOptions);
 
     assertEquals(0, getHitCounter().getCount());
     assertEquals(0, getMissesCounter().getCount());
@@ -154,10 +158,9 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void testPut() throws Exception {
-    Mockito.when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
     .thenReturn(just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
-
-    adapter.put(CACHE_KEY, JSON_DOC, 100);
+    adapter.put(CACHE_KEY, JSON_DOC, cachePersistencyOptions);
 
     // we currently have no proper way to detecting that the put was completed, so we wait (up to one second)
     // until the put-latency timer has been stopped
@@ -176,14 +179,14 @@ public class CouchbaseCacheAdapterTest {
   }
 
   public void testGet_timeout() {
-    Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class)).then(new Answer<Observable>() {
+    when(bucket.get(CACHE_KEY, RawJsonDocument.class)).then(new Answer<Observable>() {
 
       @Override
       public Observable<RawJsonDocument> answer(InvocationOnMock invocation) {
         return Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS);
       }
     });
-    String output = adapter.get(CACHE_KEY, false, 0).toBlocking().singleOrDefault(null);
+    String output = adapter.get(CACHE_KEY, cachePersistencyOptions).toBlocking().singleOrDefault(null);
     assertNull(output);
     assertEquals(0, getHitCounter().getCount());
     assertEquals(1, getMissesCounter().getCount());

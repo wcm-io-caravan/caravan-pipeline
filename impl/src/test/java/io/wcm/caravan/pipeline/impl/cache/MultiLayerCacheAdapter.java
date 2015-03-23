@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline.impl.cache;
 
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import rx.Observable;
 
@@ -32,13 +33,13 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   }
 
   @Override
-  public Observable<String> get(String cacheKey, boolean extendExpiry, int expirySeconds) {
+  public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
     // TODO: Auto-generated method stub
     return null;
   }
 
   @Override
-  public void put(String cacheKey, String jsonString, int expirySeconds) {
+  public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
     // TODO: Auto-generated method stub
 
   }

@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.impl.operators.AssertExistsOperator;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer;
@@ -203,9 +204,9 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   @Override
   public JsonPipeline addCachePoint(CacheStrategy strategy) {
-
+    CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
     // skip all caching logic if the expiry time or refresh interval for this request is 0
-    if (strategy.getStorageTime(requests) == 0 || strategy.getRefreshInterval(requests) == 0) {
+    if (options.isInvalidCachingLogic()) {
       return this;
     }
 

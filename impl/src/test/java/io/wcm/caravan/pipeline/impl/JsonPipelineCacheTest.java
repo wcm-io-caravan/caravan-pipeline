@@ -21,8 +21,7 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -75,7 +74,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 60;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.empty());
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}")
@@ -94,7 +93,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int responseMaxAge = 600;
     int timeToLiveSeconds = 60;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.empty());
 
     JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", responseMaxAge)
@@ -112,7 +111,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int responseMaxAge = 6;
     int timeToLiveSeconds = 60;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.empty());
 
     JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", responseMaxAge)
@@ -130,7 +129,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int timeToLiveSeconds = 60;
     int cacheContentAge = 20;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(cachedContent("{b: 'cached'}}", cacheContentAge));
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}")
@@ -148,7 +147,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int timeToLiveSeconds = 30;
     int cacheContentAge = 50;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(cachedContent("{b: 'cached'}}", cacheContentAge));
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}")
@@ -157,14 +156,14 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
 
     // make sure the cache was accessed...
-    Mockito.verify(cacheAdapter).get(anyString(), anyBoolean(), anyInt());
+    Mockito.verify(cacheAdapter).get(anyString(), anyObject());
 
     // ...but the content from cache was not used, because it's stale
     String json = JacksonFunctions.nodeToString(output.getPayload());
     JSONAssert.assertEquals("{a:123}", json, JSONCompareMode.STRICT);
 
     // and the new content must have been put into the cache
-    Mockito.verify(cacheAdapter).put(anyString(), anyString(), eq(timeToLiveSeconds));
+    Mockito.verify(cacheAdapter).put(anyString(), anyString(), anyObject());
 
     // the max-age must be taken from the caching strategy
     assertEquals(timeToLiveSeconds, output.getMaxAge());
@@ -177,7 +176,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     int timeToLiveSeconds = 30;
     int cacheContentAge = 50;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(cachedContent("{b: 'cached'}}", cacheContentAge));
 
     JsonPipeline pipeline = newPipelineWithResponseError(new RuntimeException("Simulated Exception in transport layer"))
@@ -186,7 +185,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
 
     // make sure the cache was accessed...
-    Mockito.verify(cacheAdapter).get(anyString(), anyBoolean(), anyInt());
+    Mockito.verify(cacheAdapter).get(anyString(), anyObject());
 
     // ...and the content from cache was used as a fallback, even though it is stale
     String json = JacksonFunctions.nodeToString(output.getPayload());
@@ -201,7 +200,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.empty());
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
@@ -216,7 +215,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     }
 
     // make sure that an entry representing the 404 has been put into the cache
-    Mockito.verify(cacheAdapter).put(anyString(), anyString(), eq(timeToLiveSeconds));
+    Mockito.verify(cacheAdapter).put(anyString(), anyString(), anyObject());
   }
 
   @Test
@@ -227,7 +226,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getContextProperties());
     cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
 
-    Mockito.when(cacheAdapter.get(anyString(), anyBoolean(), anyInt()))
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.just(cached404.getEnvelopeString()));
 
     JsonPipeline pipeline = newPipelineWithResponseCode(404)
@@ -256,14 +255,14 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     when(cacheAdapter.getCacheKey(SERVICE_NAME, a.getDescriptor()))
     .thenReturn(cacheKey);
 
-    when(cacheAdapter.get(eq(cacheKey), anyBoolean(), anyInt()))
+    when(cacheAdapter.get(eq(cacheKey), anyObject()))
     .thenReturn(cachedContent("{b: 456}}", 5));
 
     String output = cached.getStringOutput().toBlocking().single();
 
     // only getCacheKey and get should have been called to check if it is available in the cache
     verify(cacheAdapter).getCacheKey(SERVICE_NAME, a.getDescriptor());
-    verify(cacheAdapter).get(eq(cacheKey), eq(false), eq(10));
+    verify(cacheAdapter).get(eq(cacheKey), anyObject());
     verifyNoMoreInteractions(cacheAdapter);
 
     // make sure that the version from the cache is emitted in the response
@@ -274,7 +273,6 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
   public void cacheMissAndStore() throws JSONException {
 
     CacheStrategy strategy = CacheStrategies.timeToLive(1, TimeUnit.SECONDS);
-
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline cached = a.addCachePoint(strategy);
 
@@ -283,13 +281,13 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     when(cacheAdapter.getCacheKey(SERVICE_NAME, a.getDescriptor()))
     .thenReturn(cacheKey);
 
-    when(cacheAdapter.get(eq(cacheKey), anyBoolean(), anyInt()))
+    when(cacheAdapter.get(eq(cacheKey), anyObject()))
     .thenReturn(Observable.empty());
 
     String output = cached.getStringOutput().toBlocking().single();
 
     // get must have been called to check if the document is available in the cache
-    verify(cacheAdapter).get(eq(cacheKey), eq(false), eq(1));
+    verify(cacheAdapter).get(eq(cacheKey), anyObject());
 
     // put must have been called with an cache envelope version of the JSON, that contains an additional _cacheInfo
     verify(cacheAdapter).put(eq(cacheKey), Matchers.argThat(new BaseMatcher<String>() {
@@ -308,7 +306,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
         description.appendText("Expected storedObject to contain original value & _cacheInfo");
       }
 
-    }), eq(1));
+    }), anyObject());
 
     // the _cacheInfo however should not be contained in the output
     JSONAssert.assertEquals("{a: 123}", output, JSONCompareMode.STRICT);

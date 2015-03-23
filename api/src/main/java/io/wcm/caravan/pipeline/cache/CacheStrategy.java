@@ -34,30 +34,13 @@ import java.util.Collection;
 public interface CacheStrategy {
 
   /**
-   * Defines the time (in seconds) after which a cached response for the given request should be considered stale. After
-   * this time, the {@link JsonPipeline} will try to fetch a fresh response from the origin server, and will only use
-   * the stale content from cache as a fallback if this attempt fails.
    * @param requests the REST requests that were used to obtain the data to be stored in the cache
-   * @return the duration in seconds until a cached response is considered stale, and should be re-validated
+   * @return cache persistency options for persistent cache strategies
    */
-  int getRefreshInterval(Collection<CaravanHttpRequest> requests);
+  CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests);
 
   /**
-   * Defines the time (in seconds) for which the response to the given request should be at least stored in the cache.
-   * The actual storage time can be longer if {@link #isExtendStorageTimeOnGet(Collection)} or for other
-   * technical reasons.
-   * @param requests the REST requests that were used to obtain the data to be stored in the cache
-   * @return the minimum duration in seconds to keep the response in the cache
+   * @return true if usage of persistent cache is enabled
    */
-  int getStorageTime(Collection<CaravanHttpRequest> requests);
-
-  /**
-   * Determines whether to automatically extend the storage time (to the duration returned by
-   * {@link #getStorageTime(Collection)} whenever a response was successfully retrieved from cache, resulting in a
-   * "time-to-idle" cache behavior, where the total storage time is unlimited, but instead data is kept in the cache
-   * as long as it is still being requested.
-   * @param requests the REST requests that were used to obtain the data to be stored in the cache
-   * @return true if the storage value for this request should be extended on every cache hit
-   */
-  boolean isExtendStorageTimeOnGet(Collection<CaravanHttpRequest> requests);
+  boolean usePersistentCache();
 }
