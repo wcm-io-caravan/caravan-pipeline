@@ -23,21 +23,34 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
+import java.util.Collections;
+
+import org.apache.sling.testing.mock.osgi.junit.OsgiContext;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import rx.Observable;
 
+import com.codahale.metrics.MetricRegistry;
+
 
 public class GuavaCacheAdapterTest {
 
+  @Rule
+  public OsgiContext context = new OsgiContext();
+
   private GuavaCacheAdapter cacheAdapter;
+  private MetricRegistry metricRegistry;
 
   private CachePersistencyOptions options;
 
+  @SuppressWarnings("unchecked")
   @Before
   public void before() {
-    cacheAdapter = new GuavaCacheAdapter();
+    metricRegistry = new MetricRegistry();
+    context.registerService(MetricRegistry.class, metricRegistry);
+    cacheAdapter = context.registerInjectActivateService(new GuavaCacheAdapter(), Collections.EMPTY_MAP);
   }
 
   @Test

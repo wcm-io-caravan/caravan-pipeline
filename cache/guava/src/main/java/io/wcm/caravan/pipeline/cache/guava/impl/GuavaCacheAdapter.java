@@ -22,13 +22,25 @@ package io.wcm.caravan.pipeline.cache.guava.impl;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
+import java.util.Map;
+
+import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Deactivate;
+import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
+import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import rx.Observable;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.Weigher;
 
 /**
  * {@link CacheAdapter} implementation for Guava.
@@ -39,15 +51,44 @@ description = "Configure pipeline caching in guava.")
 @Service(CacheAdapter.class)
 public class GuavaCacheAdapter implements CacheAdapter {
 
-  private Cache<String, String> guavaCache;
+  private static final Logger log = LoggerFactory.getLogger(GuavaCacheAdapter.class);
 
-  /**
-   * Default constructor
-   */
-  public GuavaCacheAdapter() {
-    this.guavaCache = CacheBuilder.newBuilder()
-        .maximumSize(1000)
-        .build();
+  private static final String CACHE_MAXIMUM_WEIGHT_IN_BYTES = "cacheMaximumWeightInBytes";
+  private static final Long CACHE_DEFAULT_WEIGHT_IN_BYTES = 1058816L; // 10 MB
+
+  private Cache<String, String> guavaCache;
+  private long cacheWeight;
+
+  @Reference
+  private MetricRegistry metricRegistry;
+  private Timer getLatencyTimer;
+  private Timer putLatencyTimer;
+  private Counter hitsCounter;
+  private Counter missesCounter;
+
+  @Activate
+  void activate(Map<String, Object> config) {
+    cacheWeight = PropertiesUtil.toLong(config.get(CACHE_MAXIMUM_WEIGHT_IN_BYTES), CACHE_DEFAULT_WEIGHT_IN_BYTES);
+    this.guavaCache = CacheBuilder.newBuilder().weigher(new Weigher<String, String>() {
+      @Override
+      public int weigh(String key, String value) {
+        return 8 * ((((value.length()) * 2) + 45) / 8);
+      }
+    }).maximumWeight(cacheWeight).build();
+
+    getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
+    putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
+    hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "hits"));
+    missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
+
+  }
+
+  @Deactivate
+  void deactivate() {
+    metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "get"));
+    metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "put"));
+    metricRegistry.remove(MetricRegistry.name(getClass(), "hits"));
+    metricRegistry.remove(MetricRegistry.name(getClass(), "misses"));
   }
 
   @Override
@@ -60,16 +101,31 @@ public class GuavaCacheAdapter implements CacheAdapter {
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
 
     Observable<String> entryObservable = Observable.create(subscriber -> {
-      subscriber.onNext(guavaCache.getIfPresent(cacheKey));
+      Timer.Context context = getLatencyTimer.time();
+      String cacheEntry = guavaCache.getIfPresent(cacheKey);
+      if (cacheEntry != null) {
+        hitsCounter.inc();
+      }
+      else {
+        missesCounter.inc();
+      }
+      subscriber.onNext(cacheEntry);
+      context.stop();
+      log.trace("Succesfully retrieved document with id {}: {}", cacheKey, cacheEntry);
       subscriber.onCompleted();
     });
+
 
     return entryObservable;
   }
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
+    Timer.Context context = putLatencyTimer.time();
     guavaCache.put(cacheKey, jsonString);
+    context.stop();
+    log.trace("Document {} has been succesfully put into the Couchbase cache:\n {}", cacheKey, jsonString);
+
   }
 
 }
