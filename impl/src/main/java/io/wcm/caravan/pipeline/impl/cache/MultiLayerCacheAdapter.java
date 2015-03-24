@@ -80,20 +80,22 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
     Observable<String> result = get(cacheKey, options, nonPersistentCacheAdapters);
-    String cachedValue = null;
-    try {
-      cachedValue = result.toBlocking().single();
-    }
-    catch (java.util.NoSuchElementException exception) {
-      // TODO FIND WORKAROUND
-    }
+    String cachedValue = getCacheEntry(result);
     if (cachedValue == null && options != null) {
       result = get(cacheKey, options, persistentCacheAdapters);
-      put(cacheKey, result.toBlocking().single(), options, nonPersistentCacheAdapters);
+      cachedValue = getCacheEntry(result);
+      if (cachedValue != null) {
+        put(cacheKey, cachedValue, options, nonPersistentCacheAdapters);
+      }
     }
 
     return result;
   }
+
+  private String getCacheEntry(Observable<String> observable) {
+    return observable.count().toBlocking().single() > 0 ? observable.toBlocking().first() : null;
+  }
+
 
   private Observable<String> get(String cacheKey, CachePersistencyOptions options, List<CacheAdapter> cacheAdapters) {
     Observable<String> result = null;
