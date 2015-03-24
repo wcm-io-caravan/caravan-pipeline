@@ -26,6 +26,7 @@ import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
 
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -51,8 +52,11 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   @Reference
   private CaravanHttpClient transport;
 
-  @Reference
-  private CacheAdapter cacheAdapter;
+  @Reference(target = "storage=persistent")
+  private CacheAdapter persistentCacheAdapter;
+
+  @Reference(target = "storage=nonpersistent")
+  private CacheAdapter nonpersistentCacheAdapter;
 
   @Reference
   private MetricRegistry metricRegistry;
@@ -70,7 +74,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
     return new JsonPipelineImpl(request, response,
-        new JsonPipelineContext(this, cacheAdapter, metricRegistry, contextProperties));
+        new JsonPipelineContext(this, createMultilayerCacheAdapter(), metricRegistry, contextProperties));
   }
 
   @Override
@@ -90,7 +94,11 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
-        new JsonPipelineContext(this, cacheAdapter, metricRegistry, contextProperties));
+        new JsonPipelineContext(this, createMultilayerCacheAdapter(), metricRegistry, contextProperties));
+  }
+
+  private CacheAdapter createMultilayerCacheAdapter() {
+    return new MultiLayerCacheAdapter(persistentCacheAdapter, nonpersistentCacheAdapter);
   }
 
 }

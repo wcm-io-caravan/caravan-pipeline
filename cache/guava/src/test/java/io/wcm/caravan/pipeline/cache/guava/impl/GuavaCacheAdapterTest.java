@@ -20,43 +20,18 @@
 package io.wcm.caravan.pipeline.cache.guava.impl;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
-import java.util.Collections;
-
-import org.apache.sling.testing.mock.osgi.junit.OsgiContext;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
 import rx.Observable;
 
-import com.codahale.metrics.MetricRegistry;
 
-
-public class GuavaCacheAdapterTest {
-
-  @Rule
-  public OsgiContext context = new OsgiContext();
-
-  private GuavaCacheAdapter cacheAdapter;
-  private MetricRegistry metricRegistry;
-
-  private CachePersistencyOptions options;
-
-  @SuppressWarnings("unchecked")
-  @Before
-  public void before() {
-    metricRegistry = new MetricRegistry();
-    context.registerService(MetricRegistry.class, metricRegistry);
-    cacheAdapter = context.registerInjectActivateService(new GuavaCacheAdapter(), Collections.EMPTY_MAP);
-  }
+public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
 
   @Test
   public void tesGetKey() {
-    String cacheKey = cacheAdapter.getCacheKey("prefix", "descriptor");
-    assertNotNull(cacheKey);
+    String cacheKey = cacheAdapter.getCacheKey("prefix:", "descriptor");
+    assertEquals("prefix:descriptor", cacheKey);
 
   }
 
@@ -66,11 +41,26 @@ public class GuavaCacheAdapterTest {
   }
 
   @Test
+  public void testPutNullOptions() {
+    cacheAdapter.put("key", "value", null);
+  }
+
+  @Test
   public void testGet() {
     cacheAdapter.put("key", "value", options);
     Observable<String> cachedValueObservable = cacheAdapter.get("key", options);
     String value = cachedValueObservable.toBlocking().first();
     assertEquals("value", value);
   }
+
+  @Test
+  public void testGetNullOptions() {
+    cacheAdapter.put("key", "value", null);
+    Observable<String> cachedValueObservable = cacheAdapter.get("key", null);
+    String value = cachedValueObservable.toBlocking().first();
+    assertEquals("value", value);
+  }
+
+
 
 }

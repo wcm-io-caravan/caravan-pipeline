@@ -27,6 +27,7 @@ import java.util.Map;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
+import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.commons.osgi.PropertiesUtil;
@@ -49,6 +50,7 @@ import com.google.common.cache.Weigher;
 label = "wcm.io Caravan Pipeline Cache Adapter for Guava",
 description = "Configure pipeline caching in guava.")
 @Service(CacheAdapter.class)
+@Property(name = "storage", value = "nonpersistent")
 public class GuavaCacheAdapter implements CacheAdapter {
 
   private static final Logger log = LoggerFactory.getLogger(GuavaCacheAdapter.class);

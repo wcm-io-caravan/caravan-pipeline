@@ -60,6 +60,7 @@ import com.couchbase.client.java.document.RawJsonDocument;
 label = "wcm.io Caravan Pipeline Cache Adapter for Couchbase",
 description = "Configure pipeline caching in couchbase.")
 @Service(CacheAdapter.class)
+@Property(name = "storage", value = "persistent")
 public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Property(label = "Cache Key Prefix", description = "Prefix for caching keys.")
