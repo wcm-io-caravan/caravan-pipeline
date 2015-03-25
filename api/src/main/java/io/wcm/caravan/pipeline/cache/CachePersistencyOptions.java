@@ -20,10 +20,12 @@
 package io.wcm.caravan.pipeline.cache;
 
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 /**
- * Cache persistency options declare cache response refresh interval, storage time and automatical extension of
- * storage time. See also {@link CacheStrategy}.
+ * Cache persistency options configure entry store requirements while read or write operations in {@link CacheAdapter}.
+ * Options specify cache response refresh interval, storage time and automatical extension of storage time per stored
+ * entry. See also {@link CacheStrategy}.
  */
 public class CachePersistencyOptions {
 
@@ -44,28 +46,31 @@ public class CachePersistencyOptions {
   }
 
   /**
-   * Extend storage time false
-   * @param refreshInterval
-   * @param storageTime
-   * @return
+   * Creates caching options specifying cache refresh interval and storing time per entry without next extension of
+   * storing time.
+   * @param refreshInterval cached response refresh interval in seconds
+   * @param storageTime time of response storing in seconds
+   * @return persistent caching options without storage time extension
    */
   public static CachePersistencyOptions createPersistentAndTimeToLive(int refreshInterval, int storageTime) {
     return new CachePersistencyOptions(refreshInterval, storageTime, false);
   }
 
   /**
-   * Extend storage time true
-   * @param refreshInterval
-   * @param storageTime
-   * @return
+   * Creates caching options specifying cache refresh interval and storing time per entry with next extension of
+   * storing time.
+   * @param refreshInterval cached response refresh interval in seconds
+   * @param storageTime time of response storing in seconds
+   * @return persistent caching options with storage time extension
    */
   public static CachePersistencyOptions createPersistentAndTimeToIdle(int refreshInterval, int storageTime) {
     return new CachePersistencyOptions(refreshInterval, storageTime, true);
   }
 
   /**
-   * @param refreshInterval
-   * @return
+   * Creates caching options specifying cache refresh interval. No entry storing time is declared.
+   * @param refreshInterval cached response refresh interval in seconds
+   * @return transient caching options
    */
   public static CachePersistencyOptions createTransient(int refreshInterval) {
     return new CachePersistencyOptions(refreshInterval, 0, false);
