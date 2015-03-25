@@ -25,7 +25,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
  * Cache persistency options declare cache response refresh interval, storage time and automatical extension of
  * storage time. See also {@link CacheStrategy}.
  */
-public final class CachePersistencyOptions {
+public class CachePersistencyOptions {
 
   private final int refreshInterval;
   private final int storageTime;
@@ -37,7 +37,7 @@ public final class CachePersistencyOptions {
    * @param storageTime time of response storing in seconds
    * @param extendStorageTimeOnGet true if storage time should be extended
    */
-  private CachePersistencyOptions(int refreshInterval, int storageTime, boolean extendStorageTimeOnGet) {
+  public CachePersistencyOptions(int refreshInterval, int storageTime, boolean extendStorageTimeOnGet) {
     this.refreshInterval = refreshInterval;
     this.storageTime = storageTime;
     this.extendStorageTimeOnGet = extendStorageTimeOnGet;
