@@ -37,23 +37,20 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   private List<CacheAdapter> nonPersistentCacheAdapters;
 
   /**
-   * @param persistentCacheAdapters
-   * @param nonPersistentCacheAdapters
-   */
-  public MultiLayerCacheAdapter(List<CacheAdapter> persistentCacheAdapters, List<CacheAdapter> nonPersistentCacheAdapters) {
-    this.persistentCacheAdapters = new LinkedList<CacheAdapter>(persistentCacheAdapters);
-    this.nonPersistentCacheAdapters = new LinkedList<CacheAdapter>(nonPersistentCacheAdapters);
-  }
-
-  /**
    * @param persistentCacheAdapter
    * @param nonPersistentCacheAdapter
    */
   public MultiLayerCacheAdapter(CacheAdapter persistentCacheAdapter, CacheAdapter nonPersistentCacheAdapter) {
     persistentCacheAdapters = new LinkedList<CacheAdapter>();
-    persistentCacheAdapters.add(persistentCacheAdapter);
+    if (persistentCacheAdapter != null) {
+      persistentCacheAdapters.add(persistentCacheAdapter);
+    }
+
     nonPersistentCacheAdapters = new LinkedList<CacheAdapter>();
-    nonPersistentCacheAdapters.add(nonPersistentCacheAdapter);
+    if (nonPersistentCacheAdapter != null) {
+      nonPersistentCacheAdapters.add(nonPersistentCacheAdapter);
+    }
+
   }
 
   @Override
@@ -79,21 +76,26 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
-    Observable<String> result = get(cacheKey, options, nonPersistentCacheAdapters);
-    String cachedValue = getCacheEntry(result);
-    if (cachedValue == null && options != null) {
-      result = get(cacheKey, options, persistentCacheAdapters);
-      cachedValue = getCacheEntry(result);
-      if (cachedValue != null) {
-        put(cacheKey, cachedValue, options, nonPersistentCacheAdapters);
+    return Observable.create(subscriber -> {
+      Observable<String> result = get(cacheKey, options, nonPersistentCacheAdapters);
+      String cachedValue = getCacheEntry(result);
+      if (cachedValue == null && options != null) {
+        result = get(cacheKey, options, persistentCacheAdapters);
+        cachedValue = getCacheEntry(result);
+        if (cachedValue != null) {
+          put(cacheKey, cachedValue, options, nonPersistentCacheAdapters);
+        }
       }
-    }
+      if (cachedValue != null) {
+        subscriber.onNext(cachedValue);
+      }
+      subscriber.onCompleted();
+    });
 
-    return result;
   }
 
   private String getCacheEntry(Observable<String> observable) {
-    return observable.count().toBlocking().single() > 0 ? observable.toBlocking().first() : null;
+    return observable == null ? null : (observable.count().toBlocking().single() > 0 ? observable.toBlocking().first() : null);
   }
 
 
@@ -102,12 +104,13 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
 
     for (CacheAdapter cacheAdapter : cacheAdapters) {
       result = cacheAdapter.get(cacheKey, options);
-      if (result != null) {
+
+      if (result != null && !result.isEmpty().toBlocking().first()) {
         break;
       }
     }
 
-    return result;
+    return result != null ? result : Observable.empty();
   }
 
 

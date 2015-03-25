@@ -87,7 +87,7 @@ public class CouchbaseCacheAdapterTest {
         .put(CouchbaseCacheAdapter.CACHE_KEY_PREFIX_PROPERTY, "prefix:")
         .put(CouchbaseCacheAdapter.CACHE_TIMEOUT_PROPERTY, 100)
         .build());
-    cachePersistencyOptions = new CachePersistencyOptions(100, 0, false);
+    cachePersistencyOptions = CachePersistencyOptions.createPersistentAndTimeToLive(100, 10);
   }
 
   @Test

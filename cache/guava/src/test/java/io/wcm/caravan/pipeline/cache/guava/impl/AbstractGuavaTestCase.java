@@ -43,17 +43,16 @@ public class AbstractGuavaTestCase {
     super();
   }
 
-  @SuppressWarnings("unchecked")
   @Before
   public void before() {
     metricRegistry = new MetricRegistry();
     context.registerService(MetricRegistry.class, metricRegistry);
     cacheAdapter = context.registerInjectActivateService(new GuavaCacheAdapter(), getCacheConfig());
-    options = new CachePersistencyOptions(100, 10, true);
+    options = CachePersistencyOptions.createPersistentAndTimeToIdle(100, 10);
   }
 
   protected Map<String, Object> getCacheConfig() {
-    return Collections.EMPTY_MAP;
+    return Collections.emptyMap();
   }
 
 }

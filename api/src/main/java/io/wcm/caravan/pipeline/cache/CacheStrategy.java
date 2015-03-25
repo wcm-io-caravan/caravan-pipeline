@@ -39,8 +39,4 @@ public interface CacheStrategy {
    */
   CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests);
 
-  /**
-   * @return true if usage of persistent cache is enabled
-   */
-  boolean usePersistentCache();
 }

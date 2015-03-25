@@ -20,7 +20,7 @@
 package io.wcm.caravan.pipeline.cache.guava.impl;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -196,7 +196,6 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
   }
 
   private void assertEntryRemoved(String entryKey) {
-    String receivedEntry = cacheAdapter.get(entryKey, null).toBlocking().first();
-    assertNull("EntryKey: " + entryKey, receivedEntry);
+    assertTrue("EntryKey: " + entryKey, cacheAdapter.get(entryKey, null).isEmpty().toBlocking().single());
   }
 }

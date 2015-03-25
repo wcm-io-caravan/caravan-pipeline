@@ -25,7 +25,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
  * Cache persistency options declare cache response refresh interval, storage time and automatical extension of
  * storage time. See also {@link CacheStrategy}.
  */
-public class CachePersistencyOptions {
+public final class CachePersistencyOptions {
 
   private final int refreshInterval;
   private final int storageTime;
@@ -37,10 +37,38 @@ public class CachePersistencyOptions {
    * @param storageTime time of response storing in seconds
    * @param extendStorageTimeOnGet true if storage time should be extended
    */
-  public CachePersistencyOptions(int refreshInterval, int storageTime, boolean extendStorageTimeOnGet) {
+  private CachePersistencyOptions(int refreshInterval, int storageTime, boolean extendStorageTimeOnGet) {
     this.refreshInterval = refreshInterval;
     this.storageTime = storageTime;
     this.extendStorageTimeOnGet = extendStorageTimeOnGet;
+  }
+
+  /**
+   * Extend storage time false
+   * @param refreshInterval
+   * @param storageTime
+   * @return
+   */
+  public static CachePersistencyOptions createPersistentAndTimeToLive(int refreshInterval, int storageTime) {
+    return new CachePersistencyOptions(refreshInterval, storageTime, false);
+  }
+
+  /**
+   * Extend storage time true
+   * @param refreshInterval
+   * @param storageTime
+   * @return
+   */
+  public static CachePersistencyOptions createPersistentAndTimeToIdle(int refreshInterval, int storageTime) {
+    return new CachePersistencyOptions(refreshInterval, storageTime, true);
+  }
+
+  /**
+   * @param refreshInterval
+   * @return
+   */
+  public static CachePersistencyOptions createTransient(int refreshInterval) {
+    return new CachePersistencyOptions(refreshInterval, 0, false);
   }
 
   /**
@@ -73,12 +101,19 @@ public class CachePersistencyOptions {
   }
 
   /**
-   * Checks if the caching logic is not available. Skip cache usage if no caching logic (storage time or refresh
-   * interval) is specified.
-   * @return true if storage time or refresh interval are not specified (are equivalent to 0).
+   * Checks if the entry should be cached.
+   * @return true if refresh interval is specified (more than 0).
    */
-  public boolean isInvalidCachingLogic() {
-    return storageTime == 0 || refreshInterval == 0;
+  public boolean isCacheable() {
+    return refreshInterval > 0;
+  }
+
+  /**
+   * Check if the entry should be cached by persistent cache implementation.
+   * @return true if storage time is specified (more than 0).
+   */
+  public boolean isPersistent() {
+    return storageTime > 0;
   }
 
   @Override

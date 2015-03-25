@@ -71,6 +71,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_TIMEOUT_PROPERTY = "cacheTimeout";
   private static final int CACHE_TIMEOUT_DEFAULT = 1000;
 
+  @Property(label = "Cache Writable", description = "True if cache supports write and read operations, false if cache supports only read operations")
+  static final String CACHE_WRITABLE_PROPERTY = "cacheWritable";
+  private static final boolean CACHE_WRITABLE_DEFAULT = true;
+
   private static final int MAX_CACHE_KEY_LENGTH = 250;
 
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
@@ -90,11 +94,13 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   private String keyPrefix;
   private int timeout;
+  private boolean writable;
 
   @Activate
   private void activate(Map<String, Object> config) {
     keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
     timeout = PropertiesUtil.toInteger(config.get(CACHE_TIMEOUT_PROPERTY), CACHE_TIMEOUT_DEFAULT);
+    writable = PropertiesUtil.toBoolean(config.get(CACHE_WRITABLE_PROPERTY), CACHE_WRITABLE_DEFAULT);
 
     getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
@@ -170,6 +176,9 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
+    if (!writable || !options.isPersistent()) {
+      return;
+    }
 
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 

@@ -102,23 +102,21 @@ public class GuavaCacheAdapter implements CacheAdapter {
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
 
-    Observable<String> entryObservable = Observable.create(subscriber -> {
+    return Observable.create(subscriber -> {
       Timer.Context context = getLatencyTimer.time();
       String cacheEntry = guavaCache.getIfPresent(cacheKey);
       if (cacheEntry != null) {
         hitsCounter.inc();
+        subscriber.onNext(cacheEntry);
       }
       else {
         missesCounter.inc();
       }
-      subscriber.onNext(cacheEntry);
       context.stop();
       log.trace("Succesfully retrieved document with id {}: {}", cacheKey, cacheEntry);
       subscriber.onCompleted();
     });
 
-
-    return entryObservable;
   }
 
   @Override

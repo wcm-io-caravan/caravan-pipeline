@@ -50,16 +50,15 @@ import com.google.common.collect.Lists;
 @RunWith(MockitoJUnitRunner.class)
 public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
-
   @Mock
   private CacheStrategy cacheStrategy;
 
-  @Mock
   private CachePersistencyOptions cachePersistencyOptions;
 
 
   @Before
   public void setUp() {
+    cachePersistencyOptions = CachePersistencyOptions.createTransient(100);
     Mockito.when(cacheAdapter.getCacheKey(Matchers.anyString(), Matchers.anyString())).thenReturn("test-cache-key");
     Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.anyCollection())).thenReturn(cachePersistencyOptions);
     Mockito.when(cacheAdapter.get(Matchers.anyString(), Matchers.anyObject())).thenReturn(Observable.just("{}"));

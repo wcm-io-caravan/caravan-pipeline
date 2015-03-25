@@ -206,7 +206,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline addCachePoint(CacheStrategy strategy) {
     CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
     // skip all caching logic if the expiry time or refresh interval for this request is 0
-    if (options.isInvalidCachingLogic()) {
+    if (!options.isCacheable()) {
       return this;
     }
 
