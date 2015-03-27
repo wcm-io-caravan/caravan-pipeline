@@ -63,12 +63,14 @@ public class GuavaCacheAdapter implements CacheAdapter {
       description = "Priority of parameter persistence providers (higher value = higher priority)",
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
-  static final int DEFAULT_RANKING = 2000;
+  static final int DEFAULT_RANKING = 1000;
 
   @Property(label = "Cache Maximum Weight In Bytes",
       description = "Declares the weight of the cache. Each cache entry could not be larger than 1/4 of the declared cache weight")
   static final String CACHE_MAXIMUM_WEIGHT_IN_BYTES = "cacheMaximumWeightInBytes";
   private static final Long CACHE_DEFAULT_WEIGHT_IN_BYTES = 1058816L; // 10 MB
+
+  private static final String KEY_PREFIX = "guava";
 
   private Cache<String, String> guavaCache;
   private long cacheWeight;
@@ -107,7 +109,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public String getCacheKey(String servicePrefix, String descriptor) {
-    return servicePrefix + descriptor;
+    return KEY_PREFIX + ":" + servicePrefix + ":" + descriptor;
 
   }
 
