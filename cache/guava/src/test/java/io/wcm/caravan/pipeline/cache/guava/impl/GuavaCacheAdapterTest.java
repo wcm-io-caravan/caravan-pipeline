@@ -23,8 +23,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import rx.Observable;
-
 
 public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
 
@@ -36,31 +34,27 @@ public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
   }
 
   @Test
-  public void testPut() {
+  public void testPutAndGetWithOptions() {
     cacheAdapter.put("key", "value", options);
+    assertGet("key", options, "value");
   }
 
   @Test
-  public void testPutNullOptions() {
+  public void testPutAndGetNullOptions() {
     cacheAdapter.put("key", "value", null);
+    assertGet("key", null, "value");
   }
 
   @Test
-  public void testGet() {
+  public void testPutNullOptionsAndGetWithOptions() {
+    cacheAdapter.put("key", "value", null);
+    assertGet("key", options, "value");
+  }
+
+  @Test
+  public void testPutWithOptionsAndGetNoOptions() {
     cacheAdapter.put("key", "value", options);
-    Observable<String> cachedValueObservable = cacheAdapter.get("key", options);
-    String value = cachedValueObservable.toBlocking().first();
-    assertEquals("value", value);
+    assertGet("key", null, "value");
   }
-
-  @Test
-  public void testGetNullOptions() {
-    cacheAdapter.put("key", "value", null);
-    Observable<String> cachedValueObservable = cacheAdapter.get("key", null);
-    String value = cachedValueObservable.toBlocking().first();
-    assertEquals("value", value);
-  }
-
-
 
 }

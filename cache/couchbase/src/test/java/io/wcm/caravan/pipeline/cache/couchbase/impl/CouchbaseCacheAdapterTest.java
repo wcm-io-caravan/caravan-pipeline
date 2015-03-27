@@ -159,6 +159,9 @@ public class CouchbaseCacheAdapterTest {
   @Test
   public void testGetNoOptions() throws Exception {
     Observable<String> observable = adapter.get(CACHE_KEY, null);
+
+    // Checks that the get method returns empty Observable after input parameters validation.
+    // Get operations with absent options should be ignored.
     assertTrue(observable.isEmpty().toBlocking().first());
   }
 
@@ -217,12 +220,18 @@ public class CouchbaseCacheAdapterTest {
 
   public void testPutNoOptions() throws Exception {
     adapter.put(CACHE_KEY, JSON_DOC, null);
+
+    // Checks that the put method does not invoke next steps after input parameters validation.
+    // Put operations with absent options should be ignored.
     verify(couchbaseClientProvider, times(0)).getCacheBucket();
   }
 
   @Test
   public void testPutNonPersistentOptions() throws Exception {
     adapter.put(CACHE_KEY, JSON_DOC, CachePersistencyOptions.createTransient(100));
+
+    // Checks that the put method does not invoke next steps after input parameters validation.
+    // Put operations with transient input data should be ignored.
     verify(couchbaseClientProvider, times(0)).getCacheBucket();
   }
 
@@ -234,6 +243,9 @@ public class CouchbaseCacheAdapterTest {
         .put(CouchbaseCacheAdapter.CACHE_WRITABLE_PROPERTY, false)
         .build());
     adapter.put(CACHE_KEY, JSON_DOC, cachePersistencyOptions);
+
+    // Checks that the put method does not invoke next steps after config parameters validation.
+    // Put operations should be ignored for non writable caches (cacheWritable = false).
     verify(couchbaseClientProvider, times(0)).getCacheBucket();
   }
 

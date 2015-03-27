@@ -46,6 +46,10 @@ import com.google.common.cache.Weigher;
 
 /**
  * {@link CacheAdapter} implementation for Guava.
+ * Provides guava {@link Cache}, which size is specified in bytes. Default cache size is 10 MB. Provide higher property
+ * value {@value #CACHE_MAXIMUM_WEIGHT_IN_BYTES} to set up higher cache capacity.
+ * items life time depends on the amount and size of stored cache items. Items, which capacity is higher than 1/4 of the
+ * declared cache size will not be stored.
  */
 @Component(immediate = true, metatype = true,
 label = "wcm.io Caravan Pipeline Cache Adapter for Guava",

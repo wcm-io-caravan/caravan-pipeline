@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline.cache.guava.impl;
 
+import static org.junit.Assert.assertEquals;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
 import java.util.Collections;
@@ -27,6 +28,8 @@ import java.util.Map;
 import org.apache.sling.testing.mock.osgi.junit.OsgiContext;
 import org.junit.Before;
 import org.junit.Rule;
+
+import rx.Observable;
 
 import com.codahale.metrics.MetricRegistry;
 
@@ -53,6 +56,12 @@ public class AbstractGuavaTestCase {
 
   protected Map<String, Object> getCacheConfig() {
     return Collections.emptyMap();
+  }
+
+  protected void assertGet(String cacheKey, CachePersistencyOptions cacheOptions, String expectedEntry) {
+    Observable<String> cachedValueObservable = cacheAdapter.get(cacheKey, cacheOptions);
+    String actualEntry = cachedValueObservable.toBlocking().first();
+    assertEquals(expectedEntry, actualEntry);
   }
 
 }
