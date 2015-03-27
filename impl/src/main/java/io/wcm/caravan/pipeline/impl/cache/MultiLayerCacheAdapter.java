@@ -40,7 +40,7 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   /**
    * Return multi layer cache key, if no cache key was returned by any child cache adapter.
    */
-  public static final String MULTILAYER_CACHE_KEY = "Multilayer cache key";
+  public static final String MULTILAYER_CACHE_KEY = "NO_CACHEADAPTER_AVAILABLE";
 
   private List<CacheAdapter> cacheAdapters;
 
@@ -64,19 +64,17 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
    */
   @Override
   public String getCacheKey(String servicePrefix, String descriptor) {
-    String cacheKey = null;
 
-    for (CacheAdapter cacheAdapter : cacheAdapters) {
-      String nextCacheKey = cacheAdapter.getCacheKey(servicePrefix, descriptor);
-      cacheKey = chooseTheShortestCacheKey(cacheKey, nextCacheKey);
+    // FIXME: for now we are just taking the cache-key of the last level, assuming that this is the couchbase cache
+    // (which is currently the only service in the system that knows the configurable cache-key-prefix)
+
+    String cacheKey = MULTILAYER_CACHE_KEY;
+    if (cacheAdapters.size() > 0) {
+      CacheAdapter lastCache = cacheAdapters.get(cacheAdapters.size() - 1);
+      cacheKey = lastCache.getCacheKey(servicePrefix, descriptor);
     }
 
-    return cacheKey != null ? cacheKey : MULTILAYER_CACHE_KEY;
-  }
-
-  private String chooseTheShortestCacheKey(String actualCacheKey, String nextCacheKey) {
-    return actualCacheKey == null ? nextCacheKey :
-      (actualCacheKey.length() > nextCacheKey.length() ? nextCacheKey : actualCacheKey);
+    return cacheKey;
   }
 
   /**

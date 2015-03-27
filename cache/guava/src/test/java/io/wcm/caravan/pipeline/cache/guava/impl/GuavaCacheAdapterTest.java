@@ -28,8 +28,8 @@ public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
 
   @Test
   public void tesGetKey() {
-    String cacheKey = cacheAdapter.getCacheKey("prefix:", "descriptor");
-    assertEquals("prefix:descriptor", cacheKey);
+    String cacheKey = cacheAdapter.getCacheKey("prefix", "descriptor");
+    assertEquals("guava:prefix:descriptor", cacheKey);
 
   }
 

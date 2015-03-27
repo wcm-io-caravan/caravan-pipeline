@@ -70,7 +70,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
   static final String CACHE_MAXIMUM_WEIGHT_IN_BYTES = "cacheMaximumWeightInBytes";
   private static final Long CACHE_DEFAULT_WEIGHT_IN_BYTES = 1058816L; // 10 MB
 
-  private static final String KEY_PREFIX = "guava";
+  private static final String KEY_PREFIX = "guava:";
 
   private Cache<String, String> guavaCache;
   private long cacheWeight;
@@ -109,7 +109,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public String getCacheKey(String servicePrefix, String descriptor) {
-    return KEY_PREFIX + ":" + servicePrefix + ":" + descriptor;
+    return KEY_PREFIX + servicePrefix + ":" + descriptor;
 
   }
 
