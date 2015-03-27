@@ -186,6 +186,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);
 
     insertionObservable
+    .timeout(timeout, TimeUnit.MILLISECONDS, Observable.create(f -> {
+      log.warn("Timeout writing into Couchbase cache");
+      f.onCompleted();
+    }))
     .lift(new TimerMetricsOperator<RawJsonDocument>(putLatencyTimer))
     .subscribe(new Observer<RawJsonDocument>() {
 

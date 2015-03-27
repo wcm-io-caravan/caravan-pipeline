@@ -38,9 +38,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 import rx.Observable;
 
@@ -172,20 +170,17 @@ public class CouchbaseCacheAdapterTest {
 
     assertEquals(1, getPutLatencyTimer().getCount());
     assertTrue(getPutLatencyTimer().getSnapshot().getMean() / 1000000 >= 50);
+    assertTrue(getPutLatencyTimer().getSnapshot().getMean() / 1000000 <= 100);
   }
 
   private Timer getPutLatencyTimer() {
     return metricRegistry.getTimers().get(MetricRegistry.name(CouchbaseCacheAdapter.class, "latency", "put"));
   }
 
+  @Test
   public void testGet_timeout() {
-    when(bucket.get(CACHE_KEY, RawJsonDocument.class)).then(new Answer<Observable>() {
-
-      @Override
-      public Observable<RawJsonDocument> answer(InvocationOnMock invocation) {
-        return Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS);
-      }
-    });
+    when(bucket.get(CACHE_KEY, RawJsonDocument.class))
+    .thenReturn(Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS));
     String output = adapter.get(CACHE_KEY, cachePersistencyOptions).toBlocking().singleOrDefault(null);
     assertNull(output);
     assertEquals(0, getHitCounter().getCount());
@@ -193,4 +188,23 @@ public class CouchbaseCacheAdapterTest {
     assertEquals(1, getGetLatencyTimer().getCount());
     assertTrue(getGetLatencyTimer().getSnapshot().getMean() / 1000000 >= 100);
   }
+
+  @Test
+  public void testPut_timeout() throws InterruptedException {
+    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    .thenReturn(Observable.just(RawJsonDocument.create("test-id", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS));
+    adapter.put(CACHE_KEY, JSON_DOC, cachePersistencyOptions);
+
+    // we currently have no proper way to detecting that the put was completed, so we wait (up to one second)
+    // until the put-latency timer has been stopped
+    int millisWaited = 0;
+    while (getPutLatencyTimer().getCount() == 0 && millisWaited < 1000) {
+      Thread.sleep(1);
+      millisWaited++;
+    }
+
+    assertEquals(1, getPutLatencyTimer().getCount());
+    assertTrue(getPutLatencyTimer().getSnapshot().getMean() / 1000000 >= 100);
+  }
+
 }
