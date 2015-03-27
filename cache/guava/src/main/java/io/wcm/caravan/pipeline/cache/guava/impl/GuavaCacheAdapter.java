@@ -31,6 +31,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,12 +51,19 @@ import com.google.common.cache.Weigher;
 label = "wcm.io Caravan Pipeline Cache Adapter for Guava",
 description = "Configure pipeline caching in guava.")
 @Service(CacheAdapter.class)
-@Property(name = "storage", value = "nonpersistent")
 public class GuavaCacheAdapter implements CacheAdapter {
 
   private static final Logger log = LoggerFactory.getLogger(GuavaCacheAdapter.class);
 
-  private static final String CACHE_MAXIMUM_WEIGHT_IN_BYTES = "cacheMaximumWeightInBytes";
+  @Property(label = "Service Ranking", intValue = GuavaCacheAdapter.DEFAULT_RANKING,
+      description = "Priority of parameter persistence providers (lower = higher priority)",
+      propertyPrivate = false)
+  static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
+  static final int DEFAULT_RANKING = 1000;
+
+  @Property(label = "Cache Maximum Weight In Bytes",
+      description = "Declares the weight of the cache. Each cache entry could not be larger than 1/4 of the declared cache weight")
+  static final String CACHE_MAXIMUM_WEIGHT_IN_BYTES = "cacheMaximumWeightInBytes";
   private static final Long CACHE_DEFAULT_WEIGHT_IN_BYTES = 1058816L; // 10 MB
 
   private Cache<String, String> guavaCache;

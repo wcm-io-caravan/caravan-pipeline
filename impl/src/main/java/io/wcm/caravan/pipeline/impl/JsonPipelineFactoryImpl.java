@@ -29,13 +29,17 @@ import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Reference;
+import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.apache.felix.scr.annotations.ReferencePolicy;
 import org.apache.felix.scr.annotations.Service;
+import org.apache.sling.commons.osgi.RankedServices;
 
 import rx.Observable;
 
@@ -52,11 +56,9 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   @Reference
   private CaravanHttpClient transport;
 
-  @Reference(target = "storage=persistent")
-  private CacheAdapter persistentCacheAdapter;
-
-  @Reference(target = "storage=nonpersistent")
-  private CacheAdapter nonpersistentCacheAdapter;
+  @Reference(name = "cacheAdapter", referenceInterface = CacheAdapter.class,
+      cardinality = ReferenceCardinality.OPTIONAL_MULTIPLE, policy = ReferencePolicy.DYNAMIC)
+  private final RankedServices<CacheAdapter> cacheAdapters = new RankedServices<>();
 
   @Reference
   private MetricRegistry metricRegistry;
@@ -98,7 +100,15 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   }
 
   private CacheAdapter createMultilayerCacheAdapter() {
-    return new MultiLayerCacheAdapter(persistentCacheAdapter, nonpersistentCacheAdapter);
+    return new MultiLayerCacheAdapter(new ArrayList<CacheAdapter>(cacheAdapters.get()));
+  }
+
+  void bindCacheAdapter(CacheAdapter service, Map<String, Object> props) {
+    cacheAdapters.bind(service, props);
+  }
+
+  void unbindCacheAdapter(CacheAdapter service, Map<String, Object> props) {
+    cacheAdapters.unbind(service, props);
   }
 
 }

@@ -39,6 +39,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +61,13 @@ import com.couchbase.client.java.document.RawJsonDocument;
 label = "wcm.io Caravan Pipeline Cache Adapter for Couchbase",
 description = "Configure pipeline caching in couchbase.")
 @Service(CacheAdapter.class)
-@Property(name = "storage", value = "persistent")
 public class CouchbaseCacheAdapter implements CacheAdapter {
+
+  @Property(label = "Service Ranking", intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
+      description = "Priority of parameter persistence providers (lower = higher priority)",
+      propertyPrivate = false)
+  static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
+  static final int DEFAULT_RANKING = 2000;
 
   @Property(label = "Cache Key Prefix", description = "Prefix for caching keys.")
   static final String CACHE_KEY_PREFIX_PROPERTY = "cacheKeyPrefix";
@@ -71,7 +77,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_TIMEOUT_PROPERTY = "cacheTimeout";
   private static final int CACHE_TIMEOUT_DEFAULT = 1000;
 
-  @Property(label = "Cache Writable", description = "True if cache supports write and read operations, false if cache supports only read operations")
+  @Property(label = "Cache Writable",
+      description = "True if cache supports write and read operations, false if cache supports only read operations")
   static final String CACHE_WRITABLE_PROPERTY = "cacheWritable";
   private static final boolean CACHE_WRITABLE_DEFAULT = true;
 
@@ -149,6 +156,9 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
+    if (options == null) {
+      return Observable.empty();
+    }
 
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 
@@ -176,7 +186,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    if (!writable || !options.isPersistent()) {
+    if (!writable || options == null || !options.isPersistent()) {
       return;
     }
 

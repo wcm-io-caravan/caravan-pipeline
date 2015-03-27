@@ -28,6 +28,8 @@ import static org.mockito.Mockito.when;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
+import java.util.LinkedList;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +50,7 @@ public class MultiLayerCacheAdapterTest {
 
   @Before
   public void setup() {
-    cacheAdapter = new MultiLayerCacheAdapter(persistentCacheAdapter, nonpersistentCacheAdapter);
+    cacheAdapter = createMultilayerCacheAdapter(persistentCacheAdapter, nonpersistentCacheAdapter);
     options = CachePersistencyOptions.createPersistentAndTimeToIdle(100, 10);
   }
 
@@ -74,7 +76,7 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetCacheKeyPersistentCacheOnly() {
-    cacheAdapter = new MultiLayerCacheAdapter(persistentCacheAdapter, null);
+    cacheAdapter = createMultilayerCacheAdapter(persistentCacheAdapter, null);
     when(persistentCacheAdapter.getCacheKey("servicePrefix", "descriptor")).thenReturn("longKey");
     String cacheKey = cacheAdapter.getCacheKey("servicePrefix", "descriptor");
     assertEquals("longKey", cacheKey);
@@ -83,7 +85,7 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetCacheKeyNonPersistentCacheOnly() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, nonpersistentCacheAdapter);
+    cacheAdapter = createMultilayerCacheAdapter(null, nonpersistentCacheAdapter);
     when(nonpersistentCacheAdapter.getCacheKey("servicePrefix", "descriptor")).thenReturn("longKey");
     String cacheKey = cacheAdapter.getCacheKey("servicePrefix", "descriptor");
     assertEquals("longKey", cacheKey);
@@ -92,7 +94,7 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetCacheKeyNotInitialized() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, null);
+    cacheAdapter = createMultilayerCacheAdapter(null, null);
     String cacheKey = cacheAdapter.getCacheKey("servicePrefix", "descriptor");
     assertNull(cacheKey);
   }
@@ -107,41 +109,41 @@ public class MultiLayerCacheAdapterTest {
   @Test
   public void testPutNullOptions() {
     cacheAdapter.put("key", "entry", null);
-    verify(persistentCacheAdapter, times(0)).put("key", "entry", null);
+    verify(persistentCacheAdapter, times(1)).put("key", "entry", null);
     verify(nonpersistentCacheAdapter, times(1)).put("key", "entry", null);
   }
 
   @Test
   public void testPutNonPersistentOnly() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, nonpersistentCacheAdapter);
+    cacheAdapter = createMultilayerCacheAdapter(null, nonpersistentCacheAdapter);
     cacheAdapter.put("key", "entry", options);
     verify(nonpersistentCacheAdapter, times(1)).put("key", "entry", options);
   }
 
   @Test
   public void testPutNonPersistentOnlyNoOptions() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, nonpersistentCacheAdapter);
+    cacheAdapter = createMultilayerCacheAdapter(null, nonpersistentCacheAdapter);
     cacheAdapter.put("key", "entry", null);
     verify(nonpersistentCacheAdapter, times(1)).put("key", "entry", null);
   }
 
   @Test
   public void testPutPersistentOnly() {
-    cacheAdapter = new MultiLayerCacheAdapter(persistentCacheAdapter, null);
+    cacheAdapter = createMultilayerCacheAdapter(persistentCacheAdapter, null);
     cacheAdapter.put("key", "entry", options);
     verify(persistentCacheAdapter, times(1)).put("key", "entry", options);
   }
 
   @Test
   public void testPutPersistentOnlyNoOptions() {
-    cacheAdapter = new MultiLayerCacheAdapter(persistentCacheAdapter, null);
+    cacheAdapter = createMultilayerCacheAdapter(persistentCacheAdapter, null);
     cacheAdapter.put("key", "entry", null);
-    verify(persistentCacheAdapter, times(0)).put("key", "entry", null);
+    verify(persistentCacheAdapter, times(1)).put("key", "entry", null);
   }
 
   @Test
   public void testPutNotInitialized() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, null);
+    cacheAdapter = createMultilayerCacheAdapter(null, null);
     cacheAdapter.put("key", "entry", null);
     cacheAdapter.put("key", "entry", options);
     // ANY EXCEPTIONAL BEHAVIOUR?
@@ -162,7 +164,9 @@ public class MultiLayerCacheAdapterTest {
   public void testGetNonPersistentNoOptions() {
     when(nonpersistentCacheAdapter.get("key", null)).thenReturn(Observable.just("entry"));
     Observable<String> observableResult = cacheAdapter.get("key", null);
+
     assertEquals("entry", observableResult.toBlocking().single());
+
     verify(persistentCacheAdapter, times(0)).get("key", null);
     verify(nonpersistentCacheAdapter, times(1)).get("key", null);
     verify(persistentCacheAdapter, times(0)).put("key", "entry", null);
@@ -172,7 +176,7 @@ public class MultiLayerCacheAdapterTest {
   @Test
   public void testGetPersistent() {
     when(persistentCacheAdapter.get("key", options)).thenReturn(Observable.just("entry"));
-    when(nonpersistentCacheAdapter.get("key", options)).thenReturn(Observable.just(null));
+    when(nonpersistentCacheAdapter.get("key", options)).thenReturn(Observable.empty());
     Observable<String> observableResult = cacheAdapter.get("key", options);
     assertEquals("entry", observableResult.toBlocking().single());
     verify(persistentCacheAdapter, times(1)).get("key", options);
@@ -183,11 +187,11 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetPersistentNoOptions() {
-    when(persistentCacheAdapter.get("key", null)).thenReturn(Observable.just("entry"));
-    when(nonpersistentCacheAdapter.get("key", null)).thenReturn(Observable.just(null));
+    when(persistentCacheAdapter.get("key", null)).thenReturn(Observable.empty());
+    when(nonpersistentCacheAdapter.get("key", null)).thenReturn(Observable.empty());
     Observable<String> observableResult = cacheAdapter.get("key", null);
     assertTrue(observableResult.isEmpty().toBlocking().single());
-    verify(persistentCacheAdapter, times(0)).get("key", null);
+    verify(persistentCacheAdapter, times(1)).get("key", null);
     verify(nonpersistentCacheAdapter, times(1)).get("key", null);
     verify(persistentCacheAdapter, times(0)).put("key", "entry", null);
     verify(nonpersistentCacheAdapter, times(0)).put("key", "entry", null);
@@ -195,7 +199,7 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetPersistentOnly() {
-    cacheAdapter = new MultiLayerCacheAdapter(persistentCacheAdapter, null);
+    cacheAdapter = createMultilayerCacheAdapter(persistentCacheAdapter, null);
     when(persistentCacheAdapter.get("key", options)).thenReturn(Observable.just("entry"));
     Observable<String> observableResult = cacheAdapter.get("key", options);
     assertEquals("entry", observableResult.toBlocking().single());
@@ -205,16 +209,17 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetPersistentOnlyNoOptions() {
-    cacheAdapter = new MultiLayerCacheAdapter(persistentCacheAdapter, null);
+    cacheAdapter = createMultilayerCacheAdapter(persistentCacheAdapter, null);
+    when(persistentCacheAdapter.get("key", null)).thenReturn(Observable.empty());
     Observable<String> observableResult = cacheAdapter.get("key", null);
     assertTrue(observableResult.isEmpty().toBlocking().single());
-    verify(persistentCacheAdapter, times(0)).get("key", null);
+    verify(persistentCacheAdapter, times(1)).get("key", null);
     verify(persistentCacheAdapter, times(0)).put("key", "entry", null);
   }
 
   @Test
   public void testGetNonPersistentOnly() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, nonpersistentCacheAdapter);
+    cacheAdapter = createMultilayerCacheAdapter(null, nonpersistentCacheAdapter);
     when(nonpersistentCacheAdapter.get("key", options)).thenReturn(Observable.just("entry"));
     Observable<String> observableResult = cacheAdapter.get("key", options);
     assertEquals("entry", observableResult.toBlocking().single());
@@ -224,7 +229,7 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetNonPersistentOnlyNoOptions() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, nonpersistentCacheAdapter);
+    cacheAdapter = createMultilayerCacheAdapter(null, nonpersistentCacheAdapter);
     when(nonpersistentCacheAdapter.get("key", null)).thenReturn(Observable.just("entry"));
     Observable<String> observableResult = cacheAdapter.get("key", null);
     assertEquals("entry", observableResult.toBlocking().single());
@@ -234,13 +239,24 @@ public class MultiLayerCacheAdapterTest {
 
   @Test
   public void testGetNotInitialized() {
-    cacheAdapter = new MultiLayerCacheAdapter(null, null);
+    cacheAdapter = createMultilayerCacheAdapter(null, null);
     Observable<String> observableResult = cacheAdapter.get("key", options);
     assertTrue(observableResult.isEmpty().toBlocking().single());
     verify(persistentCacheAdapter, times(0)).get("key", options);
     verify(persistentCacheAdapter, times(0)).put("key", "entry", options);
     verify(nonpersistentCacheAdapter, times(0)).get("key", options);
     verify(nonpersistentCacheAdapter, times(0)).put("key", "entry", options);
+  }
+
+  public MultiLayerCacheAdapter createMultilayerCacheAdapter(CacheAdapter persistent, CacheAdapter nonPersistent) {
+    LinkedList<CacheAdapter> list = new LinkedList<CacheAdapter>();
+    if (nonPersistent != null) {
+      list.addLast(nonPersistent);
+    }
+    if (persistent != null) {
+      list.addLast(persistent);
+    }
+    return new MultiLayerCacheAdapter(list);
   }
 
 

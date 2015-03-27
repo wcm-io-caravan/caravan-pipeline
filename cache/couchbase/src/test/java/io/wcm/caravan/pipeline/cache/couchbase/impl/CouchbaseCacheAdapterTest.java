@@ -22,6 +22,8 @@ package io.wcm.caravan.pipeline.cache.couchbase.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
@@ -155,6 +157,12 @@ public class CouchbaseCacheAdapterTest {
   }
 
   @Test
+  public void testGetNoOptions() throws Exception {
+    Observable<String> observable = adapter.get(CACHE_KEY, null);
+    assertTrue(observable.isEmpty().toBlocking().first());
+  }
+
+  @Test
   public void testPut() throws Exception {
     when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
     .thenReturn(just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
@@ -205,6 +213,28 @@ public class CouchbaseCacheAdapterTest {
 
     assertEquals(1, getPutLatencyTimer().getCount());
     assertTrue(getPutLatencyTimer().getSnapshot().getMean() / 1000000 >= 100);
+  }
+
+  public void testPutNoOptions() throws Exception {
+    adapter.put(CACHE_KEY, JSON_DOC, null);
+    verify(couchbaseClientProvider, times(0)).getCacheBucket();
+  }
+
+  @Test
+  public void testPutNonPersistentOptions() throws Exception {
+    adapter.put(CACHE_KEY, JSON_DOC, CachePersistencyOptions.createTransient(100));
+    verify(couchbaseClientProvider, times(0)).getCacheBucket();
+  }
+
+  @Test
+  public void testPutIntoNonWritableCache() throws Exception {
+    adapter = context.registerInjectActivateService(new CouchbaseCacheAdapter(), ImmutableMap.<String, Object>builder()
+        .put(CouchbaseCacheAdapter.CACHE_KEY_PREFIX_PROPERTY, "prefix:")
+        .put(CouchbaseCacheAdapter.CACHE_TIMEOUT_PROPERTY, 100)
+        .put(CouchbaseCacheAdapter.CACHE_WRITABLE_PROPERTY, false)
+        .build());
+    adapter.put(CACHE_KEY, JSON_DOC, cachePersistencyOptions);
+    verify(couchbaseClientProvider, times(0)).getCacheBucket();
   }
 
 }
