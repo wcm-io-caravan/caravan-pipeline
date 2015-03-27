@@ -60,7 +60,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
   private static final Logger log = LoggerFactory.getLogger(GuavaCacheAdapter.class);
 
   @Property(label = "Service Ranking", intValue = GuavaCacheAdapter.DEFAULT_RANKING,
-      description = "Priority of parameter persistence providers (lower = higher priority)",
+      description = "Priority of parameter persistence providers (higher value = higher priority)",
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
   static final int DEFAULT_RANKING = 2000;
