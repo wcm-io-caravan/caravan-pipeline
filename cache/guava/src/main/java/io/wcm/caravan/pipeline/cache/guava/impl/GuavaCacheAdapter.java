@@ -63,7 +63,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
       description = "Priority of parameter persistence providers (lower = higher priority)",
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
-  static final int DEFAULT_RANKING = 1000;
+  static final int DEFAULT_RANKING = 2000;
 
   @Property(label = "Cache Maximum Weight In Bytes",
       description = "Declares the weight of the cache. Each cache entry could not be larger than 1/4 of the declared cache weight")

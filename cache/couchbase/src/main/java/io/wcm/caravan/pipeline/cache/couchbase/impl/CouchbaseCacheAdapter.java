@@ -67,7 +67,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       description = "Priority of parameter persistence providers (lower = higher priority)",
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
-  static final int DEFAULT_RANKING = 2000;
+  static final int DEFAULT_RANKING = 1000;
 
   @Property(label = "Cache Key Prefix", description = "Prefix for caching keys.")
   static final String CACHE_KEY_PREFIX_PROPERTY = "cacheKeyPrefix";
