@@ -76,7 +76,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
     return new JsonPipelineImpl(request, response,
-        new JsonPipelineContext(this, createMultilayerCacheAdapter(), metricRegistry, contextProperties));
+        new JsonPipelineContext(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));
   }
 
   @Override
@@ -96,10 +96,10 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
-        new JsonPipelineContext(this, createMultilayerCacheAdapter(), metricRegistry, contextProperties));
+        new JsonPipelineContext(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));
   }
 
-  private CacheAdapter createMultilayerCacheAdapter() {
+  MultiLayerCacheAdapter createMultiLayerCacheAdapter() {
     return new MultiLayerCacheAdapter(new ArrayList<CacheAdapter>(cacheAdapters.get()));
   }
 

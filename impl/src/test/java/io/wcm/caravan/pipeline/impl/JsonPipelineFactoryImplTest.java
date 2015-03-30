@@ -20,35 +20,104 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock;
+import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
 
+import java.util.concurrent.TimeUnit;
+
+import org.apache.http.HttpStatus;
+import org.apache.sling.testing.mock.osgi.junit.OsgiContext;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.osgi.framework.Constants;
+
+import rx.Observable;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineFactoryImplTest {
 
-  @Mock
-  private CaravanHttpClient transport;
+  /**
+   * The OSGI context.
+   */
+  @Rule
+  public OsgiContext context = new OsgiContext();
+
+  private CacheAdapterMock firstLevelCacheAdapter;
+
+  private CacheAdapterMock secondLevelCacheAdapter;
 
   @Mock
-  private CacheAdapter cacheAdapter;
+  CaravanHttpClient caravanHttpClient;
 
-  @InjectMocks
   private JsonPipelineFactoryImpl factory;
 
+  private CaravanHttpRequest request;
+
+  @Before
+  public void setup() {
+    context.registerService(MetricRegistry.class, new MetricRegistry());
+    //context.registerService(HealthCheckRegistry.class, new HealthCheckRegistry());
+    context.registerService(CaravanHttpClient.class, caravanHttpClient);
+
+    factory = new JsonPipelineFactoryImpl();
+    firstLevelCacheAdapter = new CacheAdapterMock("level 1");
+    secondLevelCacheAdapter = new CacheAdapterMock("level 2");
+    secondLevelCacheAdapter = context.registerInjectActivateService(secondLevelCacheAdapter, ImmutableMap.of(Constants.SERVICE_RANKING, Integer.MIN_VALUE));
+    firstLevelCacheAdapter = context.registerInjectActivateService(firstLevelCacheAdapter, ImmutableMap.of(Constants.SERVICE_RANKING, Integer.MAX_VALUE));
+    factory = context.registerInjectActivateService(factory);
+  }
+
   @Test
-  public void test_createEmpty() throws Exception {
+  public void testCreateEmpty() throws Exception {
     JsonPipeline pipeline = factory.createEmpty();
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
     assertEquals(31536000L, output.getMaxAge());
   }
 
+  @Test
+  public void testCreateSpecifiedRequest() throws Exception {
+    request = new CaravanHttpRequestBuilder("service").append("/path").build();
+    ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(1)));
+    when(caravanHttpClient.execute(request)).thenReturn(
+        Observable.just(CaravanHttpResponse.create(HttpStatus.SC_OK, "Content", headers, new byte[0])));
+
+    JsonPipeline pipeline = factory.create(request);
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
+    assertEquals(86400, output.getMaxAge());
+  }
+
+  @Test
+  public void testCreateMultiLayerCacheAdapter() throws Exception {
+    MultiLayerCacheAdapter cacheAdapter = factory.createMultiLayerCacheAdapter();
+    assertNotNull(cacheAdapter);
+
+    // expected two levels of cache adapters via OSGI injection
+    assertEquals(2, cacheAdapter.cachingLevels());
+  }
+
+  @Test
+  public void testRemoveOneCacheAtMultiLayerCacheAdapter() throws Exception {
+    MultiLayerCacheAdapter cacheAdapter = factory.createMultiLayerCacheAdapter();
+    assertNotNull(cacheAdapter);
+
+    // expected two levels of cache adapters via OSGI injection
+    assertEquals(2, cacheAdapter.cachingLevels());
+  }
 
 }

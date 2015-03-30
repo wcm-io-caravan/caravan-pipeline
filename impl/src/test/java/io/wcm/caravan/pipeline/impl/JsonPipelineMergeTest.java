@@ -19,9 +19,12 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 
 import java.io.FileNotFoundException;
@@ -32,6 +35,8 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
+
+import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
@@ -203,6 +208,84 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
   }
 
   @Test
+  public void mergePipelineNotAnObject() {
+
+    // test failed merge into already existing property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}").collect("a");
+    JsonPipeline b = a.merge(newPipelineWithResponseBody("{b: 456}"));
+    JsonPipeline c = b.merge(a, "c");
+
+    JsonPipelineOutputException exception = new JsonPipelineOutputException("Target pipeline " + b.getDescriptor() + " already has a property named " + "a");
+
+    c.getStringOutput().subscribe(new ExceptionExpectingObserver(exception));
+    verifyNoMoreInteractions(cacheAdapter);
+  }
+
+  @Test
+  public void mergePipelineIntoNoObjectNode() {
+    TestJsonPipelineExceptionHandler handler = new TestJsonPipelineExceptionHandler();
+    // test failed merge into already existing property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}").extract("b").merge(a).handleException(handler);
+
+    // Check that JSON pipeline could not be merged into another JSON pipeline because another JSON pipeline does not contain ObjectNode
+    JsonPipelineOutputException exception = new JsonPipelineOutputException(
+        "Only pipelines with JSON *Objects* can be used as a target for a merge operation, but response data for GET(//testService/path)+EXTRACT(b) contained IntNode");
+    b.getStringOutput().subscribe(new ExceptionExpectingObserver(exception));
+    RuntimeException actualException = handler.getActualException();
+    verifyNoMoreInteractions(cacheAdapter);
+    assertEquals(exception.toString(), actualException.toString());
+  }
+
+  @Test
+  public void mergeNoObjectNodePipelineIntoTargetNode() {
+    TestJsonPipelineExceptionHandler handler = new TestJsonPipelineExceptionHandler();
+    // test failed merge into already existing property
+    JsonPipeline a = newPipelineWithResponseBody("{a : 123}").extract("a");
+    JsonPipeline b = newPipelineWithResponseBody("{b: {b : 123}}").merge(a, "b").handleException(handler);
+
+    // Check that JSON pipeline could not be merged into another JSON pipeline target node because it does not contain an Object node
+    JsonPipelineOutputException exception = new JsonPipelineOutputException(
+        "Only pipelines with JSON *Object* responses can be merged into an existing target property");
+    b.getStringOutput().subscribe(new ExceptionExpectingObserver(exception));
+    RuntimeException actualException = handler.getActualException();
+    verifyNoMoreInteractions(cacheAdapter);
+    assertEquals(exception.toString(), actualException.toString());
+  }
+
+  @Test
+  public void mergePipelineIntoAlreadyExistingProperty() {
+    TestJsonPipelineExceptionHandler handler = new TestJsonPipelineExceptionHandler();
+    // test failed merge into already existing property
+    JsonPipeline a = newPipelineWithResponseBody("{a : 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: {a : 456}}").merge(a, "b").handleException(handler);
+
+    // Check that JSON pipeline could not be merged into another JSON pipeline target node because it does not contain an Object node
+    JsonPipelineOutputException exception = new JsonPipelineOutputException(
+        "Target pipeline GET(//testService/path) already has a property named a");
+    b.getStringOutput().subscribe(new ExceptionExpectingObserver(exception));
+    RuntimeException actualException = handler.getActualException();
+    verifyNoMoreInteractions(cacheAdapter);
+    assertEquals(exception.toString(), actualException.toString());
+  }
+
+  @Test
+  public void mergePipelineIntoNonObjectChildNode() {
+    TestJsonPipelineExceptionHandler handler = new TestJsonPipelineExceptionHandler();
+    // test failed merge into already existing property
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline b = newPipelineWithResponseBody("{b: 456}").merge(a, "b").handleException(handler);
+
+    // Check that Json pipeline could not be merged into another Json pipeline because it try no merge ObjectNode into a primitive child node
+    JsonPipelineOutputException exception = new JsonPipelineOutputException(
+        "When merging two pipelines into the same target property, both most contain JSON *Object* responses");
+    b.getStringOutput().subscribe(new ExceptionExpectingObserver(exception));
+    RuntimeException actualException = handler.getActualException();
+    verifyNoMoreInteractions(cacheAdapter);
+    assertEquals(exception.toString(), actualException.toString());
+  }
+
+  @Test
   public void mergedPipelineTransportError1() {
 
     // tests that errors from the transport layers are properly handled
@@ -234,5 +317,20 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
     merged.getStringOutput().subscribe(new ExceptionExpectingObserver(ex));
     verifyNoMoreInteractions(cacheAdapter);
   }
+
+  private static class TestJsonPipelineExceptionHandler implements JsonPipelineExceptionHandler {
+
+    private RuntimeException actualException;
+
+    @Override
+    public Observable<JsonPipelineOutput> call(JsonPipelineOutput defaultFallbackContent, RuntimeException caughtException) {
+      actualException = caughtException;
+      throw caughtException;
+    }
+
+    public RuntimeException getActualException() {
+      return actualException;
+    }
+  };
 
 }

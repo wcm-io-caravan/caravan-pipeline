@@ -321,7 +321,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
         return new CacheEnvelope(envelopeFromCache);
       }
       catch (JsonPipelineInputException e) {
-        log.warn("Failed parse cached JSON document frmo " + cacheKey, e);
+        log.warn("Failed parse cached JSON document from " + cacheKey, e);
         return null;
       }
     }

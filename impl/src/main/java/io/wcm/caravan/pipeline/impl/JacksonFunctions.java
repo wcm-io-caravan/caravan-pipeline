@@ -159,7 +159,7 @@ public final class JacksonFunctions {
    * @return JSON string
    * @throws JsonPipelineOutputException if the given object can not be serialized
    */
-  public static String pojoToString (Object pojo) {
+  public static String pojoToString(Object pojo) {
     try {
       StringWriter writer = new StringWriter();
       objectMapper.writeValue(writer, pojo);

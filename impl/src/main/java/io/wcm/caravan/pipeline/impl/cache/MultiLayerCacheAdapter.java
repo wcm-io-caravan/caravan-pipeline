@@ -97,18 +97,12 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
         }
       }
       if (actualCacheAdapter != null) {
-        String cachedValue = getCacheEntry(result);
-        if (cachedValue != null) {
-          subscriber.onNext(cachedValue);
-          put(cacheKey, cachedValue, options, actualCacheAdapter);
-        }
+        String cachedValue = result.toBlocking().first();
+        subscriber.onNext(cachedValue);
+        put(cacheKey, cachedValue, options, actualCacheAdapter);
       }
       subscriber.onCompleted();
     });
-  }
-
-  private String getCacheEntry(Observable<String> observable) {
-    return observable.count().toBlocking().single() > 0 ? observable.toBlocking().first() : null;
   }
 
   /*
@@ -137,6 +131,13 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
     for (CacheAdapter cacheAdapter : cacheAdapters) {
       cacheAdapter.put(cacheKey, jsonString, options);
     }
+  }
+
+  /**
+   * @return amount of registered caching levels
+   */
+  public int cachingLevels() {
+    return cacheAdapters.size();
   }
 
 }

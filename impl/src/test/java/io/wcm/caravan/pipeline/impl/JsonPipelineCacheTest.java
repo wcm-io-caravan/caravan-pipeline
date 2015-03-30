@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -310,6 +311,27 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     // the _cacheInfo however should not be contained in the output
     JSONAssert.assertEquals("{a: 123}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void checkNotCacheableStrategy() {
+
+    CacheStrategy strategy = CacheStrategies.noCache();
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline cached = a.addCachePoint(strategy);
+
+    // the same JsonPipeline instance should be returned because no caching is required
+    assertEquals(a, cached);
+  }
+
+  @Test
+  public void cacheCacheableStrategy() {
+    CacheStrategy strategy = CacheStrategies.timeToLive(10, TimeUnit.SECONDS);
+    JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline cached = a.addCachePoint(strategy);
+
+    // a new JsonPipeline instance should be returned because a caching strategy was included
+    assertNotEquals(a, cached);
   }
 
 }

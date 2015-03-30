@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><metatype:MetaData xmlns:metatype="http://www.osgi.org/xmlns/metatype/v1.0.0" localization="OSGI-INF/metatype/io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock">
+    <OCD id="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock" name="%io.wcm.caravan.pipeline.cache.guava.impl.GuavaCacheAdapter.name" description="%io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock.description">
+        <AD id="service.ranking" type="Integer" default="2000" name="%io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock.service.ranking.name" description="%io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock.service.ranking.description"/>
+    </OCD>
+    <Designate pid="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock">
+        <Object ocdref="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock"/>
+    </Designate>
+</metatype:MetaData>
