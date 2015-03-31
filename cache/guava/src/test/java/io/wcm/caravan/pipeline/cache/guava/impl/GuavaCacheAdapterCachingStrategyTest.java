@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.cache.guava.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,13 +43,14 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
   protected Map<String, Object> getCacheConfig() {
 
     // define the size of an actual cache entry in bytes
-    long entryWeightInBytes = (8 * ((((ENTRY_SAMPLE.length()) * 2) + 45) / 8));
+    BigDecimal bigDecimal = new BigDecimal((8 * ((((ENTRY_SAMPLE.length()) * 2) + 45) / 8)));
+    double cacheMaximumWeightInMegaBytes = bigDecimal.divide(new BigDecimal(1024)).divide(new BigDecimal(1024)).doubleValue();
 
     // define the maximum cache weight in bytes
-    long cacheWeightInBytes = entryWeightInBytes * 4;
+    cacheMaximumWeightInMegaBytes = cacheMaximumWeightInMegaBytes * 4;
 
     Map<String, Object> map = new HashMap<String, Object>();
-    map.put("cacheMaximumWeightInBytes", cacheWeightInBytes);
+    map.put("cacheMaximumWeightInMegaBytes", cacheMaximumWeightInMegaBytes);
     return map;
   }
 

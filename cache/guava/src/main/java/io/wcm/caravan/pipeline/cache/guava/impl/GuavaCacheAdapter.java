@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.cache.guava.impl;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import org.apache.felix.scr.annotations.Activate;
@@ -47,7 +48,7 @@ import com.google.common.cache.Weigher;
 /**
  * {@link CacheAdapter} implementation for Guava.
  * Provides guava {@link Cache}, which size is specified in bytes. Default cache size is 10 MB. Provide higher property
- * value {@value #CACHE_MAXIMUM_WEIGHT_IN_BYTES} to set up higher cache capacity.
+ * value {@value #CACHE_MAXIMUM_WEIGHT_IN_MEGABYTES} to set up higher cache capacity.
  * items life time depends on the amount and size of stored cache items. Items, which capacity is higher than 1/4 of the
  * declared cache size will not be stored.
  */
@@ -65,15 +66,19 @@ public class GuavaCacheAdapter implements CacheAdapter {
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
   static final int DEFAULT_RANKING = 1000;
 
-  @Property(label = "Cache Maximum Weight In Bytes",
+  @Property(label = "Cache Maximum Weight In Mega Bytes",
       description = "Declares the weight of the cache. Each cache entry could not be larger than 1/4 of the declared cache weight")
-  static final String CACHE_MAXIMUM_WEIGHT_IN_BYTES = "cacheMaximumWeightInBytes";
-  private static final Long CACHE_DEFAULT_WEIGHT_IN_BYTES = 1058816L; // 10 MB
+  static final String CACHE_MAXIMUM_WEIGHT_IN_MEGABYTES = "cacheMaximumWeightInMegaBytes";
+  private static final Integer CACHE_DEFAULT_WEIGHT_IN_MEGABYTES = 10;
 
+  /**
+   * 1024*1024 multiplier used to provide bytes from megabyte values to create correct cache weight
+   */
+  private static final BigDecimal WEIGHT_MULTIPLIER = new BigDecimal(1048576);
   private static final String KEY_PREFIX = "guava:";
 
   private Cache<String, String> guavaCache;
-  private long cacheWeight;
+  private long cacheWeightInBytes;
 
   @Reference
   private MetricRegistry metricRegistry;
@@ -84,13 +89,14 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Activate
   void activate(Map<String, Object> config) {
-    cacheWeight = PropertiesUtil.toLong(config.get(CACHE_MAXIMUM_WEIGHT_IN_BYTES), CACHE_DEFAULT_WEIGHT_IN_BYTES);
+    cacheWeightInBytes = new BigDecimal(PropertiesUtil.toDouble(config.get(CACHE_MAXIMUM_WEIGHT_IN_MEGABYTES), CACHE_DEFAULT_WEIGHT_IN_MEGABYTES))
+    .multiply(WEIGHT_MULTIPLIER).longValue();
     this.guavaCache = CacheBuilder.newBuilder().weigher(new Weigher<String, String>() {
       @Override
       public int weigh(String key, String value) {
         return 8 * ((((value.length()) * 2) + 45) / 8);
       }
-    }).maximumWeight(cacheWeight).build();
+    }).maximumWeight(cacheWeightInBytes).build();
 
     getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
