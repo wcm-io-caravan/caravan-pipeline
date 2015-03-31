@@ -25,6 +25,9 @@ import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import rx.Observable;
 
 /**
@@ -36,6 +39,8 @@ import rx.Observable;
  * method calls according to the level of cache adapters.
  */
 public class MultiLayerCacheAdapter implements CacheAdapter {
+
+  private static final Logger log = LoggerFactory.getLogger(MultiLayerCacheAdapter.class);
 
   /**
    * Return multi layer cache key, if no cache key was returned by any child cache adapter.
@@ -89,9 +94,13 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
     return Observable.create(subscriber -> {
       Observable<String> result = Observable.empty();
       CacheAdapter actualCacheAdapter = null;
-      for (CacheAdapter cacheAdapter : cacheAdapters) {
+      for (int i = 0; i < cacheAdapters.size(); i++) {
+        CacheAdapter cacheAdapter = cacheAdapters.get(i);
+        log.debug("Trying to retrieve document with id {} from cache level {} : {}", cacheKey, i, cacheAdapter.getClass().getSimpleName());
         result = cacheAdapter.get(cacheKey, options).cache();
         if (!result.isEmpty().toBlocking().first()) {
+          log.debug("Retrieved document with id {} from cache level {} : {} : {}", cacheKey, i, cacheAdapter.getClass().getSimpleName(), result.toBlocking()
+              .first());
           actualCacheAdapter = cacheAdapter;
           break;
         }
@@ -110,8 +119,10 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
    * actual CacheAdapter and later caches already have stored item.
    */
   private void put(String cacheKey, String jsonString, CachePersistencyOptions options, CacheAdapter actualCacheAdapter) {
-    for (CacheAdapter cacheAdapter : cacheAdapters) {
+    for (int i = 0; i < cacheAdapters.size(); i++) {
+      CacheAdapter cacheAdapter = cacheAdapters.get(i);
       if (cacheAdapter != actualCacheAdapter) {
+        log.debug("Trying to reput document {} into cache level {} : {} : ", cacheKey, i, cacheAdapter.getClass().getSimpleName(), jsonString);
         cacheAdapter.put(cacheKey, jsonString, options);
       }
       else {
@@ -128,8 +139,10 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
    */
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    for (CacheAdapter cacheAdapter : cacheAdapters) {
+    for (int i = 0; i < cacheAdapters.size(); i++) {
+      CacheAdapter cacheAdapter = cacheAdapters.get(i);
       cacheAdapter.put(cacheKey, jsonString, options);
+      log.debug("Trying to put document {} into cache level {} : {} : {}", cacheKey, i, cacheAdapter.getClass().getSimpleName(), jsonString);
     }
   }
 
