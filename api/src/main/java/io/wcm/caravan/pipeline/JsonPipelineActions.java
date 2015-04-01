@@ -86,13 +86,13 @@ public final class JsonPipelineActions {
   }
 
   /**
-   * Provides an action which compares actual max age value of the pipeline output with max age value of specified
-   * {@link JsonPipelineOutput} to compare with. Enriches the {@link JsonPipelineOutput} of actual pipeline with the
-   * lowest found max age value {@link JsonPipelineOutput#getMaxAge()}.
-   * Returns the actual {@link JsonPipelineOutput} without any modification, if it has the lowest or equal max age value
-   * to the max age value of the compare output. Otherwise if max age value of the compare output is the lowest, returns
-   * a new {@link JsonPipelineOutput} created from the actual output enriched with max age value from the compare
-   * output.
+   * Provides an action which compares actual max age value of the {@link JsonPipelineOutput} with max age value of
+   * {@link JsonPipelineOutput} specifying as parameter. Enriches the {@link JsonPipelineOutput} of actual pipeline with
+   * the lowest found max age value. See {@link JsonPipelineOutput#getMaxAge()}.
+   * Returns the actual {@link JsonPipelineOutput} without any modification, if it has the lowest max age value or equal
+   * to the max age value of the compared parameter. Otherwise if max age value of the compared parameter is the lowest,
+   * returns a new {@link JsonPipelineOutput} created from the actual output enriched with max age value from the
+   * compared parameter.
    * @param ageToCompareOutput a JSON pipeline output which max age value should be compared
    * @return a new action that will emit the enriched result
    */
@@ -102,11 +102,11 @@ public final class JsonPipelineActions {
 
   /**
    * Enrichment function compares the max age value of the actual {@link JsonPipelineOutput} provided by the pipeline
-   * and the compare {@link JsonPipelineOutput} provided as function constructor argument.
+   * and the compare {@link JsonPipelineOutput} provided as function constructor parameter.
    * Returns the actual {@link JsonPipelineOutput} without any modification, if it has the lowest or equal max age value
-   * to the max age value of the compare output. if max age value of the compare output is the lowest, returns
-   * a new {@link JsonPipelineOutput} created from the actual output enriched with max age value from the compare
-   * output.
+   * to the max age value of the compared parameter. if max age value of the compared parameter is the lowest, returns
+   * a new {@link JsonPipelineOutput} created from the actual output enriched with max age value from the compared
+   * parameter.
    */
   private static class LowestAgeEnricher implements Func1<JsonPipelineOutput, JsonPipelineOutput> {
 
