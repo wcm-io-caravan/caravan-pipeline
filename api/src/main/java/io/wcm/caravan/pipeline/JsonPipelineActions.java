@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline;
 
+import io.wcm.caravan.pipeline.util.JsonPipelineOutputUtil;
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -57,5 +58,51 @@ public final class JsonPipelineActions {
       }
 
     };
+  }
+
+
+  /**
+   * @param functionId
+   * @param fuction
+   * @return
+   */
+  public static JsonPipelineAction applyFuction(String functionId, Func1<JsonPipelineOutput, JsonPipelineOutput> fuction) {
+    return new JsonPipelineAction() {
+
+      @Override
+      public String getId() {
+        return functionId;
+      }
+
+      @Override
+      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory) {
+        JsonPipelineOutput transformeOutput = fuction.call(previousStepOutput);
+        return Observable.just(transformeOutput);
+      }
+
+    };
+  }
+
+  /**
+   * @param toCompare
+   * @return
+   */
+  public static JsonPipelineAction enrichWithLowestMaxAge(JsonPipelineOutput toCompare) {
+    return JsonPipelineActions.applyFuction("enrichWithLowestMaxAge", new Enricher(toCompare));
+  }
+
+  private static class Enricher implements Func1<JsonPipelineOutput, JsonPipelineOutput> {
+
+    private JsonPipelineOutput toCompare;
+
+    public Enricher(JsonPipelineOutput toCompare) {
+      this.toCompare = toCompare;
+    }
+
+    @Override
+    public JsonPipelineOutput call(JsonPipelineOutput actualPipelineOutput) {
+      return JsonPipelineOutputUtil.enrichWithLowestMaxAge(actualPipelineOutput, toCompare);
+    }
+
   }
 }
