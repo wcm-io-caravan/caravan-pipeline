@@ -56,8 +56,8 @@ public final class JsonPipelineOutputUtil {
    * Checks if the actual {@link JsonPipelineOutput} has the lowest max age value in comparison to the array of
    * {@link JsonPipelineOutput} arguments. Returns the actual {@link JsonPipelineOutput} without any modification, if it
    * has the lowest or equal max age value to the lowest max age value of array elements. Otherwise creates a new
-   * {@link JsonPipelineOutput} instance from the actual output enriched with the lowest max age value of the array
-   * outputs.
+   * {@link JsonPipelineOutput} instance from the actual output enriched with the lowest max age value found in the
+   * array of output arguments.
    * @param actualPipelineOutput an JSON pipeline output to be checked
    * @param jsonPipelineOutputs an array of JSON pipeline outputs to be compared with
    * @return JSON pipeline output with the lowest max age value
@@ -73,7 +73,7 @@ public final class JsonPipelineOutputUtil {
   }
 
   /**
-   * Compares all JSON pipeline outputs specifying as input parameters and returns the earliest of them, which has the
+   * Compares all {@link JsonPipelineOutput} specifying as input array and returns the earliest of them, which has the
    * lowest max age value {@link JsonPipelineOutput#getMaxAge()}.
    * @param jsonPipelineOutputs multiple JSON pipeline outputs to compare max age value
    * @return JSON pipeline output with the lowest max age value
