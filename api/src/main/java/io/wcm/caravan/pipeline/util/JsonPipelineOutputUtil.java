@@ -22,12 +22,7 @@ package io.wcm.caravan.pipeline.util;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 /**
- * Added handling of minimal maxAge value via utility.
- * JsonPipelineOutputUtil.minMaxAge should return JsonPipelineOutput, which has the minimal maxAge value of two
- * arguments
- * JsonPipelineOutputUtil.enrichWithLowestMaxAge should return the first JsonPipelineOutput, if it has minimal maxAge,
- * or create a new one using first JsonPipelineOutput argument and maxAge from second JsonPipelineOutput, if second has
- * the lowest maxAge
+ * Provides utility methods to handle {@link JsonPipelineOutput} entities.
  */
 public final class JsonPipelineOutputUtil {
 

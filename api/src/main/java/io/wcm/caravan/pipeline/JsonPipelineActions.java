@@ -36,8 +36,8 @@ public final class JsonPipelineActions {
 
   /**
    * Applies a custom transformation on the {@link JsonNode} (e.g. a HAL representation) of actual pipeline, specifying
-   * a function as transformation mechanism. Function receives {@link JsonNode} as parameter, which should be
-   * applied on the actual JSON node, and returns a new {@link JsonNode} with the transformation result.
+   * a function as transformation mechanism. Function receives {@link JsonNode} as parameter, which transformation
+   * should be applied and returns a new {@link JsonNode} with the transformation result.
    * @param transformationId an unique id of the actual transformation
    * @param transformation a function that provides transformation algorithm
    * @return a new action that will emit the result of the transformation
@@ -78,17 +78,17 @@ public final class JsonPipelineActions {
 
       @Override
       public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory) {
-        JsonPipelineOutput transformeOutput = fuction.call(previousStepOutput);
-        return Observable.just(transformeOutput);
+        JsonPipelineOutput nextStepOutput = fuction.call(previousStepOutput);
+        return Observable.just(nextStepOutput);
       }
 
     };
   }
 
   /**
-   * Compares actual max age value of the pipeline output with max age value of specified {@link JsonPipelineOutput} as
-   * compare output and enriches the {@link JsonPipelineOutput} of actual pipeline with the lowest max age value
-   * {@link JsonPipelineOutput#getMaxAge()}.
+   * Provides an action which compares actual max age value of the pipeline output with max age value of specified
+   * {@link JsonPipelineOutput} to compare with. Enriches the {@link JsonPipelineOutput} of actual pipeline with the
+   * lowest found max age value {@link JsonPipelineOutput#getMaxAge()}.
    * Returns the actual {@link JsonPipelineOutput} without any modification, if it has the lowest or equal max age value
    * to the max age value of the compare output. Otherwise if max age value of the compare output is the lowest, returns
    * a new {@link JsonPipelineOutput} created from the actual output enriched with max age value from the compare
