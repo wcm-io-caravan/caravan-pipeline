@@ -76,12 +76,12 @@ public class JsonPipelineActionsTest {
   }
 
   @Test
-  public void testEnrichWithLowestMaxAge_takePrevious() {
+  public void testEnrichWithLowestAge_takePrevious() {
 
     when(jsonPipelineOutputAnother.getMaxAge()).thenReturn(2000);
     when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(1000);
 
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestMaxAge(jsonPipelineOutputAnother);
+    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(jsonPipelineOutputAnother);
     assertNotNull(action);
     assertNotNull(action.getId());
 
@@ -93,12 +93,12 @@ public class JsonPipelineActionsTest {
   }
 
   @Test
-  public void testEnrichWithLowestMaxAge_takeAnother() {
+  public void testEnrichWithLowestAge_takeAnother() {
     when(jsonPipelineOutputAnother.getMaxAge()).thenReturn(1000);
     when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
     when(jsonPipelineOutputPrevious.withMaxAge(1000)).thenReturn(jsonPipelineOutputResult);
 
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestMaxAge(jsonPipelineOutputAnother);
+    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(jsonPipelineOutputAnother);
     assertNotNull(action);
     assertNotNull(action.getId());
 
@@ -110,11 +110,11 @@ public class JsonPipelineActionsTest {
   }
 
   @Test
-  public void testEnrichWithLowestMaxAge_compareToNull() {
+  public void testEnrichWithLowestAge_compareToNull() {
 
     when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
 
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestMaxAge(null);
+    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(null);
     assertNotNull(action);
     assertNotNull(action.getId());
 
