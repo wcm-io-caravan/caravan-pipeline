@@ -19,7 +19,15 @@
  */
 package io.wcm.caravan.pipeline.util;
 
+import io.wcm.caravan.commons.stream.Collectors;
+import io.wcm.caravan.commons.stream.Streams;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.collections.ComparatorUtils;
+
 
 /**
  * Provides utility methods to handle {@link JsonPipelineOutput} entities.
@@ -78,19 +86,18 @@ public final class JsonPipelineOutputUtil {
    * @param jsonPipelineOutputs multiple JSON pipeline outputs to compare max age value
    * @return JSON pipeline output with the lowest max age value
    */
+  @SuppressWarnings("unchecked")
   public static JsonPipelineOutput minAge(JsonPipelineOutput... jsonPipelineOutputs) {
 
-    JsonPipelineOutput lowestAgeOutput = null;
-
-    if (jsonPipelineOutputs != null) {
-      for (JsonPipelineOutput actualOutput : jsonPipelineOutputs) {
-        if (actualOutput != null) {
-          lowestAgeOutput = (lowestAgeOutput == null) ? actualOutput : (lowestAgeOutput.getMaxAge() <= actualOutput.getMaxAge() ? lowestAgeOutput
-              : actualOutput);
-        }
-      }
+    if (jsonPipelineOutputs == null) {
+      return null;
     }
 
-    return lowestAgeOutput;
+    List<JsonPipelineOutput> nonNullValues = Streams.of(jsonPipelineOutputs).filter(output -> output != null).collect(Collectors.toList());
+
+    return nonNullValues.isEmpty() ? null : Collections.min(nonNullValues,
+        (outputPrevious, outputNext) -> ComparatorUtils.naturalComparator().compare(outputPrevious.getMaxAge(), outputNext.getMaxAge())
+        );
   }
+
 }

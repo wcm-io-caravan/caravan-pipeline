@@ -202,7 +202,7 @@ public class JsonPipelineOutputUtilTest {
     when(jsonPipelineOutputNext.getMaxAge()).thenReturn(1000);
     when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
 
-    // check the another JSON pipeline output was returned because it has the lowest max age value
+    // check the next JSON pipeline output was returned because it has the lowest max age value
     JsonPipelineOutput result = JsonPipelineOutputUtil.minAge(jsonPipelineOutputPrevious, jsonPipelineOutputNext);
     assertNotNull(result);
     assertEquals(jsonPipelineOutputNext, result);
@@ -214,7 +214,7 @@ public class JsonPipelineOutputUtilTest {
     when(jsonPipelineOutputNext.getMaxAge()).thenReturn(2000);
     when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
 
-    // check the another JSON pipeline output was returned because it has the lowest max age value
+    // check the third JSON pipeline output was returned because it has the lowest max age value
     JsonPipelineOutput result = JsonPipelineOutputUtil.minAge(jsonPipelineOutputPrevious, jsonPipelineOutputNext, jsonPipelineOutputThird);
     assertNotNull(result);
     assertEquals(jsonPipelineOutputThird, result);
@@ -222,11 +222,8 @@ public class JsonPipelineOutputUtilTest {
 
   @Test
   public void testMinAge_compareToNull() {
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(null);
-    assertNotNull(action);
-    assertNotNull(action.getId());
 
-    // check the original JSON pipeline output was returned because it is the only one possible result
+    // check the first JSON pipeline output was returned because it is the only one possible result
     JsonPipelineOutput result = JsonPipelineOutputUtil.minAge(jsonPipelineOutputPrevious, null);
     assertNotNull(result);
     assertEquals(jsonPipelineOutputPrevious, result);
@@ -234,18 +231,28 @@ public class JsonPipelineOutputUtilTest {
 
   @Test
   public void testMinAge_compareNull() {
+    when(jsonPipelineOutputNext.getMaxAge()).thenReturn(2000);
 
-    when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
-
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(null);
-    assertNotNull(action);
-    assertNotNull(action.getId());
-
-    // check the another JSON pipeline output was returned because it is the only one possible result
+    // check next JSON pipeline output was returned because it is the only one possible result
     JsonPipelineOutput result = JsonPipelineOutputUtil.minAge(null, jsonPipelineOutputNext);
     assertNotNull(result);
     assertEquals(jsonPipelineOutputNext, result);
   }
 
+  @Test
+  public void testMinAge_Null() {
+
+    // check null was returned because null was passed as argument
+    JsonPipelineOutput result = JsonPipelineOutputUtil.minAge((JsonPipelineOutput)null);
+    assertNull(result);
+  }
+
+  @Test
+  public void testMinAge_NullArray() {
+
+    // check null was returned because null was passed as argument
+    JsonPipelineOutput result = JsonPipelineOutputUtil.minAge((JsonPipelineOutput[])null);
+    assertNull(result);
+  }
 
 }
