@@ -56,6 +56,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   private CachePersistencyOptions cachePersistencyOptions;
 
 
+  @SuppressWarnings("unchecked")
   @Before
   public void setUp() {
     cachePersistencyOptions = CachePersistencyOptions.createTransient(100);

@@ -131,8 +131,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   }
 
   /**
-   * An observer that is subscribed to the {@link Observable} returned by {@link CacheAdapter#get(String, boolean, int)}
-   * , and is responsible for
+   * An observer that is subscribed to the {@link Observable} returned by
+   * {@link CacheAdapter#get(String, CachePersistencyOptions)} , and is responsible for
    * <ul>
    * <li>unwrapping the JSON content from the caching envelope if it was successfully retrieved from cache</li>
    * <li>forwarding the unwrapped response to the subscriber given in the constructor</li>
