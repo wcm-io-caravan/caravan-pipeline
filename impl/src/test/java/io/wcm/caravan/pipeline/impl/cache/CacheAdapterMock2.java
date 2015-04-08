@@ -36,19 +36,19 @@ import rx.Observable;
 label = "wcm.io Caravan Pipeline Cache Adapter for Mock",
 description = "Configure pipeline caching in Mock.")
 @Service(CacheAdapter.class)
-public class CacheAdapterMock implements CacheAdapter {
+public class CacheAdapterMock2 implements CacheAdapter {
 
-  @Property(label = "Service Ranking", intValue = CacheAdapterMock.DEFAULT_RANKING,
+  @Property(label = "Service Ranking", intValue = CacheAdapterMock2.DEFAULT_RANKING,
       description = "Priority of parameter persistence providers (lower value = higher priority)",
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
-  static final int DEFAULT_RANKING = 3000;
+  static final int DEFAULT_RANKING = 1000;
 
   private Map<String, String> map = new ConcurrentHashMap<String, String>();
 
   private String name;
 
-  public CacheAdapterMock(String name) {
+  public CacheAdapterMock2(String name) {
     this.name = name;
   }
 
@@ -69,7 +69,7 @@ public class CacheAdapterMock implements CacheAdapter {
 
   @Override
   public String toString() {
-    return "CacheAdapterMock [name=" + this.name + "]";
+    return "CacheAdapterMock2 [name=" + this.name + "]";
   }
 
 

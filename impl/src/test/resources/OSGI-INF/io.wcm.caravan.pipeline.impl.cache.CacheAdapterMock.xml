@@ -4,7 +4,7 @@
         <service servicefactory="false">
             <provide interface="io.wcm.caravan.pipeline.cache.spi.CacheAdapter"/>
         </service>
-        <property name="service.ranking" type="Integer" value="2000"/>
+        <property name="service.ranking" type="Integer" value="3000"/>
         <property name="service.pid" value="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock"/>
     </scr:component>
 </components>

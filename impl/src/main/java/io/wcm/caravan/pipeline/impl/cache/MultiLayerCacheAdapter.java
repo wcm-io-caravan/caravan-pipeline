@@ -23,6 +23,7 @@ import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -151,6 +152,13 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
    */
   public int cachingLevels() {
     return cacheAdapters.size();
+  }
+
+  /**
+   * @return non modifiable list of cache adapters
+   */
+  public List<CacheAdapter> getCacheAdapters() {
+    return Collections.unmodifiableList(cacheAdapters);
   }
 
 }

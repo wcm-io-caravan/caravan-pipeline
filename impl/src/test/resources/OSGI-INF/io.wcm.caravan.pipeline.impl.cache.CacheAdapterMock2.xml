@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?><components xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0">
+    <scr:component immediate="true" name="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock2">
+        <implementation class="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock2"/>
+        <service servicefactory="false">
+            <provide interface="io.wcm.caravan.pipeline.cache.spi.CacheAdapter"/>
+        </service>
+        <property name="service.ranking" type="Integer" value="1000"/>
+        <property name="service.pid" value="io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock2"/>
+    </scr:component>
+</components>

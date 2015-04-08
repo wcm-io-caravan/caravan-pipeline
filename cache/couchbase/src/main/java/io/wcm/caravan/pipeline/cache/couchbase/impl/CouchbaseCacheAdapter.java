@@ -64,7 +64,7 @@ description = "Configure pipeline caching in couchbase.")
 public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Property(label = "Service Ranking", intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
-      description = "Priority of parameter persistence providers (higher value = higher priority)",
+      description = "Priority of parameter persistence providers (lower value = higher priority)",
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
   static final int DEFAULT_RANKING = 2000;
