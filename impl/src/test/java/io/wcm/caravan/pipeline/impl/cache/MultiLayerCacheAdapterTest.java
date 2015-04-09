@@ -28,14 +28,17 @@ import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import rx.Observable;
+import rx.Observer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MultiLayerCacheAdapterTest {
@@ -276,6 +279,38 @@ public class MultiLayerCacheAdapterTest {
   private void assertGetEmpty(String cacheKey, CachePersistencyOptions cacheOptions) {
     Observable<String> observableResult = cacheAdapter.get(cacheKey, cacheOptions);
     assertTrue(observableResult.isEmpty().toBlocking().single());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testMultipleSubscptions() {
+    AtomicInteger subscribeCount = new AtomicInteger(0);
+    Observable<String> sourceObservable = Observable.create(subscriber -> {
+      subscribeCount.incrementAndGet();
+      subscriber.onNext("entry");
+      subscriber.onCompleted();
+    });
+
+    when(firstLevelCacheAdapter.get("key", options)).thenReturn(sourceObservable);
+
+    Observer<String> firstObserver = Mockito.mock(Observer.class);
+    Observer<String> secondObserver = Mockito.mock(Observer.class);
+    Observer<String> thirdObserver = Mockito.mock(Observer.class);
+    cacheAdapter.get("key", options).subscribe(firstObserver);
+
+    // Single get call makes single subscription on observable.
+    // No additional subscriptions are created inside of MultiLayerCacheAdapter.
+    assertEquals(1, subscribeCount.get());
+    cacheAdapter.get("key", options).subscribe(secondObserver);
+
+    // Second get call makes second subscription on observable.
+    // No additional subscriptions are created inside of MultiLayerCacheAdapter.
+    assertEquals(2, subscribeCount.get());
+    cacheAdapter.get("key", options).subscribe(thirdObserver);
+
+    // Third get call makes third subscription on observable.
+    // No additional subscriptions are created inside of MultiLayerCacheAdapter.
+    assertEquals(3, subscribeCount.get());
   }
 
 
