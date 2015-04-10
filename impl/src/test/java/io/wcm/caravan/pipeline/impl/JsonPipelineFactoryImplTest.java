@@ -29,8 +29,6 @@ import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-import io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock;
-import io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock2;
 import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
 
 import java.util.List;
@@ -59,9 +57,11 @@ public class JsonPipelineFactoryImplTest {
   @Rule
   public OsgiContext context = new OsgiContext();
 
-  private CacheAdapterMock secondLevelCacheAdapter;
+  @Mock
+  private CacheAdapter secondLevelCacheAdapter;
 
-  private CacheAdapterMock2 firstLevelCacheAdapter;
+  @Mock
+  private CacheAdapter firstLevelCacheAdapter;
 
   @Mock
   private CaravanHttpClient caravanHttpClient;
@@ -75,13 +75,55 @@ public class JsonPipelineFactoryImplTest {
     context.registerService(MetricRegistry.class, new MetricRegistry());
     context.registerService(CaravanHttpClient.class, caravanHttpClient);
 
+    // Sample #1
+    // The working sample of initialization. Specifies default oder of list entries
+    // last entry of the list should be initialized first
+    secondLevelCacheAdapter = context.registerService(CacheAdapter.class, secondLevelCacheAdapter);
+    // first entry of the list should be initialized last
+    firstLevelCacheAdapter = context.registerService(CacheAdapter.class, firstLevelCacheAdapter);
+
+
+    //    Sample #2
+    //    Expected that Constants.SERVICE_RANKING property should modify ranking level of service, which is 0 defaults.
+    //    1st Level cache with ranking 1000 should act earlier than 2nd level cache with ranking 3000
+    //    Practically no ranking update is happened. Default order of initialization is kept as in Sample #1
+    //    #testCreateMultiLayerCacheAdapter fails, but should pass.
+    //    firstLevelCacheAdapter = context.registerService(CacheAdapter.class, firstLevelCacheAdapter,
+    //        ImmutableMap.of(Constants.SERVICE_RANKING, 1000L));
+    //    secondLevelCacheAdapter = context.registerService(CacheAdapter.class, secondLevelCacheAdapter,
+    //        ImmutableMap.of(Constants.SERVICE_RANKING, 3000L));
+
+    //    Sample #3
+    //    Expected that Constants.SERVICE_RANKING property should modify ranking level of service, which is 0 defaults.
+    //    1st Level cache with ranking 3000 should act later than 2nd level cache with ranking 1000
+    //    Practically no ranking update is happened. Default order of initialization is kept as in Sample #1
+    //    #testCreateMultiLayerCacheAdapter passes as in Sample #1, but should fail.
+    //    secondLevelCacheAdapter = context.registerService(CacheAdapter.class, secondLevelCacheAdapter,
+    //        ImmutableMap.of(Constants.SERVICE_RANKING, 1000L));
+    //    firstLevelCacheAdapter = context.registerService(CacheAdapter.class, firstLevelCacheAdapter,
+    //        ImmutableMap.of(Constants.SERVICE_RANKING, 3000L));
+
+    //     Sample #4
+    //     It just does not inject anything
+    //     CacheAdapter adapter = new io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock("name");
+    //     MockOsgi.injectServices(adapter, context.bundleContext());
+    //     MockOsgi.activate(adapter, context.bundleContext(),
+    //         ImmutableMap.of(Constants.SERVICE_RANKING, 1000L, Constants.SERVICE_PID, "thirdLevelCacheAdapter"));
+
+
+    //    Sample #5
+    //    Fails with "NoScrMetadata No OSGi SCR metadata found".
+    //    MockOsgi.activate(secondLevelCacheAdapter, context.bundleContext(),
+    //        ImmutableMap.of(Constants.SERVICE_RANKING, 1000L, Constants.SERVICE_PID, "secondLevelCacheAdapter"));
+    //    MockOsgi.activate(firstLevelCacheAdapter, context.bundleContext(),
+    //        ImmutableMap.of(Constants.SERVICE_RANKING, 3000L, Constants.SERVICE_PID, "firstLevelCacheAdapter"));
+
+    //    Sample #6
+    //    Fails with "NoScrMetadata No OSGi SCR metadata found". It was a reason to replace mocks with custom annotated implementation
+    //    firstLevelCacheAdapter = context.registerInjectActivateService(firstLevelCacheAdapter, ImmutableMap.of(Constants.SERVICE_RANKING, 1000L));
+    //    secondLevelCacheAdapter = context.registerInjectActivateService(secondLevelCacheAdapter, ImmutableMap.of(Constants.SERVICE_RANKING, 3000L));
+
     factory = new JsonPipelineFactoryImpl();
-    secondLevelCacheAdapter = new CacheAdapterMock("level 2");
-    secondLevelCacheAdapter = context.registerInjectActivateService(secondLevelCacheAdapter);
-
-    firstLevelCacheAdapter = new CacheAdapterMock2("level 1");
-    firstLevelCacheAdapter = context.registerInjectActivateService(firstLevelCacheAdapter);
-
     factory = context.registerInjectActivateService(factory);
   }
 
@@ -113,6 +155,7 @@ public class JsonPipelineFactoryImplTest {
     assertEquals(2, cacheAdapter.cachingLevels());
 
     List<CacheAdapter> cacheAdapters = cacheAdapter.getCacheAdapters();
+
     // expected firstLevelCacheAdapter at place 0 and secondLevelCacheAdapter at place 1
     // according to the ranking order 1000 of CacheAdapterMock2 (higher priority)
     // and 3000 ranking order of CacheAdapterMock (lower priority)
