@@ -59,7 +59,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private final SortedSet<String> sourceServiceNames = new TreeSet<String>();
   private final List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
-  private JsonPipelineContext context;
+  private JsonPipelineContextImpl context;
   private String descriptor;
   private Observable<JsonPipelineOutput> observable;
 
@@ -68,7 +68,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param context preinitialized JSON pipeline context
    */
-  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final JsonPipelineContext context) {
+  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final JsonPipelineContextImpl context) {
     if (isNotBlank(request.getServiceName())) {
       this.sourceServiceNames.add(request.getServiceName());
     }
@@ -197,7 +197,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline applyAction(JsonPipelineAction action) {
     String actionDesc = "ACTION(" + action.getId() + ")";
 
-    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output, context.getFactory()));
+    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output, context));
 
     return cloneWith(transformedObservable, actionDesc);
   }

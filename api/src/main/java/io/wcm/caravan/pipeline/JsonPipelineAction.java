@@ -49,9 +49,9 @@ public interface JsonPipelineAction {
   /**
    * Provides a subscription to the JSON pipeline output with the the results of this action.
    * @param previousStepOutput a JSON pipeline output provided after pipeline has executed previous steps
-   * @param factory a factory to create a new pipeline
+   * @param pipelineContext the context of the {@link JsonPipeline} instance
    * @return a subscription the result JSON pipeline output
    */
-  Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory);
+  Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext);
 
 }

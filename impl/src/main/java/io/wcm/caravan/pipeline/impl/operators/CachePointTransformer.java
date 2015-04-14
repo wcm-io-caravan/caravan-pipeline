@@ -29,7 +29,7 @@ import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
-import io.wcm.caravan.pipeline.impl.JsonPipelineContext;
+import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
   private static final Logger log = LoggerFactory.getLogger(CachePointTransformer.class);
 
-  private JsonPipelineContext context;
+  private JsonPipelineContextImpl context;
   private final List<CaravanHttpRequest> requests;
   private final String descriptor;
   private final CacheStrategy strategy;
@@ -73,7 +73,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
    * @param descriptor the unique id of the pipeline (to build a cache key)
    * @param strategy the CacheStrategy to get storage time and refresh interval
    */
-  public CachePointTransformer(JsonPipelineContext context, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy) {
+  public CachePointTransformer(JsonPipelineContextImpl context, List<CaravanHttpRequest> requests, String descriptor, CacheStrategy strategy) {
     super();
     this.context = context;
     this.requests = requests;

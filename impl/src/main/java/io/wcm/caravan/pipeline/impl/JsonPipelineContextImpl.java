@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
@@ -32,7 +33,7 @@ import com.codahale.metrics.MetricRegistry;
  * new implementation of {@link JsonPipelineImpl}. Each entry of JSON pipeline context must exist during the pipeline
  * life cycle. Temporary objects or primitives should not be a part of context.
  */
-public class JsonPipelineContext {
+public class JsonPipelineContextImpl implements JsonPipelineContext {
 
   private final JsonPipelineFactory factory;
 
@@ -47,17 +48,19 @@ public class JsonPipelineContext {
    * @param metricRegistry metrics registry
    * @param contextProperties additional metadata in string property form
    */
-  public JsonPipelineContext(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
+  public JsonPipelineContextImpl(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
     this.factory = factory;
     this.cacheAdapter = cacheAdapter;
     this.metricRegistry = metricRegistry;
     this.cacheMetadataProperties = contextProperties;
   }
 
+  @Override
   public JsonPipelineFactory getFactory() {
     return factory;
   }
 
+  @Override
   public CacheAdapter getCacheAdapter() {
     return this.cacheAdapter;
   }
@@ -66,6 +69,7 @@ public class JsonPipelineContext {
     return this.metricRegistry;
   }
 
+  @Override
   public Map<String, String> getProperties() {
     return this.cacheMetadataProperties;
   }

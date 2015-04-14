@@ -20,7 +20,7 @@
 package io.wcm.caravan.pipeline;
 
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-import io.wcm.caravan.pipeline.impl.JsonPipelineContext;
+import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,8 +52,8 @@ public abstract class AbstractCaravanTestCase {
     return cacheMetadataProperties;
   }
 
-  protected JsonPipelineContext getJsonPipelineContext() {
-    return new JsonPipelineContext(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties());
+  protected JsonPipelineContextImpl getJsonPipelineContext() {
+    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties());
   }
 
 }

@@ -51,7 +51,7 @@ public final class JsonPipelineActions {
       }
 
       @Override
-      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory) {
+      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
         JsonNode transformedPayload = transformation.call(previousStepOutput.getPayload());
         JsonPipelineOutput transformedOutput = previousStepOutput.withPayload(transformedPayload);
         return Observable.just(transformedOutput);
@@ -65,10 +65,10 @@ public final class JsonPipelineActions {
    * {@link JsonPipelineOutput} of actual JSON pipeline as parameter, which should be handled, and returns a new or the
    * same {@link JsonPipelineOutput} as the action result.
    * @param functionId an unique id of the actual action
-   * @param fuction a function that provides action algorithm
+   * @param function a function that provides action algorithm
    * @return a new action that will emit the result of the applied function
    */
-  public static JsonPipelineAction applyFuction(String functionId, Func1<JsonPipelineOutput, JsonPipelineOutput> fuction) {
+  public static JsonPipelineAction applyFunction(String functionId, Func1<JsonPipelineOutput, JsonPipelineOutput> function) {
     return new JsonPipelineAction() {
 
       @Override
@@ -77,8 +77,8 @@ public final class JsonPipelineActions {
       }
 
       @Override
-      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineFactory factory) {
-        JsonPipelineOutput nextStepOutput = fuction.call(previousStepOutput);
+      public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
+        JsonPipelineOutput nextStepOutput = function.call(previousStepOutput);
         return Observable.just(nextStepOutput);
       }
 
@@ -97,7 +97,7 @@ public final class JsonPipelineActions {
    * @return a new action that will emit the enriched result
    */
   public static JsonPipelineAction enrichWithLowestAge(JsonPipelineOutput ageToCompareOutput) {
-    return JsonPipelineActions.applyFuction("enrichJsonPipelineOutputWithLowestAge", new LowestAgeEnricher(ageToCompareOutput));
+    return JsonPipelineActions.applyFunction("enrichJsonPipelineOutputWithLowestAge", new LowestAgeEnricher(ageToCompareOutput));
   }
 
   /**

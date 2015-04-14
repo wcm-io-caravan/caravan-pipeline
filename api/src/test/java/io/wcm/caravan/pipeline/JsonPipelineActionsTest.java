@@ -37,7 +37,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class JsonPipelineActionsTest {
 
   @Mock
-  private JsonPipelineFactory factory;
+  private JsonPipelineContext context;
 
   @Mock
   private JsonPipelineOutput jsonPipelineOutputPrevious;
@@ -69,7 +69,7 @@ public class JsonPipelineActionsTest {
     assertNotNull(action);
     assertEquals("transformationId", action.getId());
 
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, factory);
+    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
     assertNotNull(result);
     JsonPipelineOutput resultOutput = result.toBlocking().single();
     assertEquals(jsonPipelineOutputResult, resultOutput);
@@ -86,7 +86,7 @@ public class JsonPipelineActionsTest {
     assertNotNull(action.getId());
 
     // check the original JSON pipeline output was returned because it has the lowest max age value
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, factory);
+    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
     assertNotNull(result);
     JsonPipelineOutput resultOutput = result.toBlocking().single();
     assertEquals(jsonPipelineOutputPrevious, resultOutput);
@@ -103,7 +103,7 @@ public class JsonPipelineActionsTest {
     assertNotNull(action.getId());
 
     // check a new JSON pipeline output was returned because another max age value had to be added to the original pipeline
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, factory);
+    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
     assertNotNull(result);
     JsonPipelineOutput resultOutput = result.toBlocking().single();
     assertEquals(jsonPipelineOutputResult, resultOutput);
@@ -119,7 +119,7 @@ public class JsonPipelineActionsTest {
     assertNotNull(action.getId());
 
     // check the original JSON pipeline output was returned because it is the only one possible result
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, factory);
+    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
     assertNotNull(result);
     JsonPipelineOutput resultOutput = result.toBlocking().single();
     assertEquals(jsonPipelineOutputPrevious, resultOutput);
