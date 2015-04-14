@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -49,6 +50,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.couchbase.client.java.AsyncBucket;
+import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.google.common.collect.ImmutableMap;
 
@@ -216,6 +218,37 @@ public class CouchbaseCacheAdapterTest {
 
     assertEquals(1, getPutLatencyTimer().getCount());
     assertTrue(getPutLatencyTimer().getSnapshot().getMean() / 1000000 >= 100);
+  }
+
+
+  @Test
+  public void testPutTimeToLive() throws Exception {
+
+    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    .thenReturn(Observable.just(RawJsonDocument.create("test-id", JSON_DOC)));
+
+    CachePersistencyOptions options = CachePersistencyOptions.createPersistentAndTimeToLive(500, 1000);
+    adapter.put(CACHE_KEY, JSON_DOC, options);
+
+    // make sure the storage time of the CachePersistenceOptions is used for the expiry value
+    ArgumentCaptor<Document> doc = ArgumentCaptor.forClass(Document.class);
+    verify(bucket).upsert(doc.capture());
+    assertEquals(options.getStorageTime(), doc.getValue().expiry());
+  }
+
+  @Test
+  public void testPutTimeToIdle() throws Exception {
+
+    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    .thenReturn(Observable.just(RawJsonDocument.create("test-id", JSON_DOC)));
+
+    CachePersistencyOptions options = CachePersistencyOptions.createPersistentAndTimeToIdle(500, 1000);
+    adapter.put(CACHE_KEY, JSON_DOC, options);
+
+    // make sure the storage time of the CachePersistenceOptions is used for the expiry value
+    ArgumentCaptor<Document> doc = ArgumentCaptor.forClass(Document.class);
+    verify(bucket).upsert(doc.capture());
+    assertEquals(options.getStorageTime(), doc.getValue().expiry());
   }
 
   public void testPutNoOptions() throws Exception {

@@ -192,7 +192,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 
-    RawJsonDocument doc = RawJsonDocument.create(cacheKey, options.getRefreshInterval(), jsonString);
+    RawJsonDocument doc = RawJsonDocument.create(cacheKey, options.getStorageTime(), jsonString);
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);
 
     insertionObservable
