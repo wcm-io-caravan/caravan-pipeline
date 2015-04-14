@@ -52,17 +52,17 @@
       <version>0.2.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
-	<dependency>
+    <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.commons.metrics</artifactId>
       <version>0.2.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
 
-	<dependency>
-	  <groupId>com.google.guava</groupId>
-	  <artifactId>guava</artifactId>
-	  <version>18.0</version>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
