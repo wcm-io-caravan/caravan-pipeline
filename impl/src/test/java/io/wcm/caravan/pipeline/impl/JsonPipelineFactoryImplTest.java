@@ -29,8 +29,6 @@ import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-import io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock;
-import io.wcm.caravan.pipeline.impl.cache.CacheAdapterMock2;
 import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
 
 import java.util.List;
@@ -44,11 +42,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.osgi.framework.Constants;
 
 import rx.Observable;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineFactoryImplTest {
@@ -59,9 +59,11 @@ public class JsonPipelineFactoryImplTest {
   @Rule
   public OsgiContext context = new OsgiContext();
 
-  private CacheAdapterMock secondLevelCacheAdapter;
+  @Mock
+  private CacheAdapter secondLevelCacheAdapter;
 
-  private CacheAdapterMock2 firstLevelCacheAdapter;
+  @Mock
+  private CacheAdapter firstLevelCacheAdapter;
 
   @Mock
   private CaravanHttpClient caravanHttpClient;
@@ -75,14 +77,12 @@ public class JsonPipelineFactoryImplTest {
     context.registerService(MetricRegistry.class, new MetricRegistry());
     context.registerService(CaravanHttpClient.class, caravanHttpClient);
 
-    factory = new JsonPipelineFactoryImpl();
-    secondLevelCacheAdapter = new CacheAdapterMock("level 2");
-    secondLevelCacheAdapter = context.registerInjectActivateService(secondLevelCacheAdapter);
+    secondLevelCacheAdapter = context.registerService(CacheAdapter.class, secondLevelCacheAdapter,
+        ImmutableMap.of(Constants.SERVICE_RANKING, 5000));
+    firstLevelCacheAdapter = context.registerService(CacheAdapter.class, firstLevelCacheAdapter,
+        ImmutableMap.of(Constants.SERVICE_RANKING, 2000));
 
-    firstLevelCacheAdapter = new CacheAdapterMock2("level 1");
-    firstLevelCacheAdapter = context.registerInjectActivateService(firstLevelCacheAdapter);
-
-    factory = context.registerInjectActivateService(factory);
+    factory = context.registerInjectActivateService(new JsonPipelineFactoryImpl());
   }
 
   @Test
@@ -114,8 +114,8 @@ public class JsonPipelineFactoryImplTest {
 
     List<CacheAdapter> cacheAdapters = cacheAdapter.getCacheAdapters();
     // expected firstLevelCacheAdapter at place 0 and secondLevelCacheAdapter at place 1
-    // according to the ranking order 1000 of CacheAdapterMock2 (higher priority)
-    // and 3000 ranking order of CacheAdapterMock (lower priority)
+    // according to the ranking order 5000 of firstLevelCacheAdapter (higher priority)
+    // and 2000 ranking order of secondLevelCacheAdapter (lower priority)
     assertEquals(firstLevelCacheAdapter, cacheAdapters.get(0));
     assertEquals(secondLevelCacheAdapter, cacheAdapters.get(1));
   }
