@@ -20,6 +20,8 @@
 package io.wcm.caravan.pipeline.impl.operators;
 
 import static org.junit.Assert.assertEquals;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
@@ -38,7 +40,8 @@ public class ResponseHandlingOperatorTest {
   @SuppressWarnings("unchecked")
   @Test
   public void test_HeadersCacheControlMaxAge() {
-    ResponseHandlingOperator operator = new ResponseHandlingOperator("test-url");
+    CaravanHttpRequest request = new CaravanHttpRequestBuilder().append("test-url").build();
+    ResponseHandlingOperator operator = new ResponseHandlingOperator(request);
     Subscriber subscriber = Mockito.mock(Subscriber.class);
     Subscriber<? super CaravanHttpResponse> operatorSubscriber = operator.call(subscriber);
     Multimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: 10");

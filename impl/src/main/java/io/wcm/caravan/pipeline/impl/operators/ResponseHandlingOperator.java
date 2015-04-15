@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.impl.operators;
 
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
@@ -41,6 +42,7 @@ import rx.Subscriber;
 import rx.exceptions.Exceptions;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Operator that converts {@link Response} emissions from the {@link CaravanHttpClient} layer into
@@ -51,13 +53,13 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
 
   private static final Logger log = LoggerFactory.getLogger(ResponseHandlingOperator.class);
 
-  private final String url;
+  private final CaravanHttpRequest request;
 
   /**
-   * @param url the URL of the outgoing request
+   * @param request the URL of the outgoing request
    */
-  public ResponseHandlingOperator(String url) {
-    this.url = url;
+  public ResponseHandlingOperator(CaravanHttpRequest request) {
+    this.request = request;
   }
 
   @Override
@@ -78,18 +80,18 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
         }
 
-        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + url, e));
+        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.url(), e));
       }
 
       @Override
       public void onNext(CaravanHttpResponse response) {
         try {
           final int statusCode = response.status();
-          log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + url);
+          log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.url());
           if (statusCode == HttpServletResponse.SC_OK) {
 
             JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
-            JsonPipelineOutput model = new JsonPipelineOutputImpl(payload);
+            JsonPipelineOutput model = new JsonPipelineOutputImpl(payload, ImmutableList.of(request));
             int maxAge = NumberUtils.toInt((String)response.getHeaderAsMap("Cache-Control").get("max-age"));
             if (maxAge > 0) {
               model = model.withMaxAge(maxAge);
@@ -98,14 +100,14 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           }
           else {
 
-            String msg = "Request for " + url + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
+            String msg = "Request for " + request.url() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
             log.warn(msg);
 
             subscriber.onError(new JsonPipelineInputException(statusCode, msg));
           }
         }
         catch (IOException ex) {
-          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + url, ex));
+          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex));
         }
       }
     };

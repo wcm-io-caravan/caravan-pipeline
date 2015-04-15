@@ -44,6 +44,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import rx.Observable;
 
@@ -56,6 +58,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * by multiple subscribers.
  */
 public final class JsonPipelineImpl implements JsonPipeline {
+
+  private final static Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
 
   private final SortedSet<String> sourceServiceNames = new TreeSet<String>();
   private final List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
@@ -74,7 +78,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     }
     this.requests.add(request);
     this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
-    this.observable = responseObservable.lift(new ResponseHandlingOperator(request.url())).cache();
+    this.observable = responseObservable.lift(new ResponseHandlingOperator(request)).cache();
     this.context = context;
   }
 
@@ -197,7 +201,14 @@ public final class JsonPipelineImpl implements JsonPipeline {
   public JsonPipeline applyAction(JsonPipelineAction action) {
     String actionDesc = "ACTION(" + action.getId() + ")";
 
-    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> action.execute(output, context));
+    Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> {
+      try {
+        return action.execute(output, context);
+      } catch (Exception e) {
+        log.error("Failed to execute action " + action.getId(), e);
+        return Observable.error(e);
+      }
+    });
 
     return cloneWith(transformedObservable, actionDesc);
   }

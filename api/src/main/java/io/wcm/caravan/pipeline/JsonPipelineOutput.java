@@ -19,6 +19,10 @@
  */
 package io.wcm.caravan.pipeline;
 
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+
+import java.util.List;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -41,6 +45,11 @@ public interface JsonPipelineOutput {
    * @return the JSON content
    */
   JsonNode getPayload();
+
+  /**
+   * @return the requests that produced this output
+   */
+  List<CaravanHttpRequest> getRequests();
 
   /**
    * @param newPayload the JSON output

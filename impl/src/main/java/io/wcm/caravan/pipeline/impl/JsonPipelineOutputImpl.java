@@ -19,7 +19,10 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+
+import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -30,23 +33,26 @@ public class JsonPipelineOutputImpl implements JsonPipelineOutput {
 
   private final JsonPipelineMetadata metadata;
   private final JsonNode payload;
+  private final List<CaravanHttpRequest> requests;
 
   /**
    * Creates pipeline output with the given payload
    * @param payload
    */
-  public JsonPipelineOutputImpl(JsonNode payload) {
+  public JsonPipelineOutputImpl(JsonNode payload, List<CaravanHttpRequest> requests) {
     this.metadata = new JsonPipelineMetadata(200);
     this.payload = payload;
+    this.requests = requests;
   }
 
-  JsonPipelineOutputImpl(JsonPipelineMetadata metadata, JsonNode payload) {
+  JsonPipelineOutputImpl(JsonPipelineMetadata metadata, JsonNode payload, List<CaravanHttpRequest> requests) {
     this.metadata = metadata;
     this.payload = payload;
+    this.requests = requests;
   }
 
   JsonPipelineOutputImpl deepCopy() {
-    JsonPipelineOutputImpl copy = new JsonPipelineOutputImpl(payload);
+    JsonPipelineOutputImpl copy = new JsonPipelineOutputImpl(payload, requests);
     copy.getMetadata().setMaxAge(getMaxAge());
     copy.getMetadata().setStatusCode(getStatusCode());
     return copy;
@@ -63,7 +69,7 @@ public class JsonPipelineOutputImpl implements JsonPipelineOutput {
 
   @Override
   public JsonPipelineOutput withPayload(JsonNode newPayload) {
-    return new JsonPipelineOutputImpl(metadata, newPayload);
+    return new JsonPipelineOutputImpl(metadata, newPayload, requests);
   }
 
   @Override
@@ -88,5 +94,10 @@ public class JsonPipelineOutputImpl implements JsonPipelineOutput {
     JsonPipelineOutputImpl copy = deepCopy();
     copy.getMetadata().setMaxAge(expirySeconds);
     return copy;
+  }
+
+  @Override
+  public List<CaravanHttpRequest> getRequests() {
+    return requests;
   }
 }
