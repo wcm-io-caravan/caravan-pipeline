@@ -19,6 +19,8 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
+import static io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers.fallbackFor50x;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -32,6 +34,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.jayway.jsonpath.InvalidPathException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -105,6 +108,21 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
 
     String output = pipeline.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("{b: 123}", output, JSONCompareMode.STRICT);
+  }
+
+  @Test
+  public void assertExistsExtractMssingNode() throws JSONException {
+
+    // check that a fulfilled assertion completes for preceding extract operation
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline extracted = pipeline.extract("$.a[?(@.label=='def')]");
+    JsonPipeline assertion = extracted.assertExists("$.a[?(@.label=='def')]", 500, "a not found");
+    JsonPipeline exception = assertion.handleException(fallbackFor50x(JacksonFunctions.stringToNode("{MissingNode:true}"), 0));
+
+    JsonNode nodeOutput = extracted.getJsonOutput().toBlocking().single();
+    assertTrue(nodeOutput.isMissingNode());
+    String output = exception.getStringOutput().toBlocking().single();
+    JSONAssert.assertEquals("{MissingNode:true}", output, JSONCompareMode.STRICT);
   }
 
   @Test
