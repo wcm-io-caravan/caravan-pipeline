@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.cache;
 import static java.util.concurrent.TimeUnit.DAYS;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.Collection;
 import java.util.EnumSet;
@@ -50,6 +51,7 @@ public final class CacheStrategies {
     int refreshInterval = toSeconds(duration, unit);
     int storageTime = toSeconds(duration, unit);
     return new CacheStrategy() {
+
       @Override
       public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
         return CachePersistencyOptions.createPersistentAndTimeToLive(refreshInterval, storageTime);
@@ -68,9 +70,27 @@ public final class CacheStrategies {
     int refreshInterval = toSeconds(365, DAYS);
     int storageTime = toSeconds(duration, unit);
     return new CacheStrategy() {
+
       @Override
       public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
         return CachePersistencyOptions.createPersistentAndTimeToIdle(refreshInterval, storageTime);
+      }
+    };
+  }
+
+  /**
+   * Stores items only in the local, non-persistent {@link CacheAdapter} for the given maximum duration.
+   * @param duration maximum Time-to-live
+   * @param unit Time unit
+   * @return Cache strategy
+   */
+  public static CacheStrategy temporary(int duration, TimeUnit unit) {
+    int refreshInterval = toSeconds(duration, unit);
+    return new CacheStrategy() {
+
+      @Override
+      public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
+        return CachePersistencyOptions.createTransient(refreshInterval);
       }
     };
   }
@@ -92,13 +112,13 @@ public final class CacheStrategies {
    */
   public static CacheStrategy noCache() {
     return new CacheStrategy() {
+
       @Override
       public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
         return CachePersistencyOptions.createTransient(0);
       }
     };
   }
-
 
 
 }
