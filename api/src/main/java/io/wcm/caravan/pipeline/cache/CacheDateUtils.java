@@ -57,7 +57,7 @@ public final class CacheDateUtils {
    * @return that time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
    */
   public static String formatRelativeTime(int secondsRelativeToNow) {
-    return getDateFormat().format(new Date(new Date().getTime() + 1000 * secondsRelativeToNow));
+    return getDateFormat().format(new Date(new Date().getTime() + 1000l * secondsRelativeToNow));
   }
 
   /**
@@ -82,6 +82,14 @@ public final class CacheDateUtils {
     Date reference = parse(rfc1123Date);
     Date now = new Date();
 
-    return (int)(now.getTime() - reference.getTime()) / 1000;
+    return (int)((now.getTime() - reference.getTime()) / 1000l);
+  }
+
+  /**
+   * @param rfc1123Date date and time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
+   * @return the number of seconds until the given date
+   */
+  public static int getSecondsUntil(String rfc1123Date) {
+    return -getSecondsSince(rfc1123Date);
   }
 }

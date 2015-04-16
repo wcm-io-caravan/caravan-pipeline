@@ -102,8 +102,8 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
 
-    // the overall max-age from the response should override that of our cache-point (because it is higher)
-    assertEquals(responseMaxAge, output.getMaxAge());
+    // the lower time-to-live of the cache-strategy should override the max-age from the response
+    assertEquals(timeToLiveSeconds, output.getMaxAge());
   }
 
   @Test
@@ -120,7 +120,25 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
 
-    // the overall max-age from the response should *not* override that of our cache-point (because it is lower)
+    // the lower max-age from the response should override the time-to-live of the cache-strategy
+    assertEquals(responseMaxAge, output.getMaxAge());
+  }
+
+  @Test
+  public void cacheMissMaxAgeFromResponseIsMissing() {
+
+    int responseMaxAge = 0;
+    int timeToLiveSeconds = 60;
+
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
+    .thenReturn(Observable.empty());
+
+    JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", responseMaxAge)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+
+    // if no max-age is specified in the response the time-to-live from the cache-strategy should become effective
     assertEquals(timeToLiveSeconds, output.getMaxAge());
   }
 

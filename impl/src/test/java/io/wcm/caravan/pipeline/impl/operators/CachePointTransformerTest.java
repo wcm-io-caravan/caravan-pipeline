@@ -146,7 +146,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
   @Test
   public void testCacheEnvelopeAvailabilityAt200() {
-    CacheEnvelope cached200 = CacheEnvelope.from200Response(JacksonFunctions.stringToNode("{}"), new LinkedList<CaravanHttpRequest>(),
+    CacheEnvelope cached200 = CacheEnvelope.from200Response(JacksonFunctions.stringToNode("{}"), 0, new LinkedList<CaravanHttpRequest>(),
         "cacheKey", "descriptor", getContextProperties());
 
     JsonNode node200 = JacksonFunctions.stringToNode(cached200.getEnvelopeString());

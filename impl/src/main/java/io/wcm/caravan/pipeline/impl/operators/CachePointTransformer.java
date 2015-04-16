@@ -111,8 +111,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       // the caching strategy determines if the storage time should be extended for cache hits(i.e. Time-to-Idle behaviour)
       CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
 
-        // try to asynchronously(!) fetch the response from the cache
-        Observable<String> cachedJsonString = cacheAdapter.get(cacheKey, options);
+      // try to asynchronously(!) fetch the response from the cache
+      Observable<String> cachedJsonString = cacheAdapter.get(cacheKey, options);
 
       // create service specific metrics
       MetricRegistry metricRegistry = context.getMetricRegistry();
@@ -172,10 +172,12 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       int responseAge = cacheEntry.getResponseAge();
       int refreshInterval = strategy.getCachePersistencyOptions(requests).getRefreshInterval();
 
+      int expirySeconds = cacheEntry.getExpirySeconds();
+
       int maxAgeFromClient = getClientMaxAge();
 
       // check if the content from cache is fresh enough to serve it
-      if (responseAge < refreshInterval && responseAge < maxAgeFromClient) {
+      if (responseAge < refreshInterval && responseAge < maxAgeFromClient && expirySeconds > 0) {
         log.debug("CACHE HIT for " + this.cacheKey);
 
         // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
@@ -183,7 +185,18 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       }
       else {
         // this means the cached content is outdated - we better fetch the data from the backend
-        log.debug("CACHE STALE - content for " + cacheKey + " is available, but it's " + responseAge + " seconds old and considered stale.");
+        String reason;
+        if (responseAge >= refreshInterval) {
+          reason = "it's " + responseAge + " seconds old and the cache strategy has a refresh interval of " + refreshInterval + " seconds.";
+        }
+        else if (responseAge >= maxAgeFromClient) {
+          reason = "it's " + responseAge + " seconds old and the client requested a max-age of " + maxAgeFromClient + " seconds.";
+        }
+        else {
+          reason = "it has expired " + (-expirySeconds) + " seconds ago, according to the original max-age header from the http-response";
+        }
+
+        log.debug("CACHE STALE - content for " + cacheKey + " is available, but " + reason);
 
         fetchAndStore(new Subscriber<JsonPipelineOutput>() {
 
@@ -233,6 +246,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
         //  make sure to set the max-age content-header just to the time the cached content will become stale
         int maxAge = refreshInterval - cacheEntry.getResponseAge();
 
+        maxAge = Math.min(maxAge, cacheEntry.getExpirySeconds());
+
         subscriber.onNext(new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests).withMaxAge(maxAge));
         subscriber.onCompleted();
       }
@@ -265,14 +280,18 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
         public void onNext(JsonPipelineOutput fetchedModel) {
           log.debug("CACHE PUT - response for " + descriptor + " has been fetched and will be put in the cache");
           CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
-          int refreshInterval = Math.max(options.getRefreshInterval(), fetchedModel.getMaxAge());
 
-          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), requests, cacheKey, descriptor,
-              context.getProperties());
+          int contentMaxAge = options.getRefreshInterval();
+          if (fetchedModel.getMaxAge() > 0) {
+            contentMaxAge = Math.min(contentMaxAge, fetchedModel.getMaxAge());
+          }
+
+          CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), contentMaxAge, requests,
+              cacheKey, descriptor, context.getProperties());
           context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), options);
 
           // everything else is just forwarding to the subscriber to the cachedSource
-          backendResponseSubscriber.onNext(fetchedModel.withMaxAge(refreshInterval));
+          backendResponseSubscriber.onNext(fetchedModel.withMaxAge(contentMaxAge));
         }
 
         @Override
@@ -350,10 +369,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param contextProperties
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from200Response(JsonNode contentNode, List<CaravanHttpRequest> requests, String cacheKey,
+    public static CacheEnvelope from200Response(JsonNode contentNode, int maxAge, List<CaravanHttpRequest> requests, String cacheKey,
         String pipelineDescriptor, Map<String, String> contextProperties) {
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, requests, cacheKey, pipelineDescriptor, null, contextProperties);
+      ObjectNode envelope = createEnvelopeNode(contentNode, HttpStatus.SC_OK, maxAge, requests, cacheKey, pipelineDescriptor, null, contextProperties);
       return new CacheEnvelope(envelope);
     }
 
@@ -371,12 +390,12 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       JsonNode contentNode = JacksonFunctions.emptyObject();
       int statusCode = HttpStatus.SC_NOT_FOUND;
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, requests, cacheKey, pipelineDescriptor, reason, contextProperties);
+      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, 0, requests, cacheKey, pipelineDescriptor, reason, contextProperties);
       return new CacheEnvelope(envelope);
     }
 
     static CacheEnvelope fromContentString(String contentJson, int age) {
-      ObjectNode envelopeNode = createEnvelopeNode(JacksonFunctions.stringToObjectNode(contentJson), 200, ImmutableList.of(),
+      ObjectNode envelopeNode = createEnvelopeNode(JacksonFunctions.stringToObjectNode(contentJson), 200, 0, ImmutableList.of(),
           "Cache-Key", "Descriptor", null, ImmutableMap.of());
 
       CacheEnvelope envelope = new CacheEnvelope(envelopeNode);
@@ -387,7 +406,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     }
 
 
-    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, List<CaravanHttpRequest> requests,
+    private static ObjectNode createEnvelopeNode(JsonNode contentNode, int statusCode, int maxAge, List<CaravanHttpRequest> requests,
         String cacheKey, String pipelineDescriptor, String reason, Map<String, String> contextProperties) {
 
       ObjectNode envelope = JacksonFunctions.emptyObject();
@@ -397,6 +416,9 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServiceNames(requests)));
       metadata.put("pipeline", pipelineDescriptor);
       metadata.put("generated", CacheDateUtils.formatCurrentTime());
+      if (maxAge > 0) {
+        metadata.put("expires", CacheDateUtils.formatRelativeTime(maxAge));
+      }
       metadata.put("statusCode", statusCode);
 
       List<String> sourcePaths = new ArrayList<String>();
@@ -442,6 +464,14 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     int getResponseAge() {
       String generatedDate = metadataNode.at("/generated").asText();
       return CacheDateUtils.getSecondsSince(generatedDate);
+    }
+
+    int getExpirySeconds() {
+      if (!metadataNode.has("expires")) {
+        return (int)TimeUnit.DAYS.toSeconds(365);
+      }
+      String expiryDate = metadataNode.at("/expires").asText();
+      return CacheDateUtils.getSecondsUntil(expiryDate);
     }
 
     /**
