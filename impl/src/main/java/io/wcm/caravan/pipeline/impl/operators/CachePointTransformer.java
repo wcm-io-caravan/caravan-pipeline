@@ -216,7 +216,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
             log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey, e);
 
-            subscriber.onNext(new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests).withMaxAge(refreshInterval));
+            JsonPipelineOutputImpl pipelineOutput = new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests);
+
+            // when fallback content is served from cache, it should not be cached by the client at all
+            subscriber.onNext(pipelineOutput.withMaxAge(0));
             subscriber.onCompleted();
           }
         });
@@ -243,9 +246,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
         subscriber.onError(new JsonPipelineInputException(HttpStatus.SC_NOT_FOUND, cacheEntry.getReasonString() + SUFFIX_FOR_CACHED_404_REASON_STRING));
       }
       else {
-        //  make sure to set the max-age content-header just to the time the cached content will become stale
+        // make sure to set the max-age content-header just to the time the cached content will become stale
         int maxAge = refreshInterval - cacheEntry.getResponseAge();
-
         maxAge = Math.min(maxAge, cacheEntry.getExpirySeconds());
 
         subscriber.onNext(new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests).withMaxAge(maxAge));

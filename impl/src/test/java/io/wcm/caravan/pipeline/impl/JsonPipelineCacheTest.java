@@ -210,8 +210,8 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     String json = JacksonFunctions.nodeToString(output.getPayload());
     JSONAssert.assertEquals("{b:'cached'}", json, JSONCompareMode.STRICT);
 
-    // the max-age must be taken from the caching strategy
-    assertEquals(timeToLiveSeconds, output.getMaxAge());
+    // the max-age must be set to 0
+    assertEquals(0, output.getMaxAge());
   }
 
   @Test
