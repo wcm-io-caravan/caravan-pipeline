@@ -204,7 +204,8 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> transformedObservable = observable.flatMap(output -> {
       try {
         return action.execute(output, context);
-      } catch (Exception e) {
+      }
+      catch (Throwable e) {
         log.error("Failed to execute action " + action.getId(), e);
         return Observable.error(e);
       }
