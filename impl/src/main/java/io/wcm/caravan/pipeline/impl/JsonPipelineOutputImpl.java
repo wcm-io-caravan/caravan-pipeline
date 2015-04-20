@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.impl;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
+import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -94,6 +95,18 @@ public class JsonPipelineOutputImpl implements JsonPipelineOutput {
     JsonPipelineOutputImpl copy = deepCopy();
     copy.getMetadata().setMaxAge(expirySeconds);
     return copy;
+  }
+
+  @Override
+  public String getCorrelationId() {
+    Iterator<CaravanHttpRequest> requestIterator = requests.iterator();
+    while (requestIterator.hasNext()) {
+      String correlationId = requestIterator.next().getCorrelationId();
+      if (correlationId != null) {
+        return correlationId;
+      }
+    }
+    return null;
   }
 
   @Override

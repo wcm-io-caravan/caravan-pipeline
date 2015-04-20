@@ -32,6 +32,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 public interface JsonPipelineOutput {
 
   /**
+   * @return the JSON content
+   */
+  JsonNode getPayload();
+
+  /**
    * @return the HTTP status code
    */
   int getStatusCode();
@@ -42,9 +47,9 @@ public interface JsonPipelineOutput {
   int getMaxAge();
 
   /**
-   * @return the JSON content
+   * @return the correlation ID from the incoming HTTP request header
    */
-  JsonNode getPayload();
+  String getCorrelationId();
 
   /**
    * @return the requests that produced this output
