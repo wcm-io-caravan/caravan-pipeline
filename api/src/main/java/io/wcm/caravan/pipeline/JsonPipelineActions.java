@@ -20,6 +20,9 @@
 package io.wcm.caravan.pipeline;
 
 import io.wcm.caravan.pipeline.util.JsonPipelineOutputUtil;
+
+import org.osgi.annotation.versioning.ProviderType;
+
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -28,6 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * Default implementations of {@link JsonPipelineAction}
  */
+@ProviderType
 public final class JsonPipelineActions {
 
   private JsonPipelineActions() {

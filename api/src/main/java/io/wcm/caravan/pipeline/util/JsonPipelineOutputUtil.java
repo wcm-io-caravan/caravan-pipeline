@@ -27,11 +27,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.ComparatorUtils;
-
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * Provides utility methods to handle {@link JsonPipelineOutput} entities.
  */
+@ProviderType
 public final class JsonPipelineOutputUtil {
 
   private JsonPipelineOutputUtil() {

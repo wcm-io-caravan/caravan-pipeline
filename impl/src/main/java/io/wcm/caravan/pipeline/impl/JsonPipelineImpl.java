@@ -59,7 +59,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public final class JsonPipelineImpl implements JsonPipeline {
 
-  private final static Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
 
   private final SortedSet<String> sourceServiceNames = new TreeSet<String>();
   private final List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();

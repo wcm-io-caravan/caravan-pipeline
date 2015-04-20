@@ -17,31 +17,8 @@
  * limitations under the License.
  * #L%
  */
-package io.wcm.caravan.pipeline;
-
-import org.osgi.annotation.versioning.ProviderType;
-
 /**
- * Used to indicate a problem while creating the output of a {@link JsonPipeline} (most likely due to an impossible
- * type-mapping).
+ * JSON Pipeline API for Cache Handling.
  */
-@ProviderType
-public final class JsonPipelineOutputException extends RuntimeException {
-  private static final long serialVersionUID = 1L;
-
-  /**
-   * @param msg Message
-   */
-  public JsonPipelineOutputException(String msg) {
-    super(msg);
-  }
-
-  /**
-   * @param msg Message
-   * @param cause Cause
-   */
-  public JsonPipelineOutputException(String msg, Throwable cause) {
-    super(msg, cause);
-  }
-
-}
+@org.osgi.annotation.versioning.Version("0.5.0")
+package io.wcm.caravan.pipeline.cache;

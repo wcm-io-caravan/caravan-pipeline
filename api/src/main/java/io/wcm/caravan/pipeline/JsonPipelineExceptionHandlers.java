@@ -21,12 +21,15 @@ package io.wcm.caravan.pipeline;
 
 import static rx.Observable.just;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Contains some common exception handling strategies to be used with
  * {@link JsonPipeline#handleException(JsonPipelineExceptionHandler)}
  */
+@ProviderType
 public final class JsonPipelineExceptionHandlers {
 
   private JsonPipelineExceptionHandlers() {

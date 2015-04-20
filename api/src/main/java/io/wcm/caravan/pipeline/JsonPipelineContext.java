@@ -23,6 +23,8 @@ import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * The context from which a given pipeline instance was created.
  * <ul>
@@ -31,8 +33,9 @@ import java.util.Map;
  * <li>the configured {@link CacheAdapter}</li>
  * </ul>
  * This allows {@link JsonPipelineAction} instances or other users of a {@link JsonPipeline} to access those OSGI
- * services
+ * services.
  */
+@ProviderType
 public interface JsonPipelineContext {
 
   /**

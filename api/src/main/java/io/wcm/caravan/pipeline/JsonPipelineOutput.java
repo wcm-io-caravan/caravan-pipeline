@@ -23,12 +23,15 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 
 import java.util.List;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * The immutable output of a {@link JsonPipeline}'s processing step: the
  * main JSON content payload, and additional metadata about the status and cachability of the content.
  */
+@ProviderType
 public interface JsonPipelineOutput {
 
   /**

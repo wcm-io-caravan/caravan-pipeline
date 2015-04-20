@@ -19,6 +19,8 @@
  */
 package io.wcm.caravan.pipeline;
 
+import org.osgi.annotation.versioning.ConsumerType;
+
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -37,6 +39,7 @@ import rx.functions.Func1;
  * identifier must be constant (non modifiable) per each new class instance, even if the pipeline output is changed.
  * See {@link JsonPipelineActions} for existing implementations.
  */
+@ConsumerType
 public interface JsonPipelineAction {
 
   /**

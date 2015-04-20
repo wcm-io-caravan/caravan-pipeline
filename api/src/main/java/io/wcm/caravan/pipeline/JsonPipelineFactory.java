@@ -24,9 +24,12 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * JSON Pipeline factory service interface.
  */
+@ProviderType
 public interface JsonPipelineFactory {
 
   /**

@@ -19,6 +19,8 @@
  */
 package io.wcm.caravan.pipeline;
 
+import org.osgi.annotation.versioning.ConsumerType;
+
 import rx.Observable;
 import rx.functions.Func2;
 
@@ -28,6 +30,7 @@ import rx.functions.Func2;
  * You can get common implementations in the {@link JsonPipelineExceptionHandlers} class.
  */
 @FunctionalInterface
+@ConsumerType
 public interface JsonPipelineExceptionHandler extends Func2<JsonPipelineOutput, RuntimeException, Observable<JsonPipelineOutput>> {
 
   /**

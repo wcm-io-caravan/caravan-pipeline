@@ -28,9 +28,12 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * Default implementations of different cache strategies.
  */
+@ProviderType
 public final class CacheStrategies {
 
   private static final EnumSet SUPPORTED_TIME_UNITS = EnumSet.of(TimeUnit.SECONDS, TimeUnit.MINUTES,

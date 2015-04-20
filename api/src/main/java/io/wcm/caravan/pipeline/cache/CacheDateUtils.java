@@ -26,10 +26,13 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * some formatting/parsing functions for the date-format to be used in HTTP headers (see
  * http://tools.ietf.org/html/rfc2616#section-3.3.1)
  */
+@ProviderType
 public final class CacheDateUtils {
 
   private static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
@@ -57,7 +60,7 @@ public final class CacheDateUtils {
    * @return that time in RFC-1123 format (e.g. "Sun, 06 Nov 1994 08:49:37 GMT")
    */
   public static String formatRelativeTime(int secondsRelativeToNow) {
-    return getDateFormat().format(new Date(new Date().getTime() + 1000l * secondsRelativeToNow));
+    return getDateFormat().format(new Date(new Date().getTime() + 1000L * secondsRelativeToNow));
   }
 
   /**
@@ -82,7 +85,7 @@ public final class CacheDateUtils {
     Date reference = parse(rfc1123Date);
     Date now = new Date();
 
-    return (int)((now.getTime() - reference.getTime()) / 1000l);
+    return (int)((now.getTime() - reference.getTime()) / 1000L);
   }
 
   /**

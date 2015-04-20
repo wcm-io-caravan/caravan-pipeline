@@ -24,6 +24,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 
 import java.util.Collection;
 
+import org.osgi.annotation.versioning.ConsumerType;
 
 /**
  * A cache-strategy implements the core decisions about storage time and lifetime of responses that are temporarily or
@@ -31,6 +32,7 @@ import java.util.Collection;
  * {@link JsonPipeline#addCachePoint(CacheStrategy)}). The decisions can vary depending on the REST requests that were
  * executed to obtain the JSON data to be cached.
  */
+@ConsumerType
 public interface CacheStrategy {
 
   /**

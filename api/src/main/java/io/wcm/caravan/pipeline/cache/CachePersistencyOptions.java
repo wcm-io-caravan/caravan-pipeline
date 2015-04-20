@@ -22,12 +22,15 @@ package io.wcm.caravan.pipeline.cache;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * Cache persistency options configure entry store requirements while read or write operations in {@link CacheAdapter}.
  * Options specify cache response refresh interval, storage time and automatical extension of storage time per stored
  * entry. See also {@link CacheStrategy}.
  */
-public class CachePersistencyOptions {
+@ProviderType
+public final class CachePersistencyOptions {
 
   private final int refreshInterval;
   private final int storageTime;

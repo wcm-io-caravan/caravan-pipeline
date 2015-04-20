@@ -20,11 +20,15 @@
 package io.wcm.caravan.pipeline.cache.spi;
 
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
+
+import org.osgi.annotation.versioning.ConsumerType;
+
 import rx.Observable;
 
 /**
  * Common interface for Couchbase-, In-Memory- and Mock-Caches.
  */
+@ConsumerType
 public interface CacheAdapter {
 
   /**

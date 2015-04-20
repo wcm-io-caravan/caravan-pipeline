@@ -26,6 +26,8 @@ import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import java.util.List;
 import java.util.SortedSet;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,6 +49,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * return a new instance with the desired behavior (and an updated descriptor that will be used to generate unique
  * cache keys)
  */
+@ProviderType
 public interface JsonPipeline {
 
   /**
