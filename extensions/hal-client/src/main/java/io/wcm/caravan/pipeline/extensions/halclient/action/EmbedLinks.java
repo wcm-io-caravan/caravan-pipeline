@@ -24,11 +24,12 @@ import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.util.JsonPipelineOutputUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -86,23 +87,27 @@ public final class EmbedLinks implements JsonPipelineAction {
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
     HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
 
-    Observable<JsonPipelineOutput> rxPipelineOutputsToEmbed = getPipelineOutputsForLinks(previousStepOutput, context, halResource).cache();
-    Observable<List<HalResource>> rxResourcesToEmbed = getResourcesToEmbed(rxPipelineOutputsToEmbed);
-    Observable<JsonPipelineOutput> rxReducedJsonPipelineOutput = getPipelineOutput(previousStepOutput, rxPipelineOutputsToEmbed);
+    Observable<JsonPipeline> pipelinesToEmbed = getPipelinesForEachLink(previousStepOutput, context, halResource);
 
-    return createOutput(halResource, rxResourcesToEmbed, rxReducedJsonPipelineOutput);
+    return CacheControlUtils.zipWithLowestMaxAge(pipelinesToEmbed, (outputsToEmbed) -> {
+
+      for (JsonPipelineOutput output : outputsToEmbed) {
+        halResource.addEmbedded(relation, new HalResource((ObjectNode)output.getPayload()));
+      }
+      removeLinks(halResource);
+
+      return previousStepOutput.withPayload(halResource.getModel());
+    });
   }
 
-  private Observable<JsonPipelineOutput> getPipelineOutputsForLinks(JsonPipelineOutput previousStepOutput, JsonPipelineContext context, HalResource halResource) {
+  private Observable<JsonPipeline> getPipelinesForEachLink(JsonPipelineOutput previousStepOutput, JsonPipelineContext context, HalResource halResource) {
     List<Link> links = getLinks(halResource);
     Observable<CaravanHttpRequest> requests = getRequests(previousStepOutput, links);
     return requests
         // create pipeline
         .map(request -> context.getFactory().create(request, context.getProperties()))
         // add Caching
-        .map(pipeline -> cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy))
-        // create asynchron output
-        .flatMap(pipeline -> pipeline.getOutput());
+        .map(pipeline -> cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy));
   }
 
   private List<Link> getLinks(HalResource halResource) {
@@ -116,36 +121,16 @@ public final class EmbedLinks implements JsonPipelineAction {
         // create request, and main cache-control headers from previous request
         .map(link -> {
           CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName)
-          .append(link.getHref())
-          .header("Cache-Control", previousHeaders.get("Cache-Control"));
+              .append(link.getHref())
+              .header("Cache-Control", previousHeaders.get("Cache-Control"));
 
           // also make sure that the correlation-id is passed on to the follow-up requests
-          if (previousStepOutput.getCorrelationId() != null) {
-            builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
-          }
+            if (previousStepOutput.getCorrelationId() != null) {
+              builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
+            }
 
-          return builder.build(parameters);
-        });
-  }
-
-  private Observable<List<HalResource>> getResourcesToEmbed(Observable<JsonPipelineOutput> rxPipelineOutputsToEmbed) {
-    return rxPipelineOutputsToEmbed
-        .map(output -> (ObjectNode)output.getPayload())
-        .map(json -> new HalResource(json)).toList();
-  }
-
-  private Observable<JsonPipelineOutput> getPipelineOutput(JsonPipelineOutput previousStepOutput, Observable<JsonPipelineOutput> rxPipelineOutputsToEmbed) {
-    return rxPipelineOutputsToEmbed
-        .reduce(previousStepOutput, (recent, next) -> JsonPipelineOutputUtil.enrichWithLowestAge(recent, next));
-  }
-
-  private Observable<JsonPipelineOutput> createOutput(HalResource halResource, Observable<List<HalResource>> rxResourcesToEmbed,
-      Observable<JsonPipelineOutput> rxReducedJsonPipelineOutput) {
-    return Observable.zip(rxResourcesToEmbed, rxReducedJsonPipelineOutput, (resourcesToEmbed, pipelineOutput) -> {
-      halResource.addEmbedded(relation, resourcesToEmbed);
-      removeLinks(halResource);
-      return pipelineOutput.withPayload(halResource.getModel());
-    });
+            return builder.build(parameters);
+          });
   }
 
   private void removeLinks(HalResource halResource) {

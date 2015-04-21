@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +54,6 @@ public class EmbedLinksTest {
 
   private EmbedLinks action;
 
-  @Mock
   private JsonPipelineOutput previousStepOutput;
   @Mock
   private JsonPipelineContext context;
@@ -71,10 +71,8 @@ public class EmbedLinksTest {
         .addLinks("item", ImmutableList.of(
             HalResourceFactory.createLink("/item-1"),
             HalResourceFactory.createLink("/item-2")));
-    Mockito.when(previousStepOutput.getPayload()).thenReturn(hal.getModel());
 
-    Mockito.when(previousStepOutput.getRequests()).thenReturn(ImmutableList.of(
-        new CaravanHttpRequestBuilder().build()));
+    previousStepOutput = new JsonPipelineOutputImpl(hal.getModel(), ImmutableList.of(new CaravanHttpRequestBuilder().build()));
 
     Mockito.when(context.getFactory()).thenReturn(factory);
 
