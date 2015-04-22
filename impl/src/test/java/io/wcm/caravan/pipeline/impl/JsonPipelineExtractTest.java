@@ -22,7 +22,7 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -196,7 +196,7 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
     pipeline.getStringOutput().subscribe(stringObserver);
 
     // make sure that only #onError was called, and there wasn't any other interaction with the observer or cache
-    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verify(stringObserver).onError(isA(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 

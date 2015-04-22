@@ -19,7 +19,8 @@
  */
 package io.wcm.caravan.pipeline.impl;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -66,7 +67,7 @@ public class JsonPipelineActionTransformTest extends AbstractJsonPipelineTest {
 
     fetchIdThenName.getStringOutput().subscribe(stringObserver);
 
-    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verify(stringObserver).onError(isA(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
@@ -74,14 +75,17 @@ public class JsonPipelineActionTransformTest extends AbstractJsonPipelineTest {
   public void transformationActualPipelineFailed() {
     JsonPipeline fetchId = newPipelineWithResponseBody("{id: 123}");
 
+    RuntimeException exceptionWithinAction = new RuntimeException("An expected exception has occured");
+
     JsonPipeline fetchIdThenName =
         fetchId.applyAction(JsonPipelineActions.simpleTransformation("fetchName", (fetchIdOutput) -> {
-          throw new RuntimeException("An expected exception has occured");
+
+          throw exceptionWithinAction;
         }));
 
     fetchIdThenName.getStringOutput().subscribe(stringObserver);
 
-    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verify(stringObserver).onError(eq(exceptionWithinAction));
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 

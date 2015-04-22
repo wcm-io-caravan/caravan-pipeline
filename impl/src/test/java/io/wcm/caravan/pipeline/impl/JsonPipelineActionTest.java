@@ -21,6 +21,8 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -29,6 +31,8 @@ import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+
+import java.io.IOException;
 
 import org.json.JSONException;
 import org.junit.Test;
@@ -89,24 +93,28 @@ public class JsonPipelineActionTest extends AbstractJsonPipelineTest {
 
   @Test
   public void applyActionPreviousPipelineFailed() {
-    JsonPipeline previousStep = newPipelineWithResponseError(new RuntimeException());
+    IOException failure = new IOException();
+    JsonPipeline previousStep = newPipelineWithResponseError(failure);
 
     JsonPipeline result = previousStep.applyAction(action);
     result.getStringOutput().subscribe(stringObserver);
 
-    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    // Exceptions when fetching the HTTP response will always be wrapped in a JsonPipelineInputException
+    verify(stringObserver).onError(isA(JsonPipelineInputException.class));
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
   @Test
   public void applyActionActualPipelineFailed() {
     JsonPipeline previousStep = newPipelineWithResponseBody("{id: 123}");
-    when(action.execute(any(), any())).thenThrow(new RuntimeException());
+
+    RuntimeException failure = new RuntimeException();
+    when(action.execute(any(), any())).thenThrow(failure);
 
     JsonPipeline result = previousStep.applyAction(action);
     result.getStringOutput().subscribe(stringObserver);
 
-    verify(stringObserver).onError(any(JsonPipelineInputException.class));
+    verify(stringObserver).onError(eq(failure));
     verifyNoMoreInteractions(stringObserver, cacheAdapter);
   }
 
