@@ -28,6 +28,7 @@ import rx.exceptions.Exceptions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 
 /**
@@ -46,6 +47,10 @@ public class AssertExistsOperator implements Operator<JsonPipelineOutput, JsonPi
    * @param msg an informative error message
    */
   public AssertExistsOperator(String jsonPath, int statusCode, String msg) {
+
+    // fail fast if the given json path is invalid
+    JsonPath.compile(jsonPath);
+
     this.jsonPath = jsonPath;
     this.statusCode = statusCode;
     this.msg = msg;

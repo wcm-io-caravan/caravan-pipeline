@@ -105,7 +105,25 @@ public class JsonPathSelectorTest {
   }
 
   @Test
-  public void testExtractArrayPathNoResults() {
+  public void testExtractArrayQuery() {
+
+    // find all books cheaper than 10
+    ArrayNode result = new JsonPathSelector("$..book[?(@.price<10)]").call(booksJson);
+
+    assertEquals(2, result.size());
+  }
+
+  @Test
+  public void testExtractArrayQuery2() {
+
+    // find the book by title
+    ArrayNode result = new JsonPathSelector("$..book[?(@.title=='The Lord of the Rings')]").call(booksJson);
+
+    assertEquals(1, result.size());
+  }
+
+  @Test
+  public void testExtractArrayQueryNoResults() {
 
     // if no selection matches the expression, but the property in the query exists, no results are returned
     ArrayNode result = new JsonPathSelector("$..book[?(@.title=='No such title')]").call(booksJson);
