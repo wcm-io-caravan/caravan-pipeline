@@ -83,7 +83,7 @@ public class EmbedLinksTest {
         JsonPipeline pipeline = Mockito.mock(JsonPipeline.class);
         Mockito.when(pipeline.getOutput()).thenReturn(Observable.create((Subscriber<? super JsonPipelineOutput> s) -> {
           CaravanHttpRequest request = invocation.getArgumentAt(0, CaravanHttpRequest.class);
-          if ("/item-1".equals(request.url())) {
+          if ("/item-1".equals(request.getUrl())) {
             try {
               Thread.sleep(10);
             }
@@ -91,9 +91,9 @@ public class EmbedLinksTest {
               ex.printStackTrace();
             }
           }
-          requests.add(request.url());
+          requests.add(request.getUrl());
           JsonPipelineOutput output = Mockito.mock(JsonPipelineOutput.class);
-          HalResource itemHal = HalResourceFactory.createResource(request.url());
+          HalResource itemHal = HalResourceFactory.createResource(request.getUrl());
           Mockito.when(output.getPayload()).thenReturn(itemHal.getModel());
           s.onNext(output);
           s.onCompleted();

@@ -77,7 +77,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       this.sourceServiceNames.add(request.getServiceName());
     }
     this.requests.add(request);
-    this.descriptor = isNotBlank(request.url()) ? "GET(//" + request.getServiceName() + request.url() + ")" : "EMPTY()";
+    this.descriptor = isNotBlank(request.getUrl()) ? "GET(//" + request.getServiceName() + request.getUrl() + ")" : "EMPTY()";
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request)).cache();
     this.context = context;
   }

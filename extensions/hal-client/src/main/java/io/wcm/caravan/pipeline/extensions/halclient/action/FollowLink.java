@@ -114,7 +114,7 @@ public final class FollowLink implements JsonPipelineAction {
 
   private Collection<String> getCacheControlHeader(JsonPipelineOutput previousStepOutput) {
     CaravanHttpRequest previousRequest = previousStepOutput.getRequests().get(0);
-    return previousRequest.headers().get("Cache-Control");
+    return previousRequest.getHeaders().get("Cache-Control");
   }
 
   private JsonPipeline createPipeline(JsonPipelineContext context, CaravanHttpRequest request) {

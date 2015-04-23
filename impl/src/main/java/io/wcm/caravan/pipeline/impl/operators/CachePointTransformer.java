@@ -228,7 +228,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     private int getClientMaxAge() {
       int maxAgeFromClient = (int)TimeUnit.DAYS.toSeconds(365);
-      for (String cacheControl : requests.get(0).headers().get("Cache-Control")) {
+      for (String cacheControl : requests.get(0).getHeaders().get("Cache-Control")) {
         if (cacheControl.startsWith("max-age")) {
           int maxAge = NumberUtils.toInt(StringUtils.substringAfter(cacheControl, "="), maxAgeFromClient);
           if (maxAge > 0) {
@@ -425,7 +425,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       List<String> sourcePaths = new ArrayList<String>();
       for (CaravanHttpRequest req : requests) {
-        sourcePaths.add(StringUtils.substringBefore(req.url(), "?"));
+        sourcePaths.add(StringUtils.substringBefore(req.getUrl(), "?"));
       }
       metadata.set("sourcePaths", JacksonFunctions.pojoToNode(sourcePaths));
 

@@ -80,14 +80,14 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
         }
 
-        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.url(), e));
+        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.getUrl(), e));
       }
 
       @Override
       public void onNext(CaravanHttpResponse response) {
         try {
           final int statusCode = response.status();
-          log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.url());
+          log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.getUrl());
           if (statusCode == HttpServletResponse.SC_OK) {
 
             JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
@@ -100,14 +100,14 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           }
           else {
 
-            String msg = "Request for " + request.url() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
+            String msg = "Request for " + request.getUrl() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
             log.warn(msg);
 
             subscriber.onError(new JsonPipelineInputException(statusCode, msg));
           }
         }
         catch (IOException ex) {
-          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.url(), ex));
+          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.getUrl(), ex));
         }
       }
     };

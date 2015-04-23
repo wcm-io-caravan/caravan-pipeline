@@ -116,7 +116,7 @@ public final class EmbedLinks implements JsonPipelineAction {
   }
 
   private Observable<CaravanHttpRequest> getRequests(JsonPipelineOutput previousStepOutput, List<Link> links) {
-    Multimap<String, String> previousHeaders = previousStepOutput.getRequests().get(0).headers();
+    Multimap<String, String> previousHeaders = previousStepOutput.getRequests().get(0).getHeaders();
     return Observable.from(links)
         // create request, and main cache-control headers from previous request
         .map(link -> {
