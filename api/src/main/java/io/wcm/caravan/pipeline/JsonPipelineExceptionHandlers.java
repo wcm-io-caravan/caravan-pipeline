@@ -67,6 +67,21 @@ public final class JsonPipelineExceptionHandlers {
   }
 
   /**
+   * Creates an exception handling function that will throw throw a new {@link JsonPipelineInputException} with the
+   * given message if the exception being caught has a status code >= 500
+   * @param msg the new error message
+   * @return a function that will throw a new {@link JsonPipelineInputException} if status code is in the 50x range
+   */
+  public static JsonPipelineExceptionHandler rethrow50x(String msg) {
+    return (defaultFallbackOutput, e) -> {
+      if (defaultFallbackOutput.getStatusCode() >= 500) {
+        throw new JsonPipelineInputException(defaultFallbackOutput.getStatusCode(), msg, e);
+      }
+      throw e;
+    };
+  }
+
+  /**
    * Creates an exception handling function that will throw the given exception if the exception being caught has a
    * status code &gt;= 500 (and otherwise rethrow the original exception )
    * @param exceptionToThrow the error message
@@ -80,6 +95,7 @@ public final class JsonPipelineExceptionHandlers {
       throw e;
     };
   }
+
 
   /**
    * Creates an exception handling function that will provide static fallback content if the exception being caught has
