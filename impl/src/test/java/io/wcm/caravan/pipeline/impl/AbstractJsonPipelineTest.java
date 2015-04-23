@@ -26,6 +26,7 @@ import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
+import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
 import io.wcm.caravan.pipeline.AbstractCaravanTestCase;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
@@ -127,7 +128,12 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
       headers.put("Cache-Control", "max-age: " + maxAge);
     }
 
-    return CaravanHttpResponse.create(statusCode, "Ok", headers, content, Charsets.UTF_8);
+    return new CaravanHttpResponseBuilder()
+        .status(statusCode)
+        .reason("OK")
+        .headers(headers)
+        .body(content, Charsets.UTF_8)
+        .build();
   }
 
   static JsonNode getJsonNode(String jsonText) {

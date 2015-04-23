@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
+import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import org.junit.Test;
@@ -45,7 +46,12 @@ public class ResponseHandlingOperatorTest {
     Subscriber subscriber = Mockito.mock(Subscriber.class);
     Subscriber<? super CaravanHttpResponse> operatorSubscriber = operator.call(subscriber);
     Multimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: 10");
-    CaravanHttpResponse response = CaravanHttpResponse.create(200, "OK", headers, new byte[0]);
+    CaravanHttpResponse response = new CaravanHttpResponseBuilder()
+        .status(200)
+        .reason("OK")
+        .headers(headers)
+        .body(new byte[0])
+        .build();
     operatorSubscriber.onNext(response);
     ArgumentCaptor<JsonPipelineOutput> captor = ArgumentCaptor.forClass(JsonPipelineOutput.class);
     Mockito.verify(subscriber).onNext(captor.capture());

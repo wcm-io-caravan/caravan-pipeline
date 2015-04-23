@@ -23,6 +23,7 @@ import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
+import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
@@ -93,7 +94,12 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     // otherwise the default max-age value of zero would become effective
     ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(365)));
 
-    CaravanHttpResponse emptyJsonResponse = CaravanHttpResponse.create(200, "Ok", headers, "{}", Charset.forName("UTF-8"));
+    CaravanHttpResponse emptyJsonResponse = new CaravanHttpResponseBuilder()
+        .status(200)
+        .reason("OK")
+        .headers(headers)
+        .body("{}", Charset.forName("UTF-8"))
+        .build();
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
         new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));

@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
-import io.wcm.caravan.io.http.response.CaravanHttpResponse;
+import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
@@ -97,7 +97,12 @@ public class JsonPipelineFactoryImplTest {
     request = new CaravanHttpRequestBuilder("service").append("/path").build();
     ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(1)));
     when(caravanHttpClient.execute(request)).thenReturn(
-        Observable.just(CaravanHttpResponse.create(HttpStatus.SC_OK, "Content", headers, new byte[0])));
+        Observable.just(new CaravanHttpResponseBuilder()
+            .status(HttpStatus.SC_OK)
+            .reason("Content")
+            .headers(headers)
+            .body(new byte[0])
+            .build()));
 
     JsonPipeline pipeline = factory.create(request);
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
