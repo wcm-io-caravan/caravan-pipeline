@@ -73,6 +73,19 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   private static final boolean DEFAULT_PERFORMANCE_METRICS = false;
   private boolean performanceMetricsEnabled;
 
+  /** constructor used in a OSGi context */
+  public JsonPipelineFactoryImpl() {}
+
+  /**
+   * explicit dependency injection (to be used in unit-tests)
+   * @param transport the implementation to use to fetch responses
+   * @param metricRegistry for gathering monitoring statistics
+   */
+  public JsonPipelineFactoryImpl(CaravanHttpClient transport, MetricRegistry metricRegistry) {
+    this.transport = transport;
+    this.metricRegistry = metricRegistry;
+  }
+
   @Override
   public JsonPipeline create(final CaravanHttpRequest request) {
     return create(request, Collections.emptyMap());

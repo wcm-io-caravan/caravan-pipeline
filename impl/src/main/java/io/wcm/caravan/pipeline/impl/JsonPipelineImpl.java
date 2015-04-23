@@ -75,7 +75,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * @param responseObservable the response observable obtained by the {@link CaravanHttpClient}
    * @param context preinitialized JSON pipeline context
    */
-  JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final JsonPipelineContextImpl context) {
+  public JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final JsonPipelineContextImpl context) {
     if (isNotBlank(request.getServiceName())) {
       this.sourceServiceNames.add(request.getServiceName());
     }
