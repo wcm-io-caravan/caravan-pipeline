@@ -43,16 +43,21 @@ public class JsonPipelineContextImpl implements JsonPipelineContext {
 
   private final Map<String, String> cacheMetadataProperties;
 
+  private final boolean performanceMetricsEnabled;
+
   /**
    * @param cacheAdapter a caching layer / cache adapter to use
    * @param metricRegistry metrics registry
    * @param contextProperties additional metadata in string property form
+   * @param performanceMetricsEnabled true if performance metrics should be enabled
    */
-  public JsonPipelineContextImpl(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
+  public JsonPipelineContextImpl(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties,
+      boolean performanceMetricsEnabled) {
     this.factory = factory;
     this.cacheAdapter = cacheAdapter;
     this.metricRegistry = metricRegistry;
     this.cacheMetadataProperties = contextProperties;
+    this.performanceMetricsEnabled = performanceMetricsEnabled;
   }
 
   @Override
@@ -72,6 +77,11 @@ public class JsonPipelineContextImpl implements JsonPipelineContext {
   @Override
   public Map<String, String> getProperties() {
     return this.cacheMetadataProperties;
+  }
+
+  @Override
+  public boolean isPerformanceMetricsEnabled() {
+    return this.performanceMetricsEnabled;
   }
 
 }

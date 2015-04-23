@@ -21,11 +21,13 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.Validate.isTrue;
+import io.wcm.caravan.common.performance.PerformanceMetrics;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
@@ -66,6 +68,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   private JsonPipelineContextImpl context;
   private String descriptor;
   private Observable<JsonPipelineOutput> observable;
+  private PerformanceMetrics performanceMetrics;
 
   /**
    * @param request the REST request that provides the source data
@@ -80,13 +83,19 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.descriptor = isNotBlank(request.getUrl()) ? "GET(//" + request.getServiceName() + request.getUrl() + ")" : "EMPTY()";
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request)).cache();
     this.context = context;
+    if (this.context.isPerformanceMetricsEnabled()) {
+      performanceMetrics = PerformanceMetrics.createNew(isNotBlank(request.getUrl()) ? "GET" : "EMPTY", descriptor, request.getCorrelationId());
+      this.observable = this.observable
+          .doOnSubscribe(performanceMetrics.getStartAction())
+          .doOnTerminate(performanceMetrics.getEndAction());
+    }
   }
 
   private JsonPipelineImpl() {
     // only used internally
   }
 
-  private JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix) {
+  private JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
     clone.requests.addAll(this.requests);
@@ -98,6 +107,12 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     clone.observable = newObservable.cache();
     clone.context = context;
+    if (clone.context.isPerformanceMetricsEnabled()) {
+      clone.performanceMetrics = performanceMetrics.createNext(action, clone.descriptor);
+      clone.observable = clone.observable
+          .doOnSubscribe(clone.performanceMetrics.getStartAction())
+          .doOnTerminate(clone.performanceMetrics.getEndAction());
+    }
     return clone;
   }
 
@@ -121,7 +136,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     Observable<JsonPipelineOutput> assertingObservable = observable.lift(new AssertExistsOperator(jsonPath, statusCode, msg));
 
-    return cloneWith(assertingObservable, null);
+    return cloneWith(assertingObservable, null, "ASSERT_EXISTS");
   }
 
   @Override
@@ -130,7 +145,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> extractingObservable = observable.lift(new ExtractOperator(jsonPath, null));
     String transformationDesc = "EXTRACT(" + jsonPath + ")";
 
-    return cloneWith(extractingObservable, transformationDesc);
+    return cloneWith(extractingObservable, transformationDesc, "EXTRACT");
   }
 
   @Override
@@ -142,7 +157,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> extractingObservable = observable.lift(new ExtractOperator(jsonPath, targetProperty));
     String transformationDesc = "EXTRACT(" + jsonPath + " INTO " + targetProperty + ")";
 
-    return cloneWith(extractingObservable, transformationDesc);
+    return cloneWith(extractingObservable, transformationDesc, "EXTRACT");
   }
 
   @Override
@@ -151,7 +166,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> collectingObservable = observable.lift(new CollectOperator(jsonPath, null));
     String transformationDesc = "COLLECT(" + jsonPath + ")";
 
-    return cloneWith(collectingObservable, transformationDesc);
+    return cloneWith(collectingObservable, transformationDesc, "COLLECT");
   }
 
   @Override
@@ -163,7 +178,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> collectingObservable = observable.lift(new CollectOperator(jsonPath, targetProperty));
     String transformationDesc = "COLLECT(" + jsonPath + " INTO " + targetProperty + ")";
 
-    return cloneWith(collectingObservable, transformationDesc);
+    return cloneWith(collectingObservable, transformationDesc, "COLLECT");
   }
 
   @Override
@@ -173,7 +188,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> mergedObservable = observable.compose(transformer);
     String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + ")";
 
-    JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc);
+    JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc, "MERGE");
     mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
     mergedPipeline.requests.addAll(secondarySource.getRequests());
 
@@ -190,7 +205,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     Observable<JsonPipelineOutput> mergedObservable = observable.compose(transformer);
     String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + " INTO " + targetProperty + ")";
 
-    JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc);
+    JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc, "MERGE");
     mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
     mergedPipeline.requests.addAll(secondarySource.getRequests());
 
@@ -205,13 +220,13 @@ public final class JsonPipelineImpl implements JsonPipeline {
       try {
         return action.execute(output, context);
       }
-      catch (Throwable e) {
+      catch (Exception e) {
         log.error("Failed to execute action " + action.getId(), e);
         return Observable.error(e);
       }
     });
 
-    return cloneWith(transformedObservable, actionDesc);
+    return cloneWith(transformedObservable, actionDesc, "ACTION");
   }
 
   @Override
@@ -225,7 +240,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     CachePointTransformer transformer = new CachePointTransformer(context, requests, descriptor, strategy);
     Observable<JsonPipelineOutput> cachingObservable = observable.compose(transformer);
 
-    return cloneWith(cachingObservable, null);
+    return cloneWith(cachingObservable, null, "ADD_CACHEPOINT");
   }
 
   @Override
@@ -233,7 +248,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     Observable<JsonPipelineOutput> exceptionHandlingObservable = observable.lift(new HandleExceptionOperator(handler));
 
-    return cloneWith(exceptionHandlingObservable, null);
+    return cloneWith(exceptionHandlingObservable, null, "HANDLE_EXCEPTION");
   }
 
   @Override
@@ -249,6 +264,14 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public Observable<String> getStringOutput() {
     return getJsonOutput().map(JacksonFunctions::nodeToString);
+  }
+
+  JsonPipelineContext getJsonPipelineContext() {
+    return this.context;
+  }
+
+  PerformanceMetrics getPerformanceMetrics() {
+    return this.performanceMetrics;
   }
 
 }

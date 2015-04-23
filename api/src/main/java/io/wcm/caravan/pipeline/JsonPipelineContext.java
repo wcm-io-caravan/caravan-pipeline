@@ -55,4 +55,9 @@ public interface JsonPipelineContext {
    */
   Map<String, String> getProperties();
 
+  /**
+   * @return true if merformance metrics are enabled
+   */
+  boolean isPerformanceMetricsEnabled();
+
 }

@@ -20,13 +20,17 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
@@ -98,11 +102,11 @@ public class JsonPipelineFactoryImplTest {
     ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(1)));
     when(caravanHttpClient.execute(request)).thenReturn(
         Observable.just(new CaravanHttpResponseBuilder()
-            .status(HttpStatus.SC_OK)
-            .reason("Content")
-            .headers(headers)
-            .body(new byte[0])
-            .build()));
+        .status(HttpStatus.SC_OK)
+        .reason("Content")
+        .headers(headers)
+        .body(new byte[0])
+        .build()));
 
     JsonPipeline pipeline = factory.create(request);
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().first();
@@ -132,6 +136,23 @@ public class JsonPipelineFactoryImplTest {
 
     // expected two levels of cache adapters via OSGI injection
     assertEquals(2, cacheAdapter.cachingLevels());
+  }
+
+  @Test
+  public void testPerformanceMetricsDisabled() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)factory.createEmpty();
+    JsonPipelineContext jsonPipelineContext = pipeline.getJsonPipelineContext();
+    assertFalse(jsonPipelineContext.isPerformanceMetricsEnabled());
+    assertNull(pipeline.getPerformanceMetrics());
+  }
+
+  @Test
+  public void testPerformanceMetricsEnabled() {
+    factory = context.registerInjectActivateService(new JsonPipelineFactoryImpl(), ImmutableMap.of(JsonPipelineFactoryImpl.PERFORMANCE_METRICS, true));
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)factory.createEmpty();
+    JsonPipelineContext jsonPipelineContext = pipeline.getJsonPipelineContext();
+    assertTrue(jsonPipelineContext.isPerformanceMetricsEnabled());
+    assertNotNull(pipeline.getPerformanceMetrics());
   }
 
 }
