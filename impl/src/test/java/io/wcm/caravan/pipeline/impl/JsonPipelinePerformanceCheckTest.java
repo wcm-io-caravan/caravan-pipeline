@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import io.wcm.caravan.common.performance.PerformanceMetrics;
@@ -60,97 +61,83 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
   public void testSingle() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody(getBooksString());
     assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
+    assertFirstPipelineMetrics(pipeline, pipeline);
+  }
 
-    PerformanceMetrics performanceMetrics = pipeline.getPerformanceMetrics();
-    assertStartMetrics(performanceMetrics);
+  @Test
+  public void testFirstAssertExists() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline asserted = pipeline.assertExists("$.a", 500, "a not found");
+    assertFirstPipelineMetrics(pipeline, asserted);
+  }
 
-    pipeline.getJsonOutput().toBlocking().single();
+  @Test
+  public void testLastAssertExists() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}").assertExists("$.a", 500, "a not found");
+    assertNextPipelineMetrics(pipeline);
+  }
 
-    assertFirstMetrics(performanceMetrics);
+  @Test
+  public void testFirstHandleException() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
+    JsonPipeline exceptionHandler = pipeline
+        .handleException((fallbackContent, ex) -> {
+          fail("this should not be called");
+          return Observable.just(fallbackContent);
+        });
 
+    assertFirstPipelineMetrics(pipeline, exceptionHandler);
+
+  }
+
+  @Test
+  public void testLastHandleException() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}").handleException(
+        (fallbackContent, ex) -> {
+          fail("this should not be called");
+          return Observable.just(fallbackContent);
+        });
+
+    assertNextPipelineMetrics(pipeline);
   }
 
   @Test
   public void testFirstCollect() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
     JsonPipeline collected = pipeline.collect("$..label", "extracted");
-
-    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
-    PerformanceMetrics performanceMetrics = pipeline.getPerformanceMetrics();
-    assertStartMetrics(performanceMetrics);
-
-    collected.getJsonOutput().toBlocking().single();
-
-    assertFirstMetrics(performanceMetrics);
+    assertFirstPipelineMetrics(pipeline, collected);
   }
 
   @Test
   public void testLastCollect() {
     JsonPipelineImpl collected = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}").collect("$..label", "extracted");
-
-    assertTrue(collected.getJsonPipelineContext().isPerformanceMetricsEnabled());
-    PerformanceMetrics performanceMetrics = collected.getPerformanceMetrics();
-    assertStartMetrics(performanceMetrics);
-
-    collected.getJsonOutput().toBlocking().single();
-
-    assertNextMetrics(performanceMetrics);
+    assertNextPipelineMetrics(collected);
   }
 
   @Test
   public void testFirstExtract() {
-    JsonPipelineImpl source = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }}");
-    JsonPipeline extracted = source.extract("$.a");
-
-    assertTrue(source.getJsonPipelineContext().isPerformanceMetricsEnabled());
-    PerformanceMetrics performanceMetrics = source.getPerformanceMetrics();
-    assertStartMetrics(performanceMetrics);
-
-    extracted.getJsonOutput().toBlocking().single();
-
-    assertFirstMetrics(performanceMetrics);
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline extracted = pipeline.extract("$.a");
+    assertFirstPipelineMetrics(pipeline, extracted);
   }
 
   @Test
   public void testLastExtract() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }}").extract("$.a");
-
-    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
-    PerformanceMetrics last = pipeline.getPerformanceMetrics();
-    assertStartMetrics(last);
-
-    pipeline.getJsonOutput().toBlocking().single();
-
-    assertNextMetrics(last);
+    assertNextPipelineMetrics(pipeline);
   }
 
   @Test
   public void testFirstMerge() {
-
-    // test successful merge of one pipeline into the other *without adding another property*
-    JsonPipelineImpl firstPipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}");
-    JsonPipeline lastPipeline = firstPipeline.merge(newPipelineWithResponseBody("{b: 456}"));
-
-    PerformanceMetrics first = firstPipeline.getPerformanceMetrics();
-    assertStartMetrics(first);
-
-    lastPipeline.getStringOutput().toBlocking().single();
-
-    assertFirstMetrics(first);
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline merged = pipeline.merge(newPipelineWithResponseBody("{b: 456}"));
+    assertFirstPipelineMetrics(pipeline, merged);
   }
 
   @Test
   public void testLastMerge() {
-
-    // test successful merge of one pipeline into the other *without adding another property*
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}").merge(newPipelineWithResponseBody("{b: 456}"));
-
-    PerformanceMetrics firstPerformanceMetrics = pipeline.getPerformanceMetrics();
-    assertStartMetrics(firstPerformanceMetrics);
-
-    pipeline.getStringOutput().toBlocking().single();
-
-    assertNextMetrics(firstPerformanceMetrics);
+    assertNextPipelineMetrics(pipeline);
   }
 
   @Test
@@ -226,7 +213,7 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
                   }
 
                   @Override
-                  public void onNext(JsonPipelineOutput t) {
+                  public void onNext(JsonPipelineOutput output) {
                     try {
                       Thread.sleep(2);
                       custom.setStartTimestamp();
@@ -237,7 +224,7 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
                     catch (InterruptedException ex) {
                       custom.setEndTimestamp();
                     }
-                    subscriber.onNext(t);
+                    subscriber.onNext(output);
                   }
                 });
               }
@@ -360,6 +347,27 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
     assertNextMetrics(secondPerformanceMetrics);
     assertNextMetrics(thirdPerformanceMetrics);
   }
+
+  private void assertFirstPipelineMetrics(JsonPipelineImpl pipeline, JsonPipeline toSubscribe) {
+    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
+    PerformanceMetrics performanceMetrics = pipeline.getPerformanceMetrics();
+    assertStartMetrics(performanceMetrics);
+
+    toSubscribe.getJsonOutput().toBlocking().single();
+
+    assertFirstMetrics(performanceMetrics);
+  }
+
+  private void assertNextPipelineMetrics(JsonPipelineImpl pipeline) {
+    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
+    PerformanceMetrics performanceMetrics = pipeline.getPerformanceMetrics();
+    assertStartMetrics(performanceMetrics);
+
+    pipeline.getJsonOutput().toBlocking().single();
+
+    assertNextMetrics(performanceMetrics);
+  }
+
 
   private void assertStartMetrics(PerformanceMetrics performanceMetrics) {
     assertNull(performanceMetrics.getStartTime());
