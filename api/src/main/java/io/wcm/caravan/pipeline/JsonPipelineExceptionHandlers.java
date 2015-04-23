@@ -68,7 +68,7 @@ public final class JsonPipelineExceptionHandlers {
 
   /**
    * Creates an exception handling function that will throw throw a new {@link JsonPipelineInputException} with the
-   * given message if the exception being caught has a status code >= 500
+   * given message if the exception being caught has a status code in the 50x range
    * @param msg the new error message
    * @return a function that will throw a new {@link JsonPipelineInputException} if status code is in the 50x range
    */
