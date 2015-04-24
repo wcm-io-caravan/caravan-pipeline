@@ -101,7 +101,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
 
 
   @Test(expected = InvalidPathException.class)
-  public void assertExistsWithInvalidPath() {
+  public void assertExistsFailsWithInvalidPath() {
 
     // check that assertExist fails with an InvalidPathException if the given JSONPath is not valid
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}")
@@ -119,7 +119,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   // with additional pipeline steps
 
   @Test
-  public void assertExistsExtractIntoTargetProperty() {
+  public void assertExistsAfterExtractIntoTargetProperty() {
 
     // check that a fulfilled assertion completes for preceding extract operation
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString())
@@ -130,7 +130,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   }
 
   @Test
-  public void assertExistsExtractNoResultIntoTargetProperty() {
+  public void assertExistsAfterExtractNoResultIntoTargetProperty() {
 
     // check that a fulfilled assertion fails for preceding extract operation because of extracted null
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString())
@@ -144,7 +144,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   }
 
   @Test
-  public void assertExistsCollectIntoTargetProperty() {
+  public void assertExistsAfterCollectIntoTargetProperty() {
 
     // check that a fulfilled assertion completes for preceding collect operation
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString())
@@ -156,7 +156,7 @@ public class JsonPipelineAssertExistsTest extends AbstractJsonPipelineTest {
   }
 
   @Test
-  public void assertExistsEmptyCollectIntoTargetProperty() {
+  public void assertExistsAfterEmptyCollectIntoTargetProperty() {
 
     // check that a fulfilled assertion fails for preceding extract operation because an empty array is extracted
     JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString())
