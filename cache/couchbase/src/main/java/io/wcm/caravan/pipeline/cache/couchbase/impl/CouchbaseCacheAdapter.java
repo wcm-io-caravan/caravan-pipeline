@@ -135,26 +135,6 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   }
 
   @Override
-  public String getCacheKey(String servicePrefix, String descriptor) {
-    String prefix = keyPrefix + servicePrefix + ":";
-
-    String cacheKey = prefix + descriptor;
-    if (cacheKey.length() < MAX_CACHE_KEY_LENGTH) {
-      return cacheKey;
-    }
-
-    int charactersToKeep = MAX_CACHE_KEY_LENGTH - prefix.length() - 41;
-
-    String toKeep = descriptor.substring(0, charactersToKeep);
-    String toHash = descriptor.substring(charactersToKeep);
-
-    String hash = calculateHash(toHash);
-
-    return prefix + toKeep + "#" + hash;
-  }
-
-
-  @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
     if (options == null) {
       return Observable.empty();
@@ -164,10 +144,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
     Observable<RawJsonDocument> fromCache;
     if (options.isExtendStorageTimeOnGet()) {
-      fromCache = bucket.getAndTouch(cacheKey, options.getStorageTime(), RawJsonDocument.class);
+      fromCache = bucket.getAndTouch(getCacheKey(cacheKey), options.getStorageTime(), RawJsonDocument.class);
     }
     else {
-      fromCache = bucket.get(cacheKey, RawJsonDocument.class);
+      fromCache = bucket.get(getCacheKey(cacheKey), RawJsonDocument.class);
     }
 
     return fromCache
@@ -192,7 +172,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
 
-    RawJsonDocument doc = RawJsonDocument.create(cacheKey, options.getStorageTime(), jsonString);
+    RawJsonDocument doc = RawJsonDocument.create(getCacheKey(cacheKey), options.getStorageTime(), jsonString);
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);
 
     insertionObservable
@@ -215,10 +195,27 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
       @Override
       public void onError(Throwable e) {
-        log.error("Failed to put document " + cacheKey + " into the Couchbase cache", e);
+        log.error("Failed to put document " + getCacheKey(cacheKey) + " into the Couchbase cache", e);
       }
 
     });
+  }
+
+  String getCacheKey(String longKey) {
+    String cacheKey = keyPrefix + longKey;
+
+    if (cacheKey.length() < MAX_CACHE_KEY_LENGTH) {
+      return cacheKey;
+    }
+
+    int charactersToKeep = MAX_CACHE_KEY_LENGTH - keyPrefix.length() - 41;
+
+    String toKeep = longKey.substring(0, charactersToKeep);
+    String toHash = longKey.substring(charactersToKeep);
+
+    String hash = calculateHash(toHash);
+
+    return keyPrefix + toKeep + "#" + hash;
   }
 
   private static String calculateHash(String message) {

@@ -75,7 +75,6 @@ public class GuavaCacheAdapter implements CacheAdapter {
    * 1024*1024 multiplier used to provide bytes from megabyte values to create correct cache weight
    */
   private static final BigDecimal WEIGHT_MULTIPLIER = new BigDecimal(1048576);
-  private static final String KEY_PREFIX = "guava:";
 
   private Cache<String, String> guavaCache;
   private long cacheWeightInBytes;
@@ -94,7 +93,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
     this.guavaCache = CacheBuilder.newBuilder().weigher(new Weigher<String, String>() {
       @Override
       public int weigh(String key, String value) {
-        return 8 * ((((value.length()) * 2) + 45) / 8);
+        return getWeight(key) + getWeight(value);
       }
     }).maximumWeight(cacheWeightInBytes).build();
 
@@ -102,7 +101,10 @@ public class GuavaCacheAdapter implements CacheAdapter {
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
     hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "hits"));
     missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
+  }
 
+  private int getWeight(String toMeasure) {
+    return 8 * ((((toMeasure.length()) * 2) + 45) / 8);
   }
 
   @Deactivate
@@ -111,12 +113,6 @@ public class GuavaCacheAdapter implements CacheAdapter {
     metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "put"));
     metricRegistry.remove(MetricRegistry.name(getClass(), "hits"));
     metricRegistry.remove(MetricRegistry.name(getClass(), "misses"));
-  }
-
-  @Override
-  public String getCacheKey(String servicePrefix, String descriptor) {
-    return KEY_PREFIX + servicePrefix + ":" + descriptor;
-
   }
 
   @Override

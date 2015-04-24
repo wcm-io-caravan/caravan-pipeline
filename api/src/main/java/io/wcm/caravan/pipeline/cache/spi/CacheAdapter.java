@@ -32,14 +32,6 @@ import rx.Observable;
 public interface CacheAdapter {
 
   /**
-   * Generate a unique cache key.
-   * @param servicePrefix logical name of the source service(s)
-   * @param descriptor from the pipeline
-   * @return the unique cache key
-   */
-  String getCacheKey(String servicePrefix, String descriptor);
-
-  /**
    * Retrieve an item from cache.
    * @param cacheKey Cache key
    * @param options valid cache persistency options

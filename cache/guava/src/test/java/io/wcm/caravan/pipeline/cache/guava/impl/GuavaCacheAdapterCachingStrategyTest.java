@@ -43,7 +43,7 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
   protected Map<String, Object> getCacheConfig() {
 
     // define the size of an actual cache entry in bytes
-    BigDecimal bigDecimal = new BigDecimal((8 * ((((ENTRY_SAMPLE.length()) * 2) + 45) / 8)));
+    BigDecimal bigDecimal = new BigDecimal((8 * ((((ENTRY_SAMPLE.length()) * 2) + 45) / 8)) + (8 * (((("entryKey00".length()) * 2) + 45) / 8)));
     double cacheMaximumWeightInMegaBytes = bigDecimal.divide(new BigDecimal(1024)).divide(new BigDecimal(1024)).doubleValue();
 
     // define the maximum cache weight in bytes
@@ -65,7 +65,7 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
     LinkedList<String> keysList = new LinkedList<String>();
 
     // bigger entry can not be put into cache
-    assertAddNewEntryAndExpectedToBeRemoved("entryKey", BIGGER_ENTRY_SAMPLE, "entryKey", keysList);
+    assertAddNewEntryAndExpectedToBeRemoved("entryKey123", BIGGER_ENTRY_SAMPLE, "entryKey123", keysList);
 
   }
 

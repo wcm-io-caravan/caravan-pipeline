@@ -66,7 +66,6 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   @Before
   public void setUp() {
     cachePersistencyOptions = CachePersistencyOptions.createTransient(100);
-    Mockito.when(cacheAdapter.getCacheKey(Matchers.anyString(), Matchers.anyString())).thenReturn("test-cache-key");
     Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.anyCollection())).thenReturn(cachePersistencyOptions);
 
     uncachedNode = JacksonFunctions.stringToObjectNode("{cached: false}");

@@ -19,19 +19,10 @@
  */
 package io.wcm.caravan.pipeline.cache.guava.impl;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 
 
 public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
-
-  @Test
-  public void tesGetKey() {
-    String cacheKey = cacheAdapter.getCacheKey("prefix", "descriptor");
-    assertEquals("guava:prefix:descriptor", cacheKey);
-
-  }
 
   @Test
   public void testPutAndGetWithOptions() {

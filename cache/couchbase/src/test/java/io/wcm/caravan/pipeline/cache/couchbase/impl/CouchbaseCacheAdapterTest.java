@@ -59,7 +59,9 @@ public class CouchbaseCacheAdapterTest {
 
   private static final String JSON_DOC = "{\"key\":\"value\"}";
 
-  private static final String CACHE_KEY = "prefix:example:/a/b/c";
+  private static final String NO_PREFIX_CACHE_KEY = "example:/a/b/c";
+
+  private static final String CACHE_KEY = "prefix:" + NO_PREFIX_CACHE_KEY;
 
   @Rule
   public OsgiContext context = new OsgiContext();
@@ -94,13 +96,13 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void getShortCacheKey() {
-    String cacheKey = adapter.getCacheKey("example", "/a/b/c");
+    String cacheKey = adapter.getCacheKey(NO_PREFIX_CACHE_KEY);
     assertEquals(CACHE_KEY, cacheKey);
   }
 
   @Test
   public void getLongCacheKey() {
-    String cacheKey = adapter.getCacheKey("example", StringUtils.repeat("/a/b/c", 500));
+    String cacheKey = adapter.getCacheKey("example:" + StringUtils.repeat("/a/b/c", 500));
     assertEquals(250, cacheKey.length());
     assertTrue("beginning of cache key is left untouched?", cacheKey.startsWith(CACHE_KEY));
   }
@@ -111,7 +113,7 @@ public class CouchbaseCacheAdapterTest {
     Mockito.when(bucket.get(CACHE_KEY, RawJsonDocument.class))
     .thenReturn(Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
 
-    Observable<String> observable = adapter.get(CACHE_KEY, cachePersistencyOptions);
+    Observable<String> observable = adapter.get(NO_PREFIX_CACHE_KEY, cachePersistencyOptions);
 
     assertEquals(0, getHitCounter().getCount());
     assertEquals(0, getMissesCounter().getCount());
@@ -144,7 +146,7 @@ public class CouchbaseCacheAdapterTest {
     when(bucket.get(CACHE_KEY, RawJsonDocument.class))
     .thenReturn(Observable.<RawJsonDocument>empty().delay(50, TimeUnit.MILLISECONDS));
 
-    Observable<String> observable = adapter.get(CACHE_KEY, cachePersistencyOptions);
+    Observable<String> observable = adapter.get(NO_PREFIX_CACHE_KEY, cachePersistencyOptions);
 
     assertEquals(0, getHitCounter().getCount());
     assertEquals(0, getMissesCounter().getCount());
@@ -194,7 +196,7 @@ public class CouchbaseCacheAdapterTest {
   public void testGet_timeout() {
     when(bucket.get(CACHE_KEY, RawJsonDocument.class))
     .thenReturn(Observable.just(RawJsonDocument.create("1", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS));
-    String output = adapter.get(CACHE_KEY, cachePersistencyOptions).toBlocking().singleOrDefault(null);
+    String output = adapter.get(NO_PREFIX_CACHE_KEY, cachePersistencyOptions).toBlocking().singleOrDefault(null);
     assertNull(output);
     assertEquals(0, getHitCounter().getCount());
     assertEquals(1, getMissesCounter().getCount());

@@ -57,40 +57,6 @@ public class MultiLayerCacheAdapterTest {
   }
 
   @Test
-  public void testGetCacheKeyFromLastCache() {
-    when(secondLevelCacheAdapter.getCacheKey("servicePrefix", "descriptor")).thenReturn("couchbaseKey");
-    when(firstLevelCacheAdapter.getCacheKey("servicePrefix", "descriptor")).thenReturn("key");
-    String cacheKey = cacheAdapter.getCacheKey("servicePrefix", "descriptor");
-
-    //Checks that the key from the last caching level was used, when the second level cache adapters returns the shortest.
-    assertEquals("couchbaseKey", cacheKey);
-
-    // Checks that get cache key operations was only called for the last cache key
-    verify(secondLevelCacheAdapter, times(1)).getCacheKey("servicePrefix", "descriptor");
-    verify(firstLevelCacheAdapter, times(0)).getCacheKey("servicePrefix", "descriptor");
-  }
-
-  @Test
-  public void testGetCacheKeySingleLevelCacheOnly() {
-    cacheAdapter = createMultilayerCacheAdapter(firstLevelCacheAdapter, null);
-    when(firstLevelCacheAdapter.getCacheKey("servicePrefix", "descriptor")).thenReturn("key");
-    String cacheKey = cacheAdapter.getCacheKey("servicePrefix", "descriptor");
-
-    //Checks that the key was chosen, which was returned by the single cache adapter.
-    assertEquals("key", cacheKey);
-
-    // Checks that get cache key operation  was called at single cache adapter.
-    verify(firstLevelCacheAdapter, times(1)).getCacheKey("servicePrefix", "descriptor");
-  }
-
-  @Test
-  public void testGetCacheKeyNotInitialized() {
-    cacheAdapter = createMultilayerCacheAdapter(null, null);
-    String cacheKey = cacheAdapter.getCacheKey("servicePrefix", "descriptor");
-    assertEquals(MultiLayerCacheAdapter.MULTILAYER_CACHE_KEY, cacheKey);
-  }
-
-  @Test
   public void testPut() {
     cacheAdapter.put("key", "entry", options);
     verify(secondLevelCacheAdapter, times(1)).put("key", "entry", options);

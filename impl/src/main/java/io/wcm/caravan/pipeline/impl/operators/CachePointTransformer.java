@@ -106,7 +106,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       // construct a unique cache key from the pipeline's descriptor
       String sourceServicePrefix = getSourceServicePrefix();
       CacheAdapter cacheAdapter = context.getCacheAdapter();
-      final String cacheKey = cacheAdapter.getCacheKey(sourceServicePrefix, descriptor);
+      final String cacheKey = sourceServicePrefix + ":" + descriptor;
 
       // the caching strategy determines if the storage time should be extended for cache hits(i.e. Time-to-Idle behaviour)
       CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);

@@ -269,18 +269,14 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline cached = a.addCachePoint(strategy);
 
-    String cacheKey = "abcdef";
-
-    when(cacheAdapter.getCacheKey(SERVICE_NAME, a.getDescriptor()))
-    .thenReturn(cacheKey);
+    String cacheKey = "testService:GET(//testService/path)";
 
     when(cacheAdapter.get(eq(cacheKey), anyObject()))
     .thenReturn(cachedContent("{b: 456}}", 5));
 
     String output = cached.getStringOutput().toBlocking().single();
 
-    // only getCacheKey and get should have been called to check if it is available in the cache
-    verify(cacheAdapter).getCacheKey(SERVICE_NAME, a.getDescriptor());
+    // only get should have been called to check if it is available in the cache
     verify(cacheAdapter).get(eq(cacheKey), anyObject());
     verifyNoMoreInteractions(cacheAdapter);
 
@@ -295,10 +291,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     JsonPipeline a = newPipelineWithResponseBody("{a: 123}");
     JsonPipeline cached = a.addCachePoint(strategy);
 
-    String cacheKey = "abcdef";
-
-    when(cacheAdapter.getCacheKey(SERVICE_NAME, a.getDescriptor()))
-    .thenReturn(cacheKey);
+    String cacheKey = "testService:GET(//testService/path)";
 
     when(cacheAdapter.get(eq(cacheKey), anyObject()))
     .thenReturn(Observable.empty());
