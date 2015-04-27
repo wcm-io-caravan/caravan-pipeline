@@ -114,7 +114,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
     // make sure to set a Cache-Control header to mark the empty response as indefinitely cacheable,
     // otherwise the default max-age value of zero would become effective
-    ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(365)));
+    ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age=" + Long.toString(TimeUnit.DAYS.toSeconds(365)));
 
     CaravanHttpResponse emptyJsonResponse = new CaravanHttpResponseBuilder()
     .status(200)

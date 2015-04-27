@@ -45,13 +45,13 @@ public class ResponseHandlingOperatorTest {
     ResponseHandlingOperator operator = new ResponseHandlingOperator(request);
     Subscriber subscriber = Mockito.mock(Subscriber.class);
     Subscriber<? super CaravanHttpResponse> operatorSubscriber = operator.call(subscriber);
-    Multimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: 10");
+    Multimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age=10");
     CaravanHttpResponse response = new CaravanHttpResponseBuilder()
-        .status(200)
-        .reason("OK")
-        .headers(headers)
-        .body(new byte[0])
-        .build();
+    .status(200)
+    .reason("OK")
+    .headers(headers)
+    .body(new byte[0])
+    .build();
     operatorSubscriber.onNext(response);
     ArgumentCaptor<JsonPipelineOutput> captor = ArgumentCaptor.forClass(JsonPipelineOutput.class);
     Mockito.verify(subscriber).onNext(captor.capture());

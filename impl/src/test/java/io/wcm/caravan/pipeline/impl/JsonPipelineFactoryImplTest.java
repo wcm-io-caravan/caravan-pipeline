@@ -99,7 +99,7 @@ public class JsonPipelineFactoryImplTest {
   @Test
   public void testCreateSpecifiedRequest() throws Exception {
     request = new CaravanHttpRequestBuilder("service").append("/path").build();
-    ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age: " + Long.toString(TimeUnit.DAYS.toSeconds(1)));
+    ImmutableListMultimap<String, String> headers = ImmutableListMultimap.of("Cache-Control", "max-age=" + Long.toString(TimeUnit.DAYS.toSeconds(1)));
     when(caravanHttpClient.execute(request)).thenReturn(
         Observable.just(new CaravanHttpResponseBuilder()
         .status(HttpStatus.SC_OK)

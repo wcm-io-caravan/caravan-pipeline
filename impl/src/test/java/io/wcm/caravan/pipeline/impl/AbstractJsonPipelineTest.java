@@ -125,15 +125,15 @@ public class AbstractJsonPipelineTest extends AbstractCaravanTestCase {
     // the cache-control unit-tests expect the content to be cacheable
     Multimap<String, String> headers = LinkedHashMultimap.create();
     if (maxAge > 0 && statusCode == 200) {
-      headers.put("Cache-Control", "max-age: " + maxAge);
+      headers.put("Cache-Control", "max-age=" + maxAge);
     }
 
     return new CaravanHttpResponseBuilder()
-        .status(statusCode)
-        .reason("OK")
-        .headers(headers)
-        .body(content, Charsets.UTF_8)
-        .build();
+    .status(statusCode)
+    .reason("OK")
+    .headers(headers)
+    .body(content, Charsets.UTF_8)
+    .build();
   }
 
   static JsonNode getJsonNode(String jsonText) {
