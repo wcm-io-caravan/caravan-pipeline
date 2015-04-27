@@ -28,7 +28,9 @@ import java.util.List;
 import rx.Observable;
 import rx.functions.Func1;
 
-
+/**
+ *
+ */
 public class CacheControlUtils {
 
   /**
@@ -46,9 +48,9 @@ public class CacheControlUtils {
   }
 
   /**
-   * Aggregates multiple resources fetched with with different {@link JsonPipeline} instances, into a single
+   * Aggregates multiple resources fetched with different {@link JsonPipeline} instances, into a single
    * {@link JsonPipelineOutput} and ensures sure that the max-age Cache-Control-Header is set to the minimum value of
-   * all aggregated. responses.
+   * all aggregated responses.
    * @param pipelines an observable that emits MULTIPLE {@link JsonPipeline}s
    * @param zipFunc a lambda that is given the list of all {@link JsonPipelineOutput}s when they have been retrieved
    * @return a new observable that emits the aggregated JsonPipelineOutput with the correct max-age
@@ -63,9 +65,9 @@ public class CacheControlUtils {
   }
 
   /**
-   * Aggregates multiple resources fetched with with different {@link JsonPipeline} instances, into a single
+   * Aggregates multiple resources fetched with different {@link JsonPipeline} instances, into a single
    * {@link JsonPipelineOutput} and ensures sure that the max-age Cache-Control-Header is set to the minimum value of
-   * all aggregated. responses.
+   * all aggregated responses.
    * @param pipelines the {@link JsonPipeline}s to zip
    * @param zipFunc a lambda that is given the list of all {@link JsonPipelineOutput}s when they have been retrieved
    * @return a new observable that emits the aggregated JsonPipelineOutput with the correct max-age
@@ -95,7 +97,7 @@ public class CacheControlUtils {
       // calculate the zipping function to produce the aggregated resposne from all JsonPipelineOutputs
       JsonPipelineOutput zippedOutput = zipFunc.call(listOfOutputs);
 
-        // then update the max age of the overall output with the lowest max-age values of all outputs in the list
+      // then update the max age of the overall output with the lowest max-age values of all outputs in the list
       int lowestMaxAge = getLowestMaxAge(listOfOutputs);
       return zippedOutput.withMaxAge(lowestMaxAge);
 

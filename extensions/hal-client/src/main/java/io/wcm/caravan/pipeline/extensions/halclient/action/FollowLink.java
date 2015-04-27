@@ -26,9 +26,9 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.JsonPipelineActions;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
 import java.util.Collection;
@@ -40,6 +40,7 @@ import org.osgi.annotation.versioning.ProviderType;
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Action to load a HAL link and replace the current resource by the loaded one.
@@ -84,7 +85,9 @@ public final class FollowLink implements JsonPipelineAction {
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
     CaravanHttpRequest request = getRequest(previousStepOutput);
     JsonPipeline pipeline = createPipeline(context, request);
-    return pipeline.applyAction(JsonPipelineActions.enrichWithLowestAge(previousStepOutput)).getOutput();
+    return pipeline.getOutput().map(jsonPipelineOutput ->
+        jsonPipelineOutput.withMaxAge(CacheControlUtils.getLowestMaxAge(ImmutableList.of(jsonPipelineOutput, previousStepOutput)))
+        );
   }
 
   private CaravanHttpRequest getRequest(JsonPipelineOutput previousStepOutput) {

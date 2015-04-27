@@ -46,9 +46,6 @@ public class JsonPipelineActionsTest {
   private JsonPipelineOutput jsonPipelineOutputResult;
 
   @Mock
-  private JsonPipelineOutput jsonPipelineOutputAnother;
-
-  @Mock
   private JsonNode jsonNodeInput;
 
   @Mock
@@ -73,55 +70,5 @@ public class JsonPipelineActionsTest {
     assertNotNull(result);
     JsonPipelineOutput resultOutput = result.toBlocking().single();
     assertEquals(jsonPipelineOutputResult, resultOutput);
-  }
-
-  @Test
-  public void testEnrichWithLowestAge_takePrevious() {
-
-    when(jsonPipelineOutputAnother.getMaxAge()).thenReturn(2000);
-    when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(1000);
-
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(jsonPipelineOutputAnother);
-    assertNotNull(action);
-    assertNotNull(action.getId());
-
-    // check the original JSON pipeline output was returned because it has the lowest max age value
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
-    assertNotNull(result);
-    JsonPipelineOutput resultOutput = result.toBlocking().single();
-    assertEquals(jsonPipelineOutputPrevious, resultOutput);
-  }
-
-  @Test
-  public void testEnrichWithLowestAge_takeAnother() {
-    when(jsonPipelineOutputAnother.getMaxAge()).thenReturn(1000);
-    when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
-    when(jsonPipelineOutputPrevious.withMaxAge(1000)).thenReturn(jsonPipelineOutputResult);
-
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(jsonPipelineOutputAnother);
-    assertNotNull(action);
-    assertNotNull(action.getId());
-
-    // check a new JSON pipeline output was returned because another max age value had to be added to the original pipeline
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
-    assertNotNull(result);
-    JsonPipelineOutput resultOutput = result.toBlocking().single();
-    assertEquals(jsonPipelineOutputResult, resultOutput);
-  }
-
-  @Test
-  public void testEnrichWithLowestAge_compareToNull() {
-
-    when(jsonPipelineOutputPrevious.getMaxAge()).thenReturn(2000);
-
-    JsonPipelineAction action = JsonPipelineActions.enrichWithLowestAge(null);
-    assertNotNull(action);
-    assertNotNull(action.getId());
-
-    // check the original JSON pipeline output was returned because it is the only one possible result
-    Observable<JsonPipelineOutput> result = action.execute(jsonPipelineOutputPrevious, context);
-    assertNotNull(result);
-    JsonPipelineOutput resultOutput = result.toBlocking().single();
-    assertEquals(jsonPipelineOutputPrevious, resultOutput);
   }
 }
