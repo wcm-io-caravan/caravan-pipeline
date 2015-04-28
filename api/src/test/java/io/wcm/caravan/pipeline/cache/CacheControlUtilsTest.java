@@ -20,13 +20,16 @@
 package io.wcm.caravan.pipeline.cache;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -47,148 +50,128 @@ public class CacheControlUtilsTest {
   private JsonPipelineOutput functionResult;
 
   @Mock
-  private JsonPipelineOutput firstOutput;
+  private JsonPipelineOutput lowestMAOutput;
 
   @Mock
-  private JsonPipelineOutput secondOutput;
+  private JsonPipelineOutput nextMAOutput;
 
   @Mock
-  private JsonPipelineOutput thirdOutput;
+  private JsonPipelineOutput highestMAOutput;
 
   @Mock
-  private JsonPipeline firstPipeline;
+  private JsonPipeline lowestMAPipeline;
 
   @Mock
-  private JsonPipeline secondPipeline;
+  private JsonPipeline nextMAPipeline;
 
   @Mock
-  private JsonPipeline thirdPipeline;
+  private JsonPipeline highestMAPipeline;
+
+  @Before
+  public void setup() {
+    when(lowestMAOutput.getMaxAge()).thenReturn(10);
+    when(nextMAOutput.getMaxAge()).thenReturn(20);
+    when(highestMAOutput.getMaxAge()).thenReturn(30);
+
+    when(lowestMAPipeline.getOutput()).thenReturn(Observable.just(lowestMAOutput));
+    when(nextMAPipeline.getOutput()).thenReturn(Observable.just(nextMAOutput));
+    when(highestMAPipeline.getOutput()).thenReturn(Observable.just(highestMAOutput));
+
+    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
+  }
 
 
   @Test
   public void testGetLowestMaxAgeFirst() {
-    when(firstOutput.getMaxAge()).thenReturn(10);
-    when(secondOutput.getMaxAge()).thenReturn(20);
-    when(thirdOutput.getMaxAge()).thenReturn(30);
-
-    // achieves the lowest maxAge value
-    assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(firstOutput, secondOutput, thirdOutput)));
+    // achieves the lowest maxAge value, found in the first list element
+    assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(lowestMAOutput, nextMAOutput, highestMAOutput)));
 
   }
 
   @Test
   public void testGetLowestMaxAgeSecond() {
-    when(firstOutput.getMaxAge()).thenReturn(20);
-    when(secondOutput.getMaxAge()).thenReturn(10);
-    when(thirdOutput.getMaxAge()).thenReturn(30);
-
-    // achieves the lowest maxAge value
-    assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(firstOutput, secondOutput, thirdOutput)));
+    // achieves the lowest maxAge value, found in the second list element
+    assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(nextMAOutput, lowestMAOutput, highestMAOutput)));
   }
 
   @Test
   public void testGetLowestMaxAgeThird() {
-    when(firstOutput.getMaxAge()).thenReturn(30);
-    when(secondOutput.getMaxAge()).thenReturn(20);
-    when(thirdOutput.getMaxAge()).thenReturn(10);
+    // achieves the lowest maxAge value, found in the third list element
+    assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(highestMAOutput, nextMAOutput, lowestMAOutput)));
+  }
 
-    // achieves the lowest maxAge value
-    assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(firstOutput, secondOutput, thirdOutput)));
+  @Test
+  public void testGetLowestMaxAgeWithNullElements() {
+    List<JsonPipelineOutput> list = new ArrayList<JsonPipelineOutput>();
+    list.add(null);
+    list.add(null);
+    list.add(highestMAOutput);
+
+    // achieves the lowest maxAge value, null elements should be filtered
+    assertEquals(30, CacheControlUtils.getLowestMaxAge(list));
   }
 
   @Test
   public void testZipWithLowestMaxAgePipelineFirst() {
-    when(firstPipeline.getOutput()).thenReturn(Observable.just(firstOutput));
-    when(firstOutput.getMaxAge()).thenReturn(10);
-    when(secondPipeline.getOutput()).thenReturn(Observable.just(secondOutput));
-    when(secondOutput.getMaxAge()).thenReturn(20);
-    when(thirdPipeline.getOutput()).thenReturn(Observable.just(thirdOutput));
-    when(thirdOutput.getMaxAge()).thenReturn(30);
-    when(mockFunction.call(any())).thenReturn(functionResult);
-    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
-    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(ImmutableList.of(firstPipeline, secondPipeline, thirdPipeline),
-        mockFunction);
-    JsonPipelineOutput output = outputObservable.toBlocking().single();
-    assertEquals(functionResult, output);
+    // tests #zipWithLowestMaxAge(Iterable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
+    // achieves the pipelineOutput with the lowest maxAge value should be found in the first element
+    assertZipWithLowestMaxAgeList(lowestMAPipeline, nextMAPipeline, highestMAPipeline);
   }
 
   @Test
   public void testZipWithLowestMaxAgePipelineSecond() {
-    when(firstPipeline.getOutput()).thenReturn(Observable.just(firstOutput));
-    when(firstOutput.getMaxAge()).thenReturn(20);
-    when(secondPipeline.getOutput()).thenReturn(Observable.just(secondOutput));
-    when(secondOutput.getMaxAge()).thenReturn(10);
-    when(thirdPipeline.getOutput()).thenReturn(Observable.just(thirdOutput));
-    when(thirdOutput.getMaxAge()).thenReturn(30);
-    when(mockFunction.call(any())).thenReturn(functionResult);
-    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
-    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(ImmutableList.of(firstPipeline, secondPipeline, thirdPipeline),
-        mockFunction);
-    JsonPipelineOutput output = outputObservable.toBlocking().single();
-    assertEquals(functionResult, output);
+    // tests #zipWithLowestMaxAge(Iterable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
+    // achieves the pipelineOutput with the lowest maxAge value should be found in the second element
+    assertZipWithLowestMaxAgeList(nextMAPipeline, lowestMAPipeline, highestMAPipeline);
   }
 
   @Test
   public void testZipWithLowestMaxAgePipelineThird() {
-    when(firstPipeline.getOutput()).thenReturn(Observable.just(firstOutput));
-    when(firstOutput.getMaxAge()).thenReturn(30);
-    when(secondPipeline.getOutput()).thenReturn(Observable.just(secondOutput));
-    when(secondOutput.getMaxAge()).thenReturn(20);
-    when(thirdPipeline.getOutput()).thenReturn(Observable.just(thirdOutput));
-    when(thirdOutput.getMaxAge()).thenReturn(10);
-    when(mockFunction.call(any())).thenReturn(functionResult);
-    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
-    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(ImmutableList.of(firstPipeline, secondPipeline, thirdPipeline),
-        mockFunction);
-    JsonPipelineOutput output = outputObservable.toBlocking().single();
-    assertEquals(functionResult, output);
+    // tests #zipWithLowestMaxAge(Iterable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
+    // achieves the pipelineOutput with the lowest maxAge value should be found in the third element
+    assertZipWithLowestMaxAgeList(nextMAPipeline, highestMAPipeline, lowestMAPipeline);
   }
 
   @Test
   public void testZipWithLowestMaxAgeObservableFirst() {
-    when(firstPipeline.getOutput()).thenReturn(Observable.just(firstOutput));
-    when(firstOutput.getMaxAge()).thenReturn(10);
-    when(secondPipeline.getOutput()).thenReturn(Observable.just(secondOutput));
-    when(secondOutput.getMaxAge()).thenReturn(20);
-    when(thirdPipeline.getOutput()).thenReturn(Observable.just(thirdOutput));
-    when(thirdOutput.getMaxAge()).thenReturn(30);
-    when(mockFunction.call(any())).thenReturn(functionResult);
-    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
-    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(Observable.just(firstPipeline, secondPipeline, thirdPipeline),
-        mockFunction);
-    JsonPipelineOutput output = outputObservable.toBlocking().single();
-    assertEquals(functionResult, output);
+    // tests #zipWithLowestMaxAge(Observable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
+    // achieves the pipelineOutput with the lowest maxAge value should be found in the first element
+    assertZipWithLowestMaxAgeObservable(lowestMAPipeline, nextMAPipeline, highestMAPipeline);
   }
 
   @Test
   public void testZipWithLowestMaxAgeObservableSecond() {
-    when(firstPipeline.getOutput()).thenReturn(Observable.just(firstOutput));
-    when(firstOutput.getMaxAge()).thenReturn(20);
-    when(secondPipeline.getOutput()).thenReturn(Observable.just(secondOutput));
-    when(secondOutput.getMaxAge()).thenReturn(10);
-    when(thirdPipeline.getOutput()).thenReturn(Observable.just(thirdOutput));
-    when(thirdOutput.getMaxAge()).thenReturn(30);
-    when(mockFunction.call(any())).thenReturn(functionResult);
-    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
-    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(Observable.just(firstPipeline, secondPipeline, thirdPipeline),
-        mockFunction);
-    JsonPipelineOutput output = outputObservable.toBlocking().single();
-    assertEquals(functionResult, output);
+    // tests #zipWithLowestMaxAge(Observable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
+    // achieves the pipelineOutput with the lowest maxAge value should be found in the second element
+    assertZipWithLowestMaxAgeObservable(nextMAPipeline, lowestMAPipeline, highestMAPipeline);
   }
 
   @Test
   public void testZipWithLowestMaxAgeObservableThird() {
-    when(firstPipeline.getOutput()).thenReturn(Observable.just(firstOutput));
-    when(firstOutput.getMaxAge()).thenReturn(30);
-    when(secondPipeline.getOutput()).thenReturn(Observable.just(secondOutput));
-    when(secondOutput.getMaxAge()).thenReturn(20);
-    when(thirdPipeline.getOutput()).thenReturn(Observable.just(thirdOutput));
-    when(thirdOutput.getMaxAge()).thenReturn(10);
-    when(mockFunction.call(any())).thenReturn(functionResult);
-    when(functionResult.withMaxAge(10)).thenReturn(functionResult);
-    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(Observable.just(firstPipeline, secondPipeline, thirdPipeline),
+    // tests #zipWithLowestMaxAge(Observable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
+    // achieves the pipelineOutput with the lowest maxAge value should be found in the third element
+    assertZipWithLowestMaxAgeObservable(nextMAPipeline, highestMAPipeline, lowestMAPipeline);
+  }
+
+  private void assertZipWithLowestMaxAgeList(JsonPipeline first, JsonPipeline second, JsonPipeline third) {
+    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(ImmutableList.of(first, second, third),
         mockFunction);
+    assertZippedObservable(outputObservable);
+  }
+
+  private void assertZipWithLowestMaxAgeObservable(JsonPipeline first, JsonPipeline second, JsonPipeline third) {
+    Observable<JsonPipelineOutput> outputObservable = CacheControlUtils.zipWithLowestMaxAge(Observable.just(first, second, third),
+        mockFunction);
+    assertZippedObservable(outputObservable);
+  }
+
+  private void assertZippedObservable(Observable<JsonPipelineOutput> outputObservable) {
     JsonPipelineOutput output = outputObservable.toBlocking().single();
+
+    // achieves mock pipelineOutput "functionResult" called with the lowest maxAge value
+    verify(functionResult, times(1)).withMaxAge(10);
+
+    // achieves mock pipelineOutput "functionResult" is returned from Observable
     assertEquals(functionResult, output);
   }
 
