@@ -29,9 +29,13 @@ import rx.Observable;
 import rx.functions.Func1;
 
 /**
- *
+ * Cache control utilities aid to manage pipeline output cache control meta data.
  */
-public class CacheControlUtils {
+public final class CacheControlUtils {
+
+  private CacheControlUtils() {
+
+  }
 
   /**
    * @param pipelineOutputs
