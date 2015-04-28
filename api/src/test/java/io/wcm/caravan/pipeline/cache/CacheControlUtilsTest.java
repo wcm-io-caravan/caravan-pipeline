@@ -84,20 +84,20 @@ public class CacheControlUtilsTest {
 
 
   @Test
-  public void testGetLowestMaxAgeFirst() {
+  public void testGetLowestMaxAgeFirstOfCollection() {
     // achieves the lowest maxAge value, found in the first list element
     assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(lowestMAOutput, nextMAOutput, highestMAOutput)));
 
   }
 
   @Test
-  public void testGetLowestMaxAgeSecond() {
+  public void testGetLowestMaxAgeSecondOfCollection() {
     // achieves the lowest maxAge value, found in the second list element
     assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(nextMAOutput, lowestMAOutput, highestMAOutput)));
   }
 
   @Test
-  public void testGetLowestMaxAgeThird() {
+  public void testGetLowestMaxAgeThirdOfCollection() {
     // achieves the lowest maxAge value, found in the third list element
     assertEquals(10, CacheControlUtils.getLowestMaxAge(ImmutableList.of(highestMAOutput, nextMAOutput, lowestMAOutput)));
   }
@@ -111,6 +111,31 @@ public class CacheControlUtilsTest {
 
     // achieves the lowest maxAge value, null elements should be filtered
     assertEquals(30, CacheControlUtils.getLowestMaxAge(list));
+  }
+
+  @Test
+  public void testGetLowestMaxAgeFirstofArray() {
+    // achieves the lowest maxAge value, found in the first list element
+    assertEquals(10, CacheControlUtils.getLowestMaxAge(lowestMAOutput, nextMAOutput, highestMAOutput));
+
+  }
+
+  @Test
+  public void testGetLowestMaxAgeSecondofArray() {
+    // achieves the lowest maxAge value, found in the second list element
+    assertEquals(10, CacheControlUtils.getLowestMaxAge(nextMAOutput, lowestMAOutput, highestMAOutput));
+  }
+
+  @Test
+  public void testGetLowestMaxAgeThirdofArray() {
+    // achieves the lowest maxAge value, found in the third list element
+    assertEquals(10, CacheControlUtils.getLowestMaxAge(highestMAOutput, nextMAOutput, lowestMAOutput));
+  }
+
+  @Test
+  public void testGetLowestMaxAgeWithNullElementsofArray() {
+    // achieves the lowest maxAge value, null elements should be filtered
+    assertEquals(30, CacheControlUtils.getLowestMaxAge(null, null, highestMAOutput));
   }
 
   @Test

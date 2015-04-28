@@ -23,6 +23,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import rx.Observable;
@@ -49,6 +50,14 @@ public final class CacheControlUtils {
         .map(output -> output.getMaxAge())
         .reduce(Math::min)
         .toBlocking().single();
+  }
+
+  /**
+   * @param pipelineOutputs
+   * @return the lowest max-age value of all the given pipeline outputs
+   */
+  public static int getLowestMaxAge(JsonPipelineOutput... pipelineOutputs) {
+    return getLowestMaxAge(Arrays.asList(pipelineOutputs));
   }
 
   /**

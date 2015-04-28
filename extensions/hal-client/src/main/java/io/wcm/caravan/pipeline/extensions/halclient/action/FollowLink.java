@@ -40,7 +40,6 @@ import org.osgi.annotation.versioning.ProviderType;
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableList;
 
 /**
  * Action to load a HAL link and replace the current resource by the loaded one.
@@ -86,7 +85,7 @@ public final class FollowLink implements JsonPipelineAction {
     CaravanHttpRequest request = getRequest(previousStepOutput);
     JsonPipeline pipeline = createPipeline(context, request);
     return pipeline.getOutput().map(jsonPipelineOutput ->
-        jsonPipelineOutput.withMaxAge(CacheControlUtils.getLowestMaxAge(ImmutableList.of(jsonPipelineOutput, previousStepOutput)))
+    jsonPipelineOutput.withMaxAge(CacheControlUtils.getLowestMaxAge(jsonPipelineOutput, previousStepOutput))
         );
   }
 
