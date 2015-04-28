@@ -33,11 +33,8 @@ import rx.Observable;
 
 /**
  * Implementation of {@link CacheAdapter}.
- * Wraps a list of references to multiple cache adapters and delegates
- * {@link #getCacheKey(String servicePrefix, String descriptor)} ,
- * {@link #get(String cacheKey, CachePersistencyOptions options)},
- * {@link #put(String cacheKey, String jsonString, CachePersistencyOptions options, CacheAdapter actualCacheAdapter)}
- * method calls according to the level of cache adapters.
+ * Wraps multiple references of different cache adapter instances.
+ * Delegates method calls to the subordinated cache adapters according to their priority.
  */
 public class MultiLayerCacheAdapter implements CacheAdapter {
 
@@ -51,9 +48,8 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   private List<CacheAdapter> cacheAdapters;
 
   /**
-   * Creates a multi layer cache adapter specifying list of references cache adapters, provided in a strict order.
-   * Position of each cache adapter in the list specifies its cache level and order, in which this cache adapter will be
-   * called.
+   * Creates a multilayer cache adapter specifying list of cache adapter references. List of cache adapter references
+   * specifies the order and priority of caches, which will be requested.
    * @param cacheAdapters List of {@link CacheAdapter} references
    */
   public MultiLayerCacheAdapter(List<CacheAdapter> cacheAdapters) {
@@ -62,8 +58,9 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   }
 
   /**
-   * Retrieves first available item from wrapped caches. If available item was found in the second or lower cache
-   * level, this item will be put into the first or other higher cache levels.
+   * Retrieves cached item. Tries to retrieve item from the cache with the highest priority.
+   * If available item has been found in any next cache, such item will be stored into each cache with higher
+   * priority to read it earlier while next get attempt.
    * @param cacheKey Cache key
    * @param options valid cache persistency options
    * @return an observable, than emits first found cache item. If no cache item is found, returns an empty observable.
@@ -94,8 +91,7 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   }
 
   /*
-   * Puts cache item into the caches, which are specified to be earlier than actual CacheAdapter. Call this method, if expected that
-   * actual CacheAdapter and later caches already have stored item.
+   * Puts cached item into the caches, which are specified to have higher priority and could be accessed while reading earlier than actual cache.
    */
   private void put(String cacheKey, String jsonString, CachePersistencyOptions options, CacheAdapter actualCacheAdapter) {
     for (int i = 0; i < cacheAdapters.size(); i++) {
