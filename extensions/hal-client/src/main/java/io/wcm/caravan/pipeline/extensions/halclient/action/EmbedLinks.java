@@ -31,14 +31,19 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
@@ -48,10 +53,14 @@ import com.google.common.collect.Multimap;
 @ProviderType
 public final class EmbedLinks implements JsonPipelineAction {
 
+  private static final Logger log = LoggerFactory.getLogger(EmbedLinks.class);
+
   private final String serviceName;
   private final String relation;
   private final Map<String, Object> parameters;
   private final int index;
+
+  private boolean includeLinksInEmbeddedResources;
 
   private CacheStrategy cacheStrategy;
 
@@ -66,6 +75,20 @@ public final class EmbedLinks implements JsonPipelineAction {
     this.relation = relation;
     this.parameters = parameters;
     this.index = index;
+  }
+
+  /**
+   * @param serviceName
+   * @param relation
+   * @param parameters
+   * @param includeLinksInEmbeddedResources whether links in embedded resources should also be resolved
+   */
+  public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters, boolean includeLinksInEmbeddedResources) {
+    this.serviceName = serviceName;
+    this.relation = relation;
+    this.parameters = parameters;
+    this.index = Integer.MIN_VALUE;
+    this.includeLinksInEmbeddedResources = includeLinksInEmbeddedResources;
   }
 
   /**
@@ -87,21 +110,37 @@ public final class EmbedLinks implements JsonPipelineAction {
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
     HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
 
-    Observable<JsonPipeline> pipelinesToEmbed = getPipelinesForEachLink(previousStepOutput, context, halResource);
+    final List<Link> links = getLinks(halResource);
+
+    Observable<JsonPipeline> pipelinesToEmbed = getPipelinesForEachLink(links, previousStepOutput, context, halResource);
 
     return CacheControlUtils.zipWithLowestMaxAge(pipelinesToEmbed, (outputsToEmbed) -> {
 
-      for (JsonPipelineOutput output : outputsToEmbed) {
-        halResource.addEmbedded(relation, new HalResource((ObjectNode)output.getPayload()));
+      if (includeLinksInEmbeddedResources) {
+
+        Map<String, HalResource> urlResourceMap = new HashMap<>();
+        for (int i=0; i<links.size(); i++) {
+          urlResourceMap.put(links.get(i).getHref(), new HalResource((ObjectNode)outputsToEmbed.get(i).getPayload()));
+        }
+
+        recursiveLinkReplacement(halResource, urlResourceMap);
+
       }
-      removeLinks(halResource);
+      else {
+
+        // if links should not be resolved for the embedded resources, keep the previous logic (which is much simpler)
+        for (JsonPipelineOutput output : outputsToEmbed) {
+          halResource.addEmbedded(relation, new HalResource((ObjectNode)output.getPayload()));
+        }
+        removeLinks(halResource);
+      }
 
       return previousStepOutput.withPayload(halResource.getModel());
     });
   }
 
-  private Observable<JsonPipeline> getPipelinesForEachLink(JsonPipelineOutput previousStepOutput, JsonPipelineContext context, HalResource halResource) {
-    List<Link> links = getLinks(halResource);
+  private Observable<JsonPipeline> getPipelinesForEachLink(List<Link> links, JsonPipelineOutput previousStepOutput, JsonPipelineContext context, HalResource halResource) {
+
     Observable<CaravanHttpRequest> requests = getRequests(previousStepOutput, links);
     return requests
         // create pipeline
@@ -111,9 +150,22 @@ public final class EmbedLinks implements JsonPipelineAction {
   }
 
   private List<Link> getLinks(HalResource halResource) {
-    List<Link> links = halResource.getLinks(relation);
+    List<Link> links = new LinkedList<>();
+    links.addAll(halResource.getLinks(relation));
+
+    ImmutableListMultimap<String, HalResource> embeddedResources = halResource.getEmbedded();
+
+    if (includeLinksInEmbeddedResources && embeddedResources != null) {
+      for (String embeddedRel : embeddedResources.keySet()) {
+        for (HalResource embedded : embeddedResources.get(embeddedRel)) {
+          links.addAll(getLinks(embedded));
+        }
+      }
+    }
+
     return index == Integer.MIN_VALUE ? links : Lists.newArrayList(links.get(index));
   }
+
 
   private Observable<CaravanHttpRequest> getRequests(JsonPipelineOutput previousStepOutput, List<Link> links) {
     Multimap<String, String> previousHeaders = previousStepOutput.getRequests().get(0).getHeaders();
@@ -131,6 +183,30 @@ public final class EmbedLinks implements JsonPipelineAction {
 
             return builder.build(parameters);
           });
+  }
+
+
+  private void recursiveLinkReplacement(HalResource output, Map<String, HalResource> urlResourceMap) {
+    List<Link> links = output.getLinks(relation);
+
+    for (Link link : links) {
+      HalResource resource = urlResourceMap.get(link.getHref());
+      if (resource != null) {
+        output.addEmbedded(relation, resource);
+      }
+      else {
+        log.error("Did not find resource for href " + link.getHref());
+      }
+    }
+
+    removeLinks(output);
+
+    ImmutableListMultimap<String, HalResource> embeddedResources = output.getEmbedded();
+    for (String embeddedRel : embeddedResources.keySet()) {
+      for (HalResource embedded : embeddedResources.get(embeddedRel)) {
+        recursiveLinkReplacement(embedded, urlResourceMap);
+      }
+    }
   }
 
   private void removeLinks(HalResource halResource) {
