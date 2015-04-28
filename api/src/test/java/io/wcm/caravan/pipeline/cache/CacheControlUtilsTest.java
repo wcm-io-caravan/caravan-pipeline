@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.cache;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -77,6 +78,7 @@ public class CacheControlUtilsTest {
     when(nextMAPipeline.getOutput()).thenReturn(Observable.just(nextMAOutput));
     when(highestMAPipeline.getOutput()).thenReturn(Observable.just(highestMAOutput));
 
+    when(mockFunction.call(any())).thenReturn(functionResult);
     when(functionResult.withMaxAge(10)).thenReturn(functionResult);
   }
 
