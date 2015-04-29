@@ -187,4 +187,15 @@ public final class HalClient {
     return new EmbedLinks(serviceName, relation, Collections.emptyMap(), true).setCacheStrategy(cacheStrategy);
   }
 
+  /**
+   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>,
+   * and replaces the links with the corresponding embedded resources.
+   * @param relation Link relation
+   * @param parameters URL parameters
+   * @return Embed links action
+   */
+  public EmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
+    return new EmbedLinks(serviceName, relation, parameters, true).setCacheStrategy(cacheStrategy);
+  }
+
 }
