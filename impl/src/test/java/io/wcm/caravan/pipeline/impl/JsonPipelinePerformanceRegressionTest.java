@@ -22,11 +22,14 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import io.wcm.caravan.common.performance.PerformanceMetrics;
 import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
 
 import java.util.concurrent.TimeUnit;
@@ -37,17 +40,11 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import rx.Observable;
-import rx.Observable.OnSubscribe;
-import rx.Observable.Operator;
-import rx.Observable.Transformer;
-import rx.Observer;
-import rx.Subscriber;
-import rx.exceptions.Exceptions;
 
 @RunWith(MockitoJUnitRunner.class)
-public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
+public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineTest {
 
-  public JsonPipelinePerformanceCheckTest() {
+  public JsonPipelinePerformanceRegressionTest() {
     super();
   }
 
@@ -104,12 +101,25 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
   @Test
   public void testFirstCollect() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
-    JsonPipeline collected = pipeline.collect("$..label", "extracted");
+    JsonPipeline collected = pipeline.collect("$..label");
     assertFirstPipelineMetrics(pipeline, collected);
   }
 
   @Test
   public void testLastCollect() {
+    JsonPipelineImpl collected = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}").collect("$..label");
+    assertNextPipelineMetrics(collected);
+  }
+
+  @Test
+  public void testFirstCollectInto() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}");
+    JsonPipeline collected = pipeline.collect("$..label", "extracted");
+    assertFirstPipelineMetrics(pipeline, collected);
+  }
+
+  @Test
+  public void testLastCollectInto() {
     JsonPipelineImpl collected = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }, b: { label: 'def' }}").collect("$..label", "extracted");
     assertNextPipelineMetrics(collected);
   }
@@ -128,6 +138,19 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
   }
 
   @Test
+  public void testFirstExtractInto() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline extracted = pipeline.extract("$.a", "extracted");
+    assertFirstPipelineMetrics(pipeline, extracted);
+  }
+
+  @Test
+  public void testLastExtractInto() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: { label: 'abc' }}").extract("$.a", "extracted");
+    assertNextPipelineMetrics(pipeline);
+  }
+
+  @Test
   public void testFirstMerge() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}");
     JsonPipeline merged = pipeline.merge(newPipelineWithResponseBody("{b: 456}"));
@@ -138,6 +161,41 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
   public void testLastMerge() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}").merge(newPipelineWithResponseBody("{b: 456}"));
     assertNextPipelineMetrics(pipeline);
+  }
+
+  @Test
+  public void testFirstMergeInto() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}");
+    JsonPipeline merged = pipeline.merge(newPipelineWithResponseBody("{b: 456}"), "extracted");
+    assertFirstPipelineMetrics(pipeline, merged);
+  }
+
+  @Test
+  public void testLastMergeInto() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}").merge(newPipelineWithResponseBody("{b: 456}"), "extracted");
+    assertNextPipelineMetrics(pipeline);
+  }
+
+  @Test
+  public void testFirstAction() {
+    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a: 123}");
+
+    JsonPipelineAction action = mock(JsonPipelineAction.class);
+    when(action.execute(any(), any())).thenReturn(pipeline.getOutput());
+    JsonPipeline afterAction = pipeline.applyAction(action);
+
+    assertFirstPipelineMetrics(pipeline, afterAction);
+  }
+
+  @Test
+  public void testLastAction() {
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: 123}");
+
+    JsonPipelineAction action = mock(JsonPipelineAction.class);
+    when(action.execute(any(), any())).thenReturn(pipeline.getOutput());
+    JsonPipelineImpl afterAction = (JsonPipelineImpl)pipeline.applyAction(action);
+
+    assertNextPipelineMetrics(afterAction);
   }
 
   @Test
@@ -179,149 +237,6 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
     assertEndMetrics(last);
     assertNull(last.getTakenTimeByStepEnd());
     assertNull(last.getTakenTimeByStepStart());
-  }
-
-  @Test
-  public void testTransformer() {
-    PerformanceMetrics custom = PerformanceMetrics.createNew("TEST", null, null);
-
-    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a:123}");
-    PerformanceMetrics first = pipeline.getPerformanceMetrics();
-    PerformanceMetrics last = first.createNext("CUSTOM TRANSFORM", null);
-
-    Observable<JsonPipelineOutput> testedOutput = pipeline.getOutput()
-        .compose(new Transformer<JsonPipelineOutput, JsonPipelineOutput>() {
-
-          @Override
-          public Observable<JsonPipelineOutput> call(Observable<JsonPipelineOutput> t) {
-            return Observable.create(new OnSubscribe<JsonPipelineOutput>() {
-
-              @Override
-              public void call(Subscriber<? super JsonPipelineOutput> subscriber) {
-
-                JsonPipeline cached = newPipelineWithResponseBody("{b: 'cached'}");
-                cached.getOutput().subscribe(new Observer<JsonPipelineOutput>() {
-
-                  @Override
-                  public void onCompleted() {
-                    subscriber.onCompleted();
-                  }
-
-                  @Override
-                  public void onError(Throwable e) {
-                    subscriber.onError(e);
-                  }
-
-                  @Override
-                  public void onNext(JsonPipelineOutput output) {
-                    try {
-                      Thread.sleep(2);
-                      custom.setStartTimestamp();
-                      Thread.sleep(2);
-                      custom.setEndTimestamp();
-                      Thread.sleep(2);
-                    }
-                    catch (InterruptedException ex) {
-                      custom.setEndTimestamp();
-                    }
-                    subscriber.onNext(output);
-                  }
-                });
-              }
-            });
-          }
-        }
-            ).doOnSubscribe(last.getStartAction()).doOnTerminate(last.getEndAction());
-
-    assertStartMetrics(first);
-    assertStartMetrics(last);
-    assertStartMetrics(custom);
-
-    testedOutput.toBlocking().single();
-
-    assertNull(first.getStartTime());
-    assertNull(first.getEndTime());
-
-    assertEndMetrics(last);
-    assertNull(last.getTakenTimeByStepEnd());
-    assertNull(last.getTakenTimeByStepStart());
-
-    //    FastDateFormat format = FastDateFormat.getInstance("HH:mm:ss S");
-    //    System.out.println(format.format(last.getStartTime()) + " - first subscription");
-    //    System.out.println(format.format(custom.getStartTime()) + " - custom subscription");
-    //    System.out.println(format.format(custom.getEndTime()) + " - custom termination");
-    //    System.out.println(format.format(last.getEndTime()) + " - first termination");
-
-    // TODO ssauder@dlonshakov: these assertion failed occasionally on my system
-    //assertTrue(custom.getStartTime() - last.getStartTime() >= 2);
-    //assertTrue(last.getEndTime() - custom.getEndTime() >= 2);
-    //assertTrue(custom.getEndTime() - custom.getStartTime() >= 2);
-  }
-
-  @Test
-  public void testOperator() {
-    PerformanceMetrics custom = PerformanceMetrics.createNew("TEST", null, null);
-
-    JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a:123}");
-    PerformanceMetrics first = pipeline.getPerformanceMetrics();
-    PerformanceMetrics last = first.createNext("CUSTOM OPERATION", null);
-    Observable<JsonPipelineOutput> output = pipeline.getOutput()
-        .lift(new Operator<JsonPipelineOutput, JsonPipelineOutput>() {
-          @Override
-          public Subscriber<? super JsonPipelineOutput> call(Subscriber<? super JsonPipelineOutput> s) {
-            return new Subscriber<JsonPipelineOutput>() {
-
-              @Override
-              public void onCompleted() {
-                s.onCompleted();
-              }
-
-              @Override
-              public void onError(Throwable e) {
-                Exceptions.throwIfFatal(e);
-                s.onError(e);
-              }
-
-              @Override
-              public void onNext(JsonPipelineOutput t) {
-                try {
-                  Thread.sleep(2);
-                  custom.setStartTimestamp();
-                  Thread.sleep(2);
-                  custom.setEndTimestamp();
-                  Thread.sleep(2);
-                }
-                catch (InterruptedException ex) {
-                  custom.setEndTimestamp();
-                }
-                s.onNext(t);
-              }
-            };
-          }
-
-        }).doOnSubscribe(last.getStartAction()).doOnTerminate(last.getEndAction());
-
-    assertStartMetrics(first);
-    assertStartMetrics(last);
-    assertStartMetrics(custom);
-
-    output.toBlocking().single();
-
-    assertFirstMetrics(first);
-    assertNextMetrics(last);
-
-    //    FastDateFormat format = FastDateFormat.getInstance("HH:mm:ss S");
-    //    System.out.println(format.format(last.getStartTime()) + " - first subscription");
-    //    System.out.println(format.format(first.getStartTime()) + " - second subscription");
-    //    System.out.println(format.format(custom.getStartTime()) + " - custom subscription");
-    //    System.out.println(format.format(custom.getEndTime()) + " - custom termination");
-    //    System.out.println(format.format(first.getEndTime()) + " - second termination");
-    //    System.out.println(format.format(last.getEndTime()) + " - first termination");
-
-    // TODO ssauder@dlonshakov: these assertion failed occasionally on my system
-    //assertTrue(custom.getStartTime() - last.getStartTime() >= 2);
-    //assertTrue(last.getEndTime() - custom.getEndTime() >= 2);
-    //assertTrue(custom.getEndTime() - custom.getStartTime() >= 2);
   }
 
   @Test
@@ -393,8 +308,5 @@ public class JsonPipelinePerformanceCheckTest extends AbstractJsonPipelineTest {
     assertNull(performanceMetrics.getTakenTimeByStepEnd());
     assertNull(performanceMetrics.getTakenTimeByStepStart());
   }
-
-
-
 
 }

@@ -95,7 +95,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     // only used internally
   }
 
-  private JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action) {
+  JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
     clone.requests.addAll(this.requests);
