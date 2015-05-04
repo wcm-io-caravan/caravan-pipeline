@@ -35,14 +35,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.ReferencePolicy;
 import org.apache.felix.scr.annotations.Service;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.apache.sling.commons.osgi.RankedServices;
 
 import rx.Observable;
@@ -66,12 +63,6 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
 
   @Reference
   private MetricRegistry metricRegistry;
-
-  @Property(label = "Pipeline Performance Metrics",
-      description = "Set true to enable pipeline performance metrics mersurement")
-  static final String PERFORMANCE_METRICS = "performanceMetricsEnabled";
-  private static final boolean DEFAULT_PERFORMANCE_METRICS = false;
-  private boolean performanceMetricsEnabled;
 
   /** constructor used in a OSGi context */
   public JsonPipelineFactoryImpl() {}
@@ -99,7 +90,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
     return new JsonPipelineImpl(request, response,
-        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties, performanceMetricsEnabled));
+        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));
   }
 
   @Override
@@ -124,7 +115,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     .build();
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
-        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties, performanceMetricsEnabled));
+        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));
   }
 
   MultiLayerCacheAdapter createMultiLayerCacheAdapter() {
@@ -138,11 +129,5 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   void unbindCacheAdapter(CacheAdapter service, Map<String, Object> props) {
     cacheAdapters.unbind(service, props);
   }
-
-  @Activate
-  void activate(Map<String, Object> config) {
-    this.performanceMetricsEnabled = PropertiesUtil.toBoolean(config.get(PERFORMANCE_METRICS), DEFAULT_PERFORMANCE_METRICS);
-  }
-
 
 }

@@ -37,12 +37,6 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     super();
   }
 
-
-  @Override
-  protected JsonPipelineContextImpl getJsonPipelineContext() {
-    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties(), true);
-  }
-
   @Ignore
   @Test
   public void testOnNext() {
@@ -64,8 +58,8 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     }), "suffix2", "action2");
 
     next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 102);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 2);
+    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 120);
+    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 20);
   }
 
   @Ignore
@@ -89,8 +83,8 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     }), "suffix2", "action2");
 
     next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 2);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 102);
+    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 20);
+    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 120);
   }
 
   @Ignore
@@ -113,8 +107,8 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
 
     }), "suffix2", "action2");
     next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 2);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 102);
+    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 20);
+    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 120);
   }
 
   @Ignore
@@ -138,8 +132,8 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     }), "suffix2", "action2");
 
     next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 2);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 102);
+    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 20);
+    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 120);
   }
 
 

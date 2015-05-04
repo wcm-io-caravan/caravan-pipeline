@@ -53,7 +53,7 @@ public abstract class AbstractCaravanTestCase {
   }
 
   protected JsonPipelineContextImpl getJsonPipelineContext() {
-    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties(), false);
+    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties());
   }
 
 }

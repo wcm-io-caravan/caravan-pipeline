@@ -83,12 +83,15 @@ public final class JsonPipelineImpl implements JsonPipeline {
     this.descriptor = isNotBlank(request.getUrl()) ? "GET(//" + request.getServiceName() + request.getUrl() + ")" : "EMPTY()";
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request)).cache();
     this.context = context;
-    if (this.context.isPerformanceMetricsEnabled()) {
-      performanceMetrics = PerformanceMetrics.createNew(isNotBlank(request.getUrl()) ? "GET" : "EMPTY", descriptor, request.getCorrelationId());
-      this.observable = this.observable
-          .doOnSubscribe(performanceMetrics.getStartAction())
-          .doOnTerminate(performanceMetrics.getEndAction());
+    if (request.getPerformanceMetrics() != null) {
+      this.performanceMetrics = request.getPerformanceMetrics().createNext(isNotBlank(request.getUrl()) ? "GET" : "EMPTY", descriptor);
+    } else {
+      this.performanceMetrics = PerformanceMetrics.createNew(isNotBlank(request.getUrl()) ? "GET" : "EMPTY", descriptor, request.getCorrelationId());
     }
+    this.observable = this.observable
+        .doOnSubscribe(this.performanceMetrics.getStartAction())
+        .doOnTerminate(this.performanceMetrics.getEndAction());
+
   }
 
   private JsonPipelineImpl() {
@@ -107,12 +110,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     clone.observable = newObservable.cache();
     clone.context = context;
-    if (clone.context.isPerformanceMetricsEnabled()) {
-      clone.performanceMetrics = performanceMetrics.createNext(action, clone.descriptor);
-      clone.observable = clone.observable
-          .doOnSubscribe(clone.performanceMetrics.getStartAction())
-          .doOnTerminate(clone.performanceMetrics.getEndAction());
-    }
+    clone.performanceMetrics = performanceMetrics.createNext(action, clone.descriptor);
+    clone.observable = clone.observable
+        .doOnSubscribe(clone.performanceMetrics.getStartAction())
+        .doOnTerminate(clone.performanceMetrics.getEndAction());
+
     return clone;
   }
 
@@ -226,7 +228,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       }
     });
 
-    return cloneWith(transformedObservable, actionDesc, "ACTION");
+    return cloneWith(transformedObservable, actionDesc, "ACTION : " + action.getClass());
   }
 
   @Override

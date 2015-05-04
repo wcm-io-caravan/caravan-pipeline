@@ -48,16 +48,9 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
     super();
   }
 
-
-  @Override
-  protected JsonPipelineContextImpl getJsonPipelineContext() {
-    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties(), true);
-  }
-
   @Test
   public void testSingle() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody(getBooksString());
-    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
     assertFirstPipelineMetrics(pipeline, pipeline);
   }
 
@@ -245,10 +238,6 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
     JsonPipelineImpl second = (JsonPipelineImpl)first.extract("$.a");
     JsonPipelineImpl third = (JsonPipelineImpl)second.extract("$.label");
 
-    assertTrue(first.getJsonPipelineContext().isPerformanceMetricsEnabled());
-    assertTrue(second.getJsonPipelineContext().isPerformanceMetricsEnabled());
-    assertTrue(third.getJsonPipelineContext().isPerformanceMetricsEnabled());
-
     PerformanceMetrics firstPerformanceMetrics = first.getPerformanceMetrics();
     PerformanceMetrics secondPerformanceMetrics = second.getPerformanceMetrics();
     PerformanceMetrics thirdPerformanceMetrics = third.getPerformanceMetrics();
@@ -265,7 +254,6 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
   }
 
   private void assertFirstPipelineMetrics(JsonPipelineImpl pipeline, JsonPipeline toSubscribe) {
-    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
     PerformanceMetrics performanceMetrics = pipeline.getPerformanceMetrics();
     assertStartMetrics(performanceMetrics);
 
@@ -275,7 +263,6 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
   }
 
   private void assertNextPipelineMetrics(JsonPipelineImpl pipeline) {
-    assertTrue(pipeline.getJsonPipelineContext().isPerformanceMetricsEnabled());
     PerformanceMetrics performanceMetrics = pipeline.getPerformanceMetrics();
     assertStartMetrics(performanceMetrics);
 
