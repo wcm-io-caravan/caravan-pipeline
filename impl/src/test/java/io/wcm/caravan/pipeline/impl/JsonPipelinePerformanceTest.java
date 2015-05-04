@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -42,6 +43,7 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties(), true);
   }
 
+  @Ignore
   @Test
   public void testOnNext() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
@@ -66,7 +68,7 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 2);
   }
 
-
+  @Ignore
   @Test
   public void testOnSubscribe() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
@@ -91,6 +93,7 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 102);
   }
 
+  @Ignore
   @Test
   public void testOnTerminate() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
@@ -114,6 +117,7 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 102);
   }
 
+  @Ignore
   @Test
   public void testOnCompleted() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
