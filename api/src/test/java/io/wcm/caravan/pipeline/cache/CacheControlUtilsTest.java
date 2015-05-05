@@ -20,20 +20,24 @@
 package io.wcm.caravan.pipeline.cache;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import rx.Observable;
@@ -178,6 +182,48 @@ public class CacheControlUtilsTest {
     // tests #zipWithLowestMaxAge(Observable<JsonPipeline> pipelines, Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc)
     // achieves the pipelineOutput with the lowest maxAge value should be found in the third element
     assertZipWithLowestMaxAgeObservable(nextMAPipeline, highestMAPipeline, lowestMAPipeline);
+  }
+
+  @Test
+  public void testZipWithLowestMaxAge_emptyList() {
+
+    List<JsonPipeline> emptyListOfPipelines = ImmutableList.of();
+    Observable<JsonPipelineOutput> zipped = CacheControlUtils.zipWithLowestMaxAge(emptyListOfPipelines, mockFunction);
+
+    // zipping an empty list of pipelines should return an empty Observable (i.e. one that does not emit any JsonPipelineOutput)
+    Iterator<JsonPipelineOutput> outputIterable = zipped.toBlocking().next().iterator();
+    assertFalse(outputIterable.hasNext());
+
+    // and the zip function should have never been called
+    verifyZeroInteractions(mockFunction);
+  }
+
+  @Test
+  public void testZipWithLowestMaxAge_emptyObservable() {
+
+    Observable<JsonPipeline> emptyObservable = Observable.from(ImmutableList.of());
+    Observable<JsonPipelineOutput> zipped = CacheControlUtils.zipWithLowestMaxAge(emptyObservable, mockFunction);
+
+    // zipping an empty observable of pipelines should return an empty Observable (i.e. one that does not emit any JsonPipelineOutput)
+    Iterator<JsonPipelineOutput> outputIterable = zipped.toBlocking().next().iterator();
+    assertFalse(outputIterable.hasNext());
+
+    // and the zip function should have never been called
+    verifyZeroInteractions(mockFunction);
+  }
+
+  @Test
+  public void testZipWithLowestMaxAge_emptyObservableWithDefault() {
+
+    Observable<JsonPipeline> emptyObservable = Observable.from(ImmutableList.of());
+    Observable<JsonPipelineOutput> zipped = CacheControlUtils.zipWithLowestMaxAge(emptyObservable, mockFunction);
+
+    // if a default output is provided by using Obseravble#defaultIfEmpty, then a .toBlicking().single() should
+    // succeed and return the specified fallback output
+    JsonPipelineOutput fallbackOutput = Mockito.mock(JsonPipelineOutput.class);
+    JsonPipelineOutput output = zipped.defaultIfEmpty(fallbackOutput).toBlocking().single();
+
+    assertEquals(fallbackOutput, output);
   }
 
   private void assertZipWithLowestMaxAgeList(JsonPipeline first, JsonPipeline second, JsonPipeline third) {
