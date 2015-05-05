@@ -28,6 +28,7 @@ import java.util.List;
 
 import rx.Observable;
 import rx.functions.Func1;
+import rx.observers.SafeSubscriber;
 
 /**
  * Cache control utilities aid to manage pipeline output cache control meta data.
@@ -99,21 +100,33 @@ public final class CacheControlUtils {
       Observable<Observable<JsonPipelineOutput>> multipleOutputs,
       Func1<List<JsonPipelineOutput>, JsonPipelineOutput> zipFunc) {
 
-    return Observable.zip(multipleOutputs, (arrayOfOutputs) -> {
+    // this method could just return the zippingObservable created below, but this lead to an odd bug when this
+    // method was called with an empty "multipleOutputs" observable. In that case, the OperatorZip called
+    // #onCompleted twice (is this an implementation bug in rx.java?), which was causing weird behaviour
+    // if #defaultIfEmpty was used on the zipped result (the default value was emitted twice)
 
-      // collect the JsonPipelineOutput instances in a generic list (casting is required since FuncN only gives as a Object[])
-      List<JsonPipelineOutput> listOfOutputs = new ArrayList<>(arrayOfOutputs.length);
-      for (Object o : arrayOfOutputs) {
-        listOfOutputs.add((JsonPipelineOutput)o);
-      }
+    // that behaviour can be avoided by adding a SafeSubscriber layer
 
-      // calculate the zipping function to produce the aggregated resposne from all JsonPipelineOutputs
-      JsonPipelineOutput zippedOutput = zipFunc.call(listOfOutputs);
+    return Observable.create(subscriber -> {
 
-      // then update the max age of the overall output with the lowest max-age values of all outputs in the list
-      int lowestMaxAge = getLowestMaxAge(listOfOutputs);
-      return zippedOutput.withMaxAge(lowestMaxAge);
+      Observable<JsonPipelineOutput> zippingObservable = Observable.zip(multipleOutputs, (arrayOfOutputs) -> {
 
+        // collect the JsonPipelineOutput instances in a generic list (casting is required since FuncN only gives as a Object[])
+        List<JsonPipelineOutput> listOfOutputs = new ArrayList<>(arrayOfOutputs.length);
+        for (Object o : arrayOfOutputs) {
+          listOfOutputs.add((JsonPipelineOutput)o);
+        }
+
+        // calculate the zipping function to produce the aggregated resposne from all JsonPipelineOutputs
+        JsonPipelineOutput zippedOutput = zipFunc.call(listOfOutputs);
+
+        // then update the max age of the overall output with the lowest max-age values of all outputs in the list
+        int lowestMaxAge = getLowestMaxAge(listOfOutputs);
+        return zippedOutput.withMaxAge(lowestMaxAge);
+
+      });
+
+      zippingObservable.subscribe(new SafeSubscriber<JsonPipelineOutput>(subscriber));
     });
   }
 }
