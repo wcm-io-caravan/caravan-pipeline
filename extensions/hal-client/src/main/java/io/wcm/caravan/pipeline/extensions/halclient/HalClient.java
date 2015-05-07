@@ -45,6 +45,8 @@ public final class HalClient {
   private final CacheStrategy cacheStrategy;
   private final Map<String, String> contextProperties;
 
+  private final CaravanHttpRequest entryPointRequest;
+
   /**
    * @param serviceName Service name
    * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
@@ -62,33 +64,62 @@ public final class HalClient {
     this.serviceName = serviceName;
     this.cacheStrategy = cacheStrategy;
     this.contextProperties = contextProperties;
+    this.entryPointRequest = new CaravanHttpRequestBuilder(serviceName).append("/").build();
+  }
+
+  /**
+   * @param entryPointRequest the request to be executed to fetch the HAL entry point
+   * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
+   * @param contextProperties a Map of properties to pass on to
+   *          {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
+   */
+  public HalClient(CaravanHttpRequest entryPointRequest, CacheStrategy cacheStrategy, Map<String, String> contextProperties) {
+    this.serviceName = entryPointRequest.getServiceName();
+    this.cacheStrategy = cacheStrategy;
+    this.contextProperties = contextProperties;
+    this.entryPointRequest = entryPointRequest;
+  }
+
+  /**
+   * Creates a {@link JsonPipeline} that will fetch the entry point of the HAL service
+   * @param factory the factory to use to create the pipeline
+   * @return the pipeline
+   */
+  public JsonPipeline getEntryPoint(JsonPipelineFactory factory) {
+    return create(factory, entryPointRequest);
   }
 
   /**
    * Creates a JSON pipeline for a service entry point.
+   * @deprecated use {@link #getEntryPoint(JsonPipelineFactory)} instead
    * @param factory Pipeline factory
    * @return JSON pipeline
    */
+  @Deprecated
   public JsonPipeline createEntryPoint(JsonPipelineFactory factory) {
     return create(factory, "/");
   }
 
   /**
    * Creates a JSON pipeline for a service and URL.
+   * @deprecated specify the entry point in the constructor and use {@link #getEntryPoint(JsonPipelineFactory)} instead
    * @param factory Pipeline factory
    * @param url URL to start
    * @return JSON pipeline
    */
+  @Deprecated
   public JsonPipeline create(JsonPipelineFactory factory, String url) {
     return create(factory, new CaravanHttpRequestBuilder(serviceName).append(url).build());
   }
 
   /**
    * Creates a JSON pipeline for a HTTP request.
+   * @deprecated specify the entry point in the constructor and use {@link #getEntryPoint(JsonPipelineFactory)} instead
    * @param factory Pipeline factory
    * @param request Pre-configured HTTP request
    * @return JSON pipeline
    */
+  @Deprecated
   public JsonPipeline create(JsonPipelineFactory factory, CaravanHttpRequest request) {
     JsonPipeline entryPoint = factory.create(request, contextProperties);
     if (cacheStrategy != null) {
