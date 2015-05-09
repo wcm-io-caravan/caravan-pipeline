@@ -287,7 +287,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
             contentMaxAge = Math.min(contentMaxAge, fetchedModel.getMaxAge());
           }
 
-          log.debug("CACHE PUT - response for {} has been fetched and will be put in the cache, max-age={} sec", descriptor, contentMaxAge);
+          log.debug("CACHE PUT - response for {} has been fetched and will be put in the cache, max-age={} sec", cacheKey, contentMaxAge);
 
           CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), contentMaxAge, requests,
               cacheKey, descriptor, context.getProperties());
