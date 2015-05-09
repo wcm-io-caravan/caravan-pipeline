@@ -140,7 +140,16 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return Observable.empty();
     }
 
+    if (!couchbaseClientProvider.isEnabled()) {
+      log.warn("Couchbase client provider is disabled, please check the configuration. Additional error details should have been logged when the bundle was activated");
+      return Observable.empty();
+    }
+
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
+    if (bucket == null) {
+      log.error("Failed to obtain couchase bucket from " + couchbaseClientProvider.getCacheBucketName());
+      return Observable.empty();
+    }
 
     Observable<RawJsonDocument> fromCache;
     if (options.isExtendStorageTimeOnGet()) {
@@ -170,7 +179,16 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return;
     }
 
+    if (!couchbaseClientProvider.isEnabled()) {
+      log.warn("Couchbase client provider is disabled, please check the configuration. Additional error details should have been logged when the bundle was activated");
+      return;
+    }
+
     AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
+    if (bucket == null) {
+      log.error("Failed to obtain couchase bucket from " + couchbaseClientProvider.getCacheBucketName());
+      return;
+    }
 
     RawJsonDocument doc = RawJsonDocument.create(getCacheKey(cacheKey), options.getStorageTime(), jsonString);
     Observable<RawJsonDocument> insertionObservable = bucket.upsert(doc);

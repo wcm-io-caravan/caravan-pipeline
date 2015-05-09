@@ -72,11 +72,10 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
       CacheAdapter actualCacheAdapter = null;
       for (int i = 0; i < cacheAdapters.size(); i++) {
         CacheAdapter cacheAdapter = cacheAdapters.get(i);
-        log.debug("Trying to retrieve document with id {} from cache level {} : {}", cacheKey, i, cacheAdapter.getClass().getSimpleName());
+        log.debug("Trying to retrieve document from cache level {} : {} : ", i, cacheAdapter.getClass().getSimpleName(), cacheKey);
         result = cacheAdapter.get(cacheKey, options).cache();
         if (!result.isEmpty().toBlocking().first()) {
-          log.debug("Retrieved document with id {} from cache level {} : {} : {}", cacheKey, i, cacheAdapter.getClass().getSimpleName(), result.toBlocking()
-              .first());
+          log.debug("Retrieved document from cache level {} : {} : {}", i, cacheAdapter.getClass().getSimpleName(), cacheKey);
           actualCacheAdapter = cacheAdapter;
           break;
         }
@@ -97,7 +96,7 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
     for (int i = 0; i < cacheAdapters.size(); i++) {
       CacheAdapter cacheAdapter = cacheAdapters.get(i);
       if (cacheAdapter != actualCacheAdapter) {
-        log.debug("Trying to reput document {} into cache level {} : {} : ", cacheKey, i, cacheAdapter.getClass().getSimpleName(), jsonString);
+        log.debug("Promoting document into cache level {} : {} : ", i, cacheAdapter.getClass().getSimpleName(), cacheKey);
         cacheAdapter.put(cacheKey, jsonString, options);
       }
       else {
@@ -116,8 +115,8 @@ public class MultiLayerCacheAdapter implements CacheAdapter {
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
     for (int i = 0; i < cacheAdapters.size(); i++) {
       CacheAdapter cacheAdapter = cacheAdapters.get(i);
+      log.debug("Putting document into cache level {} : {} : {} ", i, cacheAdapter.getClass().getSimpleName(), cacheKey);
       cacheAdapter.put(cacheKey, jsonString, options);
-      log.debug("Trying to put document {} into cache level {} : {} : {}", cacheKey, i, cacheAdapter.getClass().getSimpleName(), jsonString);
     }
   }
 
