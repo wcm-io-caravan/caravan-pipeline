@@ -19,19 +19,26 @@
  */
 package io.wcm.caravan.pipeline.extensions.halclient;
 
+import io.wcm.caravan.commons.hal.HalBuilder;
+import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
+import io.wcm.caravan.pipeline.extensions.halclient.action.BuildResource;
 import io.wcm.caravan.pipeline.extensions.halclient.action.EmbedLinks;
 import io.wcm.caravan.pipeline.extensions.halclient.action.FollowLink;
+import io.wcm.caravan.pipeline.extensions.halclient.action.ModifyResource;
 
 import java.util.Collections;
 import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rx.functions.Action1;
+import rx.functions.Func2;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -227,6 +234,39 @@ public final class HalClient {
    */
   public EmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
     return new EmbedLinks(serviceName, relation, parameters, true).setCacheStrategy(cacheStrategy);
+  }
+
+  /**
+   * Allows to create a {@link BuildResource} action by specifying the output href and a lambda
+   * @param selfHref the path of the output resource to be used for the self helf
+   * @param buildFunc the lambda that gets the previous step's output and a {@link HalBuilder} with the specified
+   *          self-link
+   * @return the action that executes the lambda build function
+   **/
+  public BuildResource buildResource(String selfHref, Func2<HalResource, HalBuilder, HalResource> buildFunc) {
+    return new BuildResource(selfHref) {
+
+      @Override
+      public HalResource build(HalResource input, HalBuilder outputBuilder) {
+        return buildFunc.call(input, outputBuilder);
+      }
+    };
+  }
+
+  /**
+   * Allows to create a {@link ModifyResource} action by specifying the output href and a lambda
+   * @param selfHref the path of the output resource to be used for the self helf
+   * @param modifyFunc the lambda that gets a HalResource with the previous step's output and the specified self-link
+   * @return the action that executes the lambda build function
+   **/
+  public ModifyResource modifyResource(String selfHref, Action1<HalResource> modifyFunc) {
+    return new ModifyResource(selfHref) {
+
+      @Override
+      public void modify(HalResource output) {
+        modifyFunc.call(output);
+      }
+    };
   }
 
 }
