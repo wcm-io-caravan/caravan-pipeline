@@ -41,8 +41,8 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
   @Test
   public void testOnNext() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
-    JsonPipelineImpl next1 = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
-    JsonPipelineImpl next2 = next1.cloneWith(next1.getOutput().doOnNext(new Action1<JsonPipelineOutput>() {
+    JsonPipelineImpl fast = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
+    JsonPipelineImpl slow = fast.cloneWith(fast.getOutput().doOnNext(new Action1<JsonPipelineOutput>() {
 
       @Override
       public void call(JsonPipelineOutput t) {
@@ -57,9 +57,9 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
 
     }), "suffix2", "action2");
 
-    next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 120);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 20);
+    slow.getOutput().toBlocking().first();
+    assertTrue(fast.getPerformanceMetrics().getTakenTimeByStep() < 50);
+    assertTrue(slow.getPerformanceMetrics().getTakenTimeByStep() >= 50);
   }
 
   @Ignore
