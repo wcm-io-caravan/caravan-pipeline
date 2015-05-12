@@ -283,7 +283,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
 
           int contentMaxAge = options.getRefreshInterval();
-          if (fetchedModel.getMaxAge() > 0) {
+          if (fetchedModel.getMaxAge() >= 0) {
             contentMaxAge = Math.min(contentMaxAge, fetchedModel.getMaxAge());
           }
 

@@ -61,13 +61,13 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
 
   @Test
-  public void defaultMaxAgeIsZero() {
+  public void defaultMaxAgeIsUndefined() {
 
     JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}");
 
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
 
-    assertEquals(0, output.getMaxAge());
+    assertEquals(-1, output.getMaxAge());
   }
 
   @Test
@@ -127,13 +127,12 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
   @Test
   public void cacheMissMaxAgeFromResponseIsMissing() {
 
-    int responseMaxAge = 0;
     int timeToLiveSeconds = 60;
 
     Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.empty());
 
-    JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", responseMaxAge)
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a:123}")
         .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
 
     JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
@@ -165,6 +164,36 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
     int cacheContentAge = 50;
+    int maxAgeFomResponse = 20;
+
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
+    .thenReturn(cachedContent("{b: 'cached'}}", cacheContentAge));
+
+    JsonPipeline pipeline = newPipelineWithResponseBodyAndMaxAge("{a:123}", maxAgeFomResponse)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+
+    // make sure the cache was accessed...
+    Mockito.verify(cacheAdapter).get(anyString(), anyObject());
+
+    // ...but the content from cache was not used, because it's stale
+    String json = JacksonFunctions.nodeToString(output.getPayload());
+    JSONAssert.assertEquals("{a:123}", json, JSONCompareMode.STRICT);
+
+    // and the new content must have been put into the cache
+    Mockito.verify(cacheAdapter).put(anyString(), anyString(), anyObject());
+
+    //  the max-age must be taken from the response, since it's smaller than the caching strategy
+    assertEquals(maxAgeFomResponse, output.getMaxAge());
+
+  }
+
+  @Test
+  public void cacheHitIgnoreStaleContent_NoMaxAgeInResponse() throws JSONException {
+
+    int timeToLiveSeconds = 30;
+    int cacheContentAge = 50;
 
     Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(cachedContent("{b: 'cached'}}", cacheContentAge));
@@ -184,7 +213,7 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     // and the new content must have been put into the cache
     Mockito.verify(cacheAdapter).put(anyString(), anyString(), anyObject());
 
-    // the max-age must be taken from the caching strategy
+    //  the max-age must be taken from the caching strategy
     assertEquals(timeToLiveSeconds, output.getMaxAge());
 
   }

@@ -91,11 +91,9 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           if (statusCode == HttpServletResponse.SC_OK) {
 
             JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
-            JsonPipelineOutput model = new JsonPipelineOutputImpl(payload, ImmutableList.of(request));
             int maxAge = NumberUtils.toInt(response.getCacheControl().get("max-age"), -1);
-            if (maxAge >= 0) {
-              model = model.withMaxAge(maxAge);
-            }
+            JsonPipelineOutput model = new JsonPipelineOutputImpl(payload, ImmutableList.of(request)).withMaxAge(maxAge);
+
             subscriber.onNext(model);
           }
           else {
