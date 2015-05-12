@@ -228,7 +228,7 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
     pipeline.getOutput().toBlocking().single();
 
     assertEndMetrics(last);
-    assertNull(last.getTakenTimeByStepEnd());
+    assertNull(last.getTakenTimeByStepOperation());
     assertNull(last.getTakenTimeByStepStart());
   }
 
@@ -274,25 +274,27 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
 
   private void assertStartMetrics(PerformanceMetrics performanceMetrics) {
     assertNull(performanceMetrics.getStartTime());
+    assertNull(performanceMetrics.getOperationTime());
     assertNull(performanceMetrics.getEndTime());
   }
 
   private void assertEndMetrics(PerformanceMetrics performanceMetrics) {
     assertTrue(performanceMetrics.getStartTime() > 0);
     assertTrue(performanceMetrics.getEndTime() > 0);
+    assertTrue(performanceMetrics.getOperationTime() > 0);
     assertTrue(performanceMetrics.getTakenTimeByStep() >= 0);
     System.out.println(performanceMetrics.toString());
   }
 
   private void assertNextMetrics(PerformanceMetrics performanceMetrics) {
     assertEndMetrics(performanceMetrics);
-    assertTrue(performanceMetrics.getTakenTimeByStepEnd() >= 0);
+    assertTrue(performanceMetrics.getTakenTimeByStepOperation() >= 0);
     assertTrue(performanceMetrics.getTakenTimeByStepStart() >= 0);
   }
 
   private void assertFirstMetrics(PerformanceMetrics performanceMetrics) {
     assertEndMetrics(performanceMetrics);
-    assertNull(performanceMetrics.getTakenTimeByStepEnd());
+    assertNull(performanceMetrics.getTakenTimeByStepOperation());
     assertNull(performanceMetrics.getTakenTimeByStepStart());
   }
 

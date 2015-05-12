@@ -90,6 +90,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     }
     this.observable = this.observable
         .doOnSubscribe(this.performanceMetrics.getStartAction())
+        .doOnNext(this.performanceMetrics.getOnNextAction())
         .doOnTerminate(this.performanceMetrics.getEndAction());
 
   }
@@ -102,6 +103,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     return cloneWith(newObservable, descriptorSuffix, action, null);
   }
 
+  @SuppressWarnings("unchecked")
   JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action, Class actionClass) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
@@ -117,6 +119,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     clone.performanceMetrics = performanceMetrics.createNext(action, clone.descriptor, actionClass);
     clone.observable = clone.observable
         .doOnSubscribe(clone.performanceMetrics.getStartAction())
+        .doOnNext(clone.performanceMetrics.getOnNextAction())
         .doOnTerminate(clone.performanceMetrics.getEndAction());
 
     return clone;

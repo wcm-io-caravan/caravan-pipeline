@@ -22,7 +22,6 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -37,7 +36,7 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     super();
   }
 
-  @Ignore
+
   @Test
   public void testOnNext() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
@@ -58,16 +57,15 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
     }), "suffix2", "action2");
 
     slow.getOutput().toBlocking().first();
-    assertTrue(fast.getPerformanceMetrics().getTakenTimeByStep() < 50);
-    assertTrue(slow.getPerformanceMetrics().getTakenTimeByStep() >= 50);
+    assertTrue(fast.getPerformanceMetrics().getTakenTimeByStep() < 100);
+    assertTrue(slow.getPerformanceMetrics().getTakenTimeByStep() >= 100);
   }
 
-  @Ignore
   @Test
   public void testOnSubscribe() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
-    JsonPipelineImpl next1 = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
-    JsonPipelineImpl next2 = next1.cloneWith(next1.getOutput().doOnSubscribe(new Action0() {
+    JsonPipelineImpl fast = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
+    JsonPipelineImpl slow = fast.cloneWith(fast.getOutput().doOnSubscribe(new Action0() {
 
       @Override
       public void call() {
@@ -82,17 +80,17 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
 
     }), "suffix2", "action2");
 
-    next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 20);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 120);
+    slow.getOutput().toBlocking().first();
+    assertTrue(fast.getPerformanceMetrics().getTakenTimeByStep() < 100);
+    assertTrue(slow.getPerformanceMetrics().getTakenTimeByStep() >= 100);
   }
 
-  @Ignore
+
   @Test
   public void testOnTerminate() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
-    JsonPipelineImpl next1 = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
-    JsonPipelineImpl next2 = next1.cloneWith(next1.getOutput().doOnTerminate(new Action0() {
+    JsonPipelineImpl fast = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
+    JsonPipelineImpl slow = fast.cloneWith(fast.getOutput().doOnTerminate(new Action0() {
 
       @Override
       public void call() {
@@ -106,17 +104,17 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
       }
 
     }), "suffix2", "action2");
-    next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 20);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 120);
+    slow.getOutput().toBlocking().first();
+    assertTrue(fast.getPerformanceMetrics().getTakenTimeByStep() < 100);
+    assertTrue(slow.getPerformanceMetrics().getTakenTimeByStep() >= 100);
   }
 
-  @Ignore
+
   @Test
   public void testOnCompleted() {
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("");
-    JsonPipelineImpl next1 = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
-    JsonPipelineImpl next2 = next1.cloneWith(next1.getOutput().doOnCompleted(new Action0() {
+    JsonPipelineImpl fast = pipeline.cloneWith(pipeline.getOutput(), "suffix1", "action1");
+    JsonPipelineImpl slow = fast.cloneWith(fast.getOutput().doOnCompleted(new Action0() {
 
       @Override
       public void call() {
@@ -131,9 +129,9 @@ public class JsonPipelinePerformanceTest extends AbstractJsonPipelineTest {
 
     }), "suffix2", "action2");
 
-    next2.getOutput().toBlocking().first();
-    assertTrue(next1.getPerformanceMetrics().getTakenTimeByStep() >= 0 && next1.getPerformanceMetrics().getTakenTimeByStep() <= 20);
-    assertTrue(next2.getPerformanceMetrics().getTakenTimeByStep() >= 100 && next2.getPerformanceMetrics().getTakenTimeByStep() <= 120);
+    slow.getOutput().toBlocking().first();
+    assertTrue(fast.getPerformanceMetrics().getTakenTimeByStep() < 100);
+    assertTrue(slow.getPerformanceMetrics().getTakenTimeByStep() >= 100);
   }
 
 
