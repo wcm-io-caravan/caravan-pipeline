@@ -19,6 +19,7 @@
  */
 package io.wcm.caravan.pipeline;
 
+import io.wcm.caravan.common.performance.PerformanceMetrics;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
@@ -69,6 +70,11 @@ public interface JsonPipeline {
    * @return all resilient HTTP requests involved in producing the pipeline's output
    */
   List<CaravanHttpRequest> getRequests();
+
+  /**
+   * @return pipeline performance metrics
+   */
+  PerformanceMetrics getPerformanceMetrics();
 
   /**
    * Raises an exception in case, if expected content is not present in the actual JSON node of this pipeline.

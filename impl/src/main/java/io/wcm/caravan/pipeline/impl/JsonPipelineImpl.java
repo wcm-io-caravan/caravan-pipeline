@@ -99,6 +99,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
   }
 
   JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action) {
+    return cloneWith(newObservable, descriptorSuffix, action, null);
+  }
+
+  JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action, Class actionClass) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
     clone.requests.addAll(this.requests);
@@ -110,7 +114,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
     clone.observable = newObservable.cache();
     clone.context = context;
-    clone.performanceMetrics = performanceMetrics.createNext(action, clone.descriptor);
+    clone.performanceMetrics = performanceMetrics.createNext(action, clone.descriptor, actionClass);
     clone.observable = clone.observable
         .doOnSubscribe(clone.performanceMetrics.getStartAction())
         .doOnTerminate(clone.performanceMetrics.getEndAction());
@@ -131,6 +135,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public List<CaravanHttpRequest> getRequests() {
     return this.requests;
+  }
+
+  @Override
+  public PerformanceMetrics getPerformanceMetrics() {
+    return this.performanceMetrics;
   }
 
   @Override
@@ -228,7 +237,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       }
     });
 
-    return cloneWith(transformedObservable, actionDesc, "ACTION : " + action.getClass());
+    return cloneWith(transformedObservable, actionDesc, "ACTION", action.getClass());
   }
 
   @Override
@@ -270,10 +279,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   JsonPipelineContext getJsonPipelineContext() {
     return this.context;
-  }
-
-  PerformanceMetrics getPerformanceMetrics() {
-    return this.performanceMetrics;
   }
 
 }
