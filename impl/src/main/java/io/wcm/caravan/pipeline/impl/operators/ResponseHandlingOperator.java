@@ -22,6 +22,7 @@ package io.wcm.caravan.pipeline.impl.operators;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.response.Body;
 import io.wcm.caravan.io.http.response.CaravanHttpResponse;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
@@ -45,9 +46,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 
 /**
- * Operator that converts {@link Response} emissions from the {@link CaravanHttpClient} layer into
- * {@link JsonPipelineOutput} objects. All recoverable exceptions are wrapped in a {@link JsonPipelineInputException}
- * before they are forwarded to the subscriber's onNext method
+ * Operator that converts {@link Response} emissions from the {@link CaravanHttpClient} layer into {@link JsonPipelineOutput} objects. All recoverable
+ * exceptions are wrapped in a {@link JsonPipelineInputException} before they are forwarded to the subscriber's onNext method
  */
 public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, CaravanHttpResponse> {
 
@@ -85,12 +85,12 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
 
       @Override
       public void onNext(CaravanHttpResponse response) {
-        try {
+        try (Body body = response.body()) {
           final int statusCode = response.status();
           log.debug("received " + statusCode + " response (" + response.reason() + ") with from " + request.getUrl());
           if (statusCode == HttpServletResponse.SC_OK) {
 
-            JsonNode payload = JacksonFunctions.stringToNode(response.body().asString());
+            JsonNode payload = JacksonFunctions.stringToNode(body.asString());
             int maxAge = NumberUtils.toInt(response.getCacheControl().get("max-age"), -1);
             JsonPipelineOutput model = new JsonPipelineOutputImpl(payload, ImmutableList.of(request)).withMaxAge(maxAge);
 
