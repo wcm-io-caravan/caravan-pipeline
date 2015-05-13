@@ -50,7 +50,8 @@ public abstract class ModifyResource implements JsonPipelineAction {
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
     if (!previousStepOutput.getPayload().isObject()) {
-      throw new JsonPipelineOutputException(ModifyResource.class.getName() + " expects the output of the previous step to be a JSON *object* output, but got " + previousStepOutput.getPayload().toString());
+      throw new JsonPipelineOutputException(ModifyResource.class.getName()
+          + " expects the output of the previous step to be a JSON *object* output, but got " + previousStepOutput.getPayload().toString());
     }
 
     ObjectNode state = previousStepOutput.getPayload().deepCopy();

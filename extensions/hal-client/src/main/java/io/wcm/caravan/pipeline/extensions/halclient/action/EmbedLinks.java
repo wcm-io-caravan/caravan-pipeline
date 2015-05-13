@@ -119,7 +119,7 @@ public final class EmbedLinks implements JsonPipelineAction {
       if (includeLinksInEmbeddedResources) {
 
         Map<String, HalResource> urlResourceMap = new HashMap<>();
-        for (int i=0; i<links.size(); i++) {
+        for (int i = 0; i < links.size(); i++) {
           urlResourceMap.put(links.get(i).getHref(), new HalResource((ObjectNode)outputsToEmbed.get(i).getPayload()));
         }
 
@@ -139,7 +139,8 @@ public final class EmbedLinks implements JsonPipelineAction {
     });
   }
 
-  private Observable<JsonPipeline> getPipelinesForEachLink(List<Link> links, JsonPipelineOutput previousStepOutput, JsonPipelineContext context, HalResource halResource) {
+  private Observable<JsonPipeline> getPipelinesForEachLink(List<Link> links, JsonPipelineOutput previousStepOutput, JsonPipelineContext context,
+      HalResource halResource) {
 
     Observable<CaravanHttpRequest> requests = getRequests(previousStepOutput, links);
     return requests
@@ -173,16 +174,16 @@ public final class EmbedLinks implements JsonPipelineAction {
         // create request, and main cache-control headers from previous request
         .map(link -> {
           CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName)
-              .append(link.getHref())
-              .header("Cache-Control", previousHeaders.get("Cache-Control"));
+          .append(link.getHref())
+          .header("Cache-Control", previousHeaders.get("Cache-Control"));
 
           // also make sure that the correlation-id is passed on to the follow-up requests
-            if (previousStepOutput.getCorrelationId() != null) {
-              builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
-            }
+          if (previousStepOutput.getCorrelationId() != null) {
+            builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
+          }
 
-            return builder.build(parameters);
-          });
+          return builder.build(parameters);
+        });
   }
 
 

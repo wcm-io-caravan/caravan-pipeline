@@ -65,7 +65,9 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   private MetricRegistry metricRegistry;
 
   /** constructor used in a OSGi context */
-  public JsonPipelineFactoryImpl() {}
+  public JsonPipelineFactoryImpl() {
+    // empty constructor
+  }
 
   /**
    * explicit dependency injection (to be used in unit-tests)
