@@ -27,6 +27,7 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
@@ -63,6 +64,7 @@ public final class EmbedLinks implements JsonPipelineAction {
   private boolean includeLinksInEmbeddedResources;
 
   private CacheStrategy cacheStrategy;
+  private JsonPipelineExceptionHandler exceptionHandler;
 
   /**
    * @param serviceName
@@ -98,6 +100,16 @@ public final class EmbedLinks implements JsonPipelineAction {
    */
   public EmbedLinks setCacheStrategy(CacheStrategy newCacheStrategy) {
     this.cacheStrategy = newCacheStrategy;
+    return this;
+  }
+
+  /**
+   * Sets the exception handler for this action.
+   * @param exceptionHandler The exceptionHandler to set.
+   * @return Embed links action
+   */
+  public EmbedLinks setExceptionHandler(JsonPipelineExceptionHandler exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
     return this;
   }
 
@@ -147,7 +159,9 @@ public final class EmbedLinks implements JsonPipelineAction {
         // create pipeline
         .map(request -> context.getFactory().create(request, context.getProperties()))
         // add Caching
-        .map(pipeline -> cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy));
+        .map(pipeline -> cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy))
+        // add exception handler
+        .map(pipeline -> exceptionHandler == null ? pipeline : pipeline.handleException(exceptionHandler));
   }
 
   private List<Link> getLinks(HalResource halResource) {
