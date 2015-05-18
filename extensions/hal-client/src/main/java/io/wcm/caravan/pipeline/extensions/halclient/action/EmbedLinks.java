@@ -67,10 +67,10 @@ public final class EmbedLinks implements JsonPipelineAction {
   private JsonPipelineExceptionHandler exceptionHandler;
 
   /**
-   * @param serviceName
-   * @param relation
-   * @param parameters
-   * @param index
+   * @param serviceName Logical name of the service
+   * @param relation Link relation to embed
+   * @param parameters URI parameters
+   * @param index Index of the link to embed. If equals {@code Integer.MIN_VALUE} embeds all links
    */
   public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters, int index) {
     this.serviceName = serviceName;
@@ -80,9 +80,9 @@ public final class EmbedLinks implements JsonPipelineAction {
   }
 
   /**
-   * @param serviceName
-   * @param relation
-   * @param parameters
+   * @param serviceName Logical name of the service
+   * @param relation Link relation to embed
+   * @param parameters URI parameters
    * @param includeLinksInEmbeddedResources whether links in embedded resources should also be resolved
    */
   public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters, boolean includeLinksInEmbeddedResources) {
@@ -138,9 +138,9 @@ public final class EmbedLinks implements JsonPipelineAction {
         recursiveLinkReplacement(halResource, urlResourceMap);
 
       }
-      else {
+        else {
 
-        // if links should not be resolved for the embedded resources, keep the previous logic (which is much simpler)
+          // if links should not be resolved for the embedded resources, keep the previous logic (which is much simpler)
         for (JsonPipelineOutput output : outputsToEmbed) {
           halResource.addEmbedded(relation, new HalResource((ObjectNode)output.getPayload()));
         }
@@ -188,16 +188,16 @@ public final class EmbedLinks implements JsonPipelineAction {
         // create request, and main cache-control headers from previous request
         .map(link -> {
           CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName)
-          .append(link.getHref())
-          .header("Cache-Control", previousHeaders.get("Cache-Control"));
+              .append(link.getHref())
+              .header("Cache-Control", previousHeaders.get("Cache-Control"));
 
           // also make sure that the correlation-id is passed on to the follow-up requests
-          if (previousStepOutput.getCorrelationId() != null) {
-            builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
-          }
+            if (previousStepOutput.getCorrelationId() != null) {
+              builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
+            }
 
-          return builder.build(parameters);
-        });
+            return builder.build(parameters);
+          });
   }
 
 

@@ -40,7 +40,7 @@ public final class CacheControlUtils {
   }
 
   /**
-   * @param pipelineOutputs
+   * @param pipelineOutputs Pipeline outputs with {@code max-age} values
    * @return the lowest max-age value of all the given pipeline outputs
    */
   public static int getLowestMaxAge(Iterable<JsonPipelineOutput> pipelineOutputs) {
@@ -54,7 +54,7 @@ public final class CacheControlUtils {
   }
 
   /**
-   * @param pipelineOutputs
+   * @param pipelineOutputs  Pipeline outputs with {@code max-age} values
    * @return the lowest max-age value of all the given pipeline outputs
    */
   public static int getLowestMaxAge(JsonPipelineOutput... pipelineOutputs) {

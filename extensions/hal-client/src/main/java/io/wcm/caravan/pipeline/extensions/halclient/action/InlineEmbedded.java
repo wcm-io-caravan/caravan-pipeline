@@ -45,7 +45,7 @@ public final class InlineEmbedded implements JsonPipelineAction {
   private final String[] relations;
 
   /**
-   * @param relations
+   * @param relations Relations of the embedded resources to embed
    */
   public InlineEmbedded(String... relations) {
     this.relations = relations;

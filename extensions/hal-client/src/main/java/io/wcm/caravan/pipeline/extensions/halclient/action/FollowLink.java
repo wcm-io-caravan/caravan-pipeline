@@ -55,9 +55,10 @@ public final class FollowLink implements JsonPipelineAction {
   private CacheStrategy cacheStrategy;
 
   /**
-   * @param relation
-   * @param parameters
-   * @param index
+   * @param serviceName Logical name of the service
+   * @param relation Link relation to embed
+   * @param parameters URI parameters
+   * @param index Index of the link to embed
    */
   public FollowLink(String serviceName, String relation, Map<String, Object> parameters, int index) {
     this.serviceName = serviceName;
