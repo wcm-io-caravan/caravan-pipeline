@@ -33,6 +33,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
+import com.jayway.jsonpath.InvalidPathException;
+
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
@@ -190,7 +192,7 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
-    JsonPipeline collected = pipeline.collect("$a.numbers", "extracted");
+    JsonPipeline collected = pipeline.collect("$.a.numbers", "extracted");
 
     // make sure that only empty ArrayNode is returned and saved in ObjectNode with specified targetProperty when a PathNotFoundException is thrown
     String output = collected.getStringOutput().toBlocking().single();
@@ -202,11 +204,22 @@ public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
-    JsonPipeline collected = pipeline.collect("$a.numbers");
+    JsonPipeline collected = pipeline.collect("$.a.numbers");
 
     // make sure that only empty ArrayNode is returned when a PathNotFoundException is thrown
     String output = collected.getStringOutput().toBlocking().single();
     JSONAssert.assertEquals("[]", output, JSONCompareMode.STRICT);
+  }
+
+  @Test(expected = InvalidPathException.class)
+  public void collectInvalidJsonPath() {
+
+    // test error handling for an JSON path that can not even be parsed
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline collected = pipeline.collect("$[");
+
+    // this will trigger an InvalidPathException that should not be catched by the JsonPathSelector or CollectOperator
+    collected.getStringOutput().toBlocking().single();
   }
 
   @Test

@@ -119,7 +119,7 @@ public class JsonPipelineOutputTest extends AbstractJsonPipelineTest {
   public void plainPipelineOutputMissingNode() {
 
     // check that pipelines string output throws JsonPipelineOutputException when MissingNode is a root node of the pipeline
-    JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString()).extract("unknown book");
+    JsonPipeline pipeline = newPipelineWithResponseBody(getBooksString()).extract("$..videos");
 
     pipeline.getStringOutput().toBlocking().single();
   }

@@ -32,6 +32,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.InvalidPathException;
 
 /** Tests for the {@link JsonPathSelector} functions */
 @RunWith(MockitoJUnitRunner.class)
@@ -138,5 +139,12 @@ public class JsonPathSelectorTest {
     ArrayNode result = new JsonPathSelector("$.store.cars[*]").call(booksJson);
 
     assertEquals(0, result.size());
+  }
+
+  @Test(expected = InvalidPathException.class)
+  public void testExtractArrayInvalidJsonPath() {
+
+    // for an invalid JSON path, the JsonPathSelector should not catch the InvalidPathException
+    new JsonPathSelector("$[").call(booksJson);
   }
 }

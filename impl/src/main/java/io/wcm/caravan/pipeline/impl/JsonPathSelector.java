@@ -35,6 +35,7 @@ import com.jayway.jsonpath.Configuration.ConfigurationBuilder;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.PathNotFoundException;
 
 /**
  * Function that evaluates a JSONpath expression on a Jackson {@link JsonNode} tree, and returns an {@link ArrayNode}
@@ -67,7 +68,7 @@ public final class JsonPathSelector implements Func1<JsonNode, ArrayNode> {
           .parse(inputData)
           .read(jsonPath, ArrayNode.class);
     }
-    catch (JsonPathException exception) {
+    catch (PathNotFoundException exception) {
       arrayNode = JsonNodeFactory.instance.arrayNode();
     }
 

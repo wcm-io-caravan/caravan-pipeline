@@ -39,6 +39,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.jayway.jsonpath.InvalidPathException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
@@ -148,7 +149,7 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
-    JsonPipeline extracted = pipeline.extract("$a.numbers", "extracted");
+    JsonPipeline extracted = pipeline.extract("$.a.numbers", "extracted");
 
     // make sure that only MissingNode is returned when a PathNotFoundException is thrown
     JsonNode output = extracted.getJsonOutput().toBlocking().single();
@@ -163,7 +164,7 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
 
     // test error handling if a property has been used in the JSONPath that does not exist in the whole document
     JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
-    JsonPipeline extracted = pipeline.extract("$a.numbers");
+    JsonPipeline extracted = pipeline.extract("$.a.numbers");
 
 
     // make sure that only MissingNode is returned when a PathNotFoundException is thrown
@@ -172,6 +173,17 @@ public class JsonPipelineExtractTest extends AbstractJsonPipelineTest {
 
     // make sure that JsonPipelineOutputException is thrown, when user tries to serialize MissingNode as String
     extracted.getStringOutput().toBlocking().single();
+  }
+
+  @Test(expected = InvalidPathException.class)
+  public void extractInvalidJsonPath() {
+
+    // test error handling for an JSON path that can not even be parsed
+    JsonPipeline pipeline = newPipelineWithResponseBody("{a: { label: 'abc' }}");
+    JsonPipeline collected = pipeline.extract("$[");
+
+    // this will trigger an InvalidPathException that should not be catched by the JsonPathSelector or ExtractOperator
+    collected.getStringOutput().toBlocking().single();
   }
 
   @Test
