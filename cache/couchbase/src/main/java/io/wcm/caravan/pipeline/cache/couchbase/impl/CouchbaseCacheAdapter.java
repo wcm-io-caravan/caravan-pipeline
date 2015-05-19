@@ -68,26 +68,32 @@ description = "Configure pipeline caching in couchbase.")
 @Service(CacheAdapter.class)
 public class CouchbaseCacheAdapter implements CacheAdapter {
 
-  @Property(label = "Service Ranking", intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
+  @Property(label = "Service Ranking",
       description = "Priority of parameter persistence providers (lower value = higher priority)",
+      intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
       propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
   static final int DEFAULT_RANKING = 2000;
 
-  @Property(label = "Cache Key Prefix", description = "Prefix for caching keys.")
+  @Property(label = "Cache Key Prefix", description = "Prefix for caching keys.",
+      value = CouchbaseCacheAdapter.CACHE_KEY_PREFIX_DEFAULT)
   static final String CACHE_KEY_PREFIX_PROPERTY = "cacheKeyPrefix";
   private static final String CACHE_KEY_PREFIX_DEFAULT = "json-pipeline:";
 
-  @Property(label = "Cache Timeout", description = "Timeout in ms for Coucbase cache operations.")
+  @Property(label = "Cache Timeout", description = "Timeout in ms for Coucbase cache operations.",
+      intValue = CouchbaseCacheAdapter.CACHE_TIMEOUT_DEFAULT)
   static final String CACHE_TIMEOUT_PROPERTY = "cacheTimeout";
   private static final int CACHE_TIMEOUT_DEFAULT = 1000;
 
   @Property(label = "Cache Writable",
-      description = "True if cache supports write and read operations, false if cache supports only read operations")
+      description = "True if cache supports write and read operations, false if cache supports only read operations",
+      boolValue = CouchbaseCacheAdapter.CACHE_WRITABLE_DEFAULT)
   static final String CACHE_WRITABLE_PROPERTY = "cacheWritable";
   private static final boolean CACHE_WRITABLE_DEFAULT = true;
 
-  @Property(label = "Couchbase Client ID", description = "ID referencing the matching couchbase client configuration and bucket for caching.")
+  @Property(label = "Couchbase Client ID",
+      description = "ID referencing the matching couchbase client configuration and bucket for caching.",
+      value = CouchbaseCacheAdapter.COUCHBASE_CLIENT_ID_DEFAULT)
   static final String COUCHBASE_CLIENT_ID_PROPERTY = "couchbaseClientID";
   private static final String COUCHBASE_CLIENT_ID_DEFAULT = "caravan-pipeline-cacheadapter-couchbase";
 
