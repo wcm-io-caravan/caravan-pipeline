@@ -95,6 +95,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
 
+  private String couchbaseClientId;
   private ServiceReference<CouchbaseClient> couchbaseClientServiceReference;
   private CouchbaseClient couchbaseClient;
 
@@ -124,19 +125,19 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
 
     try {
-      String couchbaseClientID = PropertiesUtil.toString(config.get(COUCHBASE_CLIENT_ID_PROPERTY), COUCHBASE_CLIENT_ID_DEFAULT);
+      couchbaseClientId = PropertiesUtil.toString(config.get(COUCHBASE_CLIENT_ID_PROPERTY), COUCHBASE_CLIENT_ID_DEFAULT);
       BundleContext bundleContext = componentContext.getBundleContext();
       Collection<ServiceReference<CouchbaseClient>> serviceReferences = bundleContext.getServiceReferences(CouchbaseClient.class,
-          "(clientID=" + couchbaseClientID + ")");
+          "(" + CouchbaseClient.CLIENT_ID_PROPERTY + "=" + couchbaseClientId + ")");
       if (serviceReferences.size() == 1) {
         couchbaseClientServiceReference = serviceReferences.iterator().next();
         couchbaseClient = bundleContext.getService(couchbaseClientServiceReference);
       }
       else if (serviceReferences.size() > 1) {
-        log.warn("Multiple couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientID);
+        log.warn("Multiple couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientId);
       }
       else {
-        log.warn("No couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientID);
+        log.warn("No couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientId);
       }
     }
     catch (InvalidSyntaxException ex) {
@@ -172,7 +173,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     }
 
     if (couchbaseClient == null || !couchbaseClient.isEnabled()) {
-      log.warn("Couchbase client provider is disabled, please check the configuration. Additional error details should have been logged when the bundle was activated");
+      log.warn("Couchbase client '{}' is disabled, please check the configuration. "
+          + "Additional error details should have been logged when the bundle was activated", couchbaseClientId);
       return Observable.empty();
     }
 
@@ -211,7 +213,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     }
 
     if (couchbaseClient == null || !couchbaseClient.isEnabled()) {
-      log.warn("Couchbase client provider is disabled, please check the configuration. Additional error details should have been logged when the bundle was activated");
+      log.warn("Couchbase client '{}' is disabled, please check the configuration. "
+          + "Additional error details should have been logged when the bundle was activated", couchbaseClientId);
       return;
     }
 
