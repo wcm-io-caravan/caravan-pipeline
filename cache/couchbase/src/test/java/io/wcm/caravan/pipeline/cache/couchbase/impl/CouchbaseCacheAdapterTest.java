@@ -26,7 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
+import io.wcm.caravan.commons.couchbase.CouchbaseClient;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
 import java.util.concurrent.TimeUnit;
@@ -69,7 +69,7 @@ public class CouchbaseCacheAdapterTest {
   @Mock
   private AsyncBucket bucket;
   @Mock
-  private CouchbaseClientProvider couchbaseClientProvider;
+  private CouchbaseClient couchbaseClientProvider;
 
   private CachePersistencyOptions cachePersistencyOptions;
 
@@ -81,9 +81,9 @@ public class CouchbaseCacheAdapterTest {
 
   @Before
   public void setUp() {
-    when(couchbaseClientProvider.getCacheBucket()).thenReturn(bucket);
+    when(couchbaseClientProvider.getBucket()).thenReturn(bucket);
     when(couchbaseClientProvider.isEnabled()).thenReturn(true);
-    context.registerService(CouchbaseClientProvider.class, couchbaseClientProvider);
+    context.registerService(CouchbaseClient.class, couchbaseClientProvider);
     metricRegistry = new MetricRegistry();
     context.registerService(MetricRegistry.class, metricRegistry);
     healthCheckRegistry = new HealthCheckRegistry();
@@ -259,7 +259,7 @@ public class CouchbaseCacheAdapterTest {
 
     // Checks that the put method does not invoke next steps after input parameters validation.
     // Put operations with absent options should be ignored.
-    verify(couchbaseClientProvider, times(0)).getCacheBucket();
+    verify(couchbaseClientProvider, times(0)).getBucket();
   }
 
   @Test
@@ -268,7 +268,7 @@ public class CouchbaseCacheAdapterTest {
 
     // Checks that the put method does not invoke next steps after input parameters validation.
     // Put operations with transient input data should be ignored.
-    verify(couchbaseClientProvider, times(0)).getCacheBucket();
+    verify(couchbaseClientProvider, times(0)).getBucket();
   }
 
   @Test
@@ -282,7 +282,7 @@ public class CouchbaseCacheAdapterTest {
 
     // Checks that the put method does not invoke next steps after config parameters validation.
     // Put operations should be ignored for non writable caches (cacheWritable = false).
-    verify(couchbaseClientProvider, times(0)).getCacheBucket();
+    verify(couchbaseClientProvider, times(0)).getBucket();
   }
 
 }

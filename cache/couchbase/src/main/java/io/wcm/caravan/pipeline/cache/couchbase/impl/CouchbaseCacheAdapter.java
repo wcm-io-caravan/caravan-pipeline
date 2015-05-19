@@ -19,7 +19,7 @@
  */
 package io.wcm.caravan.pipeline.cache.couchbase.impl;
 
-import io.wcm.caravan.commons.couchbase.CouchbaseClientProvider;
+import io.wcm.caravan.commons.couchbase.CouchbaseClient;
 import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
 import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +40,11 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.commons.osgi.PropertiesUtil;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,12 +87,16 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_WRITABLE_PROPERTY = "cacheWritable";
   private static final boolean CACHE_WRITABLE_DEFAULT = true;
 
+  @Property(label = "Couchbase Client ID", description = "ID referencing the matching couchbase client configuration and bucket for caching.")
+  static final String COUCHBASE_CLIENT_ID_PROPERTY = "couchbaseClientID";
+  private static final String COUCHBASE_CLIENT_ID_DEFAULT = "caravan-pipeline-cacheadapter-couchbase";
+
   private static final int MAX_CACHE_KEY_LENGTH = 250;
 
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
 
-  @Reference
-  private CouchbaseClientProvider couchbaseClientProvider;
+  private ServiceReference<CouchbaseClient> couchbaseClientServiceReference;
+  private CouchbaseClient couchbaseClient;
 
   @Reference
   private MetricRegistry metricRegistry;
@@ -104,7 +113,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private boolean writable;
 
   @Activate
-  private void activate(Map<String, Object> config) {
+  private void activate(ComponentContext componentContext, Map<String, Object> config) {
     keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
     timeout = PropertiesUtil.toInteger(config.get(CACHE_TIMEOUT_PROPERTY), CACHE_TIMEOUT_DEFAULT);
     writable = PropertiesUtil.toBoolean(config.get(CACHE_WRITABLE_PROPERTY), CACHE_WRITABLE_DEFAULT);
@@ -114,19 +123,41 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "hits"));
     missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
 
-    healthCheckRegistry.register(MetricRegistry.name(getClass()), new HealthCheck() {
+    try {
+      String couchbaseClientID = PropertiesUtil.toString(config.get(COUCHBASE_CLIENT_ID_PROPERTY), COUCHBASE_CLIENT_ID_DEFAULT);
+      BundleContext bundleContext = componentContext.getBundleContext();
+      Collection<ServiceReference<CouchbaseClient>> serviceReferences = bundleContext.getServiceReferences(CouchbaseClient.class,
+          "(clientID=" + couchbaseClientID + ")");
+      if (serviceReferences.size() == 1) {
+        couchbaseClientServiceReference = serviceReferences.iterator().next();
+        couchbaseClient = bundleContext.getService(couchbaseClientServiceReference);
+      }
+      else if (serviceReferences.size() > 1) {
+        log.warn("Multiple couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientID);
+      }
+      else {
+        log.warn("No couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientID);
+      }
+    }
+    catch (InvalidSyntaxException ex) {
+      log.error("Invalid service filter, couchbase caching is disabled.", ex);
+    }
 
+    healthCheckRegistry.register(MetricRegistry.name(getClass()), new HealthCheck() {
       @Override
       protected Result check() throws Exception {
-        return couchbaseClientProvider != null && couchbaseClientProvider.isEnabled() ? Result.healthy() : Result.unhealthy("No cache bucket");
+        return couchbaseClient != null && couchbaseClient.isEnabled() ? Result.healthy() : Result.unhealthy("No cache bucket");
       }
-
     });
 
   }
 
   @Deactivate
-  private void deactivate() {
+  private void deactivate(ComponentContext componentContext) {
+    if (couchbaseClientServiceReference != null) {
+      componentContext.getBundleContext().ungetService(couchbaseClientServiceReference);
+    }
+
     metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "get"));
     metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "put"));
     metricRegistry.remove(MetricRegistry.name(getClass(), "hits"));
@@ -140,14 +171,14 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return Observable.empty();
     }
 
-    if (!couchbaseClientProvider.isEnabled()) {
+    if (couchbaseClient == null || !couchbaseClient.isEnabled()) {
       log.warn("Couchbase client provider is disabled, please check the configuration. Additional error details should have been logged when the bundle was activated");
       return Observable.empty();
     }
 
-    AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
+    AsyncBucket bucket = couchbaseClient.getBucket();
     if (bucket == null) {
-      log.error("Failed to obtain couchase bucket from " + couchbaseClientProvider.getCacheBucketName());
+      log.error("Failed to obtain couchase bucket from " + couchbaseClient.getBucketName() + ", couchbase client " + couchbaseClient.getClientId());
       return Observable.empty();
     }
 
@@ -179,14 +210,14 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return;
     }
 
-    if (!couchbaseClientProvider.isEnabled()) {
+    if (couchbaseClient == null || !couchbaseClient.isEnabled()) {
       log.warn("Couchbase client provider is disabled, please check the configuration. Additional error details should have been logged when the bundle was activated");
       return;
     }
 
-    AsyncBucket bucket = couchbaseClientProvider.getCacheBucket();
+    AsyncBucket bucket = couchbaseClient.getBucket();
     if (bucket == null) {
-      log.error("Failed to obtain couchase bucket from " + couchbaseClientProvider.getCacheBucketName());
+      log.error("Failed to obtain couchase bucket from " + couchbaseClient.getBucketName() + ", couchbase client " + couchbaseClient.getClientId());
       return;
     }
 
