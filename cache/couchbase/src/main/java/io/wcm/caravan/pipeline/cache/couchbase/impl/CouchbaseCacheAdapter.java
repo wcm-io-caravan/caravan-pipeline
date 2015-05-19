@@ -184,7 +184,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return Observable.empty();
     }
 
-    AsyncBucket bucket = couchbaseClient.getBucket();
+    AsyncBucket bucket = couchbaseClient.getAsyncBucket();
     if (bucket == null) {
       log.error("Failed to obtain couchase bucket from " + couchbaseClient.getBucketName() + ", couchbase client " + couchbaseClient.getClientId());
       return Observable.empty();
@@ -224,7 +224,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return;
     }
 
-    AsyncBucket bucket = couchbaseClient.getBucket();
+    AsyncBucket bucket = couchbaseClient.getAsyncBucket();
     if (bucket == null) {
       log.error("Failed to obtain couchase bucket from " + couchbaseClient.getBucketName() + ", couchbase client " + couchbaseClient.getClientId());
       return;

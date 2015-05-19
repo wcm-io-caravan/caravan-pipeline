@@ -81,7 +81,7 @@ public class CouchbaseCacheAdapterTest {
 
   @Before
   public void setUp() {
-    when(couchbaseClientProvider.getBucket()).thenReturn(bucket);
+    when(couchbaseClientProvider.getAsyncBucket()).thenReturn(bucket);
     when(couchbaseClientProvider.isEnabled()).thenReturn(true);
     context.registerService(CouchbaseClient.class, couchbaseClientProvider);
     metricRegistry = new MetricRegistry();
