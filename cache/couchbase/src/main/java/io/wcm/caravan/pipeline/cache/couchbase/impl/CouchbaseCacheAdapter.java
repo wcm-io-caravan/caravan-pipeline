@@ -24,6 +24,8 @@ import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -81,10 +83,17 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private static final int CACHE_TIMEOUT_DEFAULT = 1000;
 
   @Property(label = "Cache Writable",
-      description = "True if cache supports write and read operations, false if cache supports only read operations",
+      description = "Determines if this system should be allowed to write into the couchbase cache. If disabled it will only be able to read existing entries.",
       boolValue = CouchbaseCacheAdapter.CACHE_WRITABLE_DEFAULT)
   static final String CACHE_WRITABLE_PROPERTY = "cacheWritable";
   private static final boolean CACHE_WRITABLE_DEFAULT = true;
+
+  @Property(label = "Cache Isolated",
+      description = "If enabled, this system's hostname will be appended to all cache keys. " +
+          "This can be used in development or test environments to share the same couchbase bucket without actually sharing any cached data",
+          boolValue = CouchbaseCacheAdapter.CACHE_ISOLATED_DEFAULT)
+  static final String CACHE_ISOLATED_PROPERTY = "cacheIsolated";
+  private static final boolean CACHE_ISOLATED_DEFAULT = false;
 
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
 
@@ -104,12 +113,14 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private String keyPrefix;
   private int timeout;
   private boolean writable;
+  private boolean isolated;
 
   @Activate
   private void activate(ComponentContext componentContext, Map<String, Object> config) {
     keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
     timeout = PropertiesUtil.toInteger(config.get(CACHE_TIMEOUT_PROPERTY), CACHE_TIMEOUT_DEFAULT);
     writable = PropertiesUtil.toBoolean(config.get(CACHE_WRITABLE_PROPERTY), CACHE_WRITABLE_DEFAULT);
+    isolated = PropertiesUtil.toBoolean(config.get(CACHE_ISOLATED_PROPERTY), CACHE_ISOLATED_DEFAULT);
 
     getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
@@ -220,7 +231,21 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   }
 
   private String getCacheKey(String cacheKey) {
-    return CouchbaseKey.build(cacheKey, keyPrefix);
+
+    String fullCacheKey = cacheKey;
+
+    if (isolated) {
+      try {
+        String hostName = InetAddress.getLocalHost().getHostName();
+        fullCacheKey += "_" + hostName;
+      }
+      catch (UnknownHostException ex) {
+        log.error("Failed to obtain this system's own host name to append it to the cache key", ex);
+        isolated = false;
+      }
+    }
+
+    return CouchbaseKey.build(fullCacheKey, keyPrefix);
   }
 
 }
