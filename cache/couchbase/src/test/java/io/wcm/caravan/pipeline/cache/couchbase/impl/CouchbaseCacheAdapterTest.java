@@ -26,12 +26,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import io.wcm.caravan.commons.couchbase.CouchbaseClient;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.nosql.couchbase.client.CouchbaseClient;
 import org.apache.sling.testing.mock.osgi.junit.OsgiContext;
 import org.junit.Before;
 import org.junit.Rule;
@@ -93,19 +92,6 @@ public class CouchbaseCacheAdapterTest {
         .put(CouchbaseCacheAdapter.CACHE_TIMEOUT_PROPERTY, 100)
         .build());
     cachePersistencyOptions = CachePersistencyOptions.createPersistentAndTimeToLive(100, 10);
-  }
-
-  @Test
-  public void getShortCacheKey() {
-    String cacheKey = adapter.getCacheKey(NO_PREFIX_CACHE_KEY);
-    assertEquals(CACHE_KEY, cacheKey);
-  }
-
-  @Test
-  public void getLongCacheKey() {
-    String cacheKey = adapter.getCacheKey("example:" + StringUtils.repeat("/a/b/c", 500));
-    assertEquals(250, cacheKey.length());
-    assertTrue("beginning of cache key is left untouched?", cacheKey.startsWith(CACHE_KEY));
   }
 
   @Test

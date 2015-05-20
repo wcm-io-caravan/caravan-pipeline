@@ -19,20 +19,14 @@
  */
 package io.wcm.caravan.pipeline.cache.couchbase.impl;
 
-import io.wcm.caravan.commons.couchbase.CouchbaseClient;
 import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
 import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.CharEncoding;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
@@ -40,10 +34,9 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.commons.osgi.PropertiesUtil;
-import org.osgi.framework.BundleContext;
+import org.apache.sling.nosql.couchbase.client.CouchbaseClient;
+import org.apache.sling.nosql.couchbase.client.CouchbaseKey;
 import org.osgi.framework.Constants;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +61,8 @@ description = "Configure pipeline caching in couchbase.")
 @Service(CacheAdapter.class)
 public class CouchbaseCacheAdapter implements CacheAdapter {
 
+  private static final String COUCHBASE_CLIENT_ID = "caravan-pipeline-cacheadapter-couchbase";
+
   @Property(label = "Service Ranking",
       description = "Priority of parameter persistence providers (lower value = higher priority)",
       intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
@@ -91,18 +86,9 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_WRITABLE_PROPERTY = "cacheWritable";
   private static final boolean CACHE_WRITABLE_DEFAULT = true;
 
-  @Property(label = "Couchbase Client ID",
-      description = "ID referencing the matching couchbase client configuration and bucket for caching.",
-      value = CouchbaseCacheAdapter.COUCHBASE_CLIENT_ID_DEFAULT)
-  static final String COUCHBASE_CLIENT_ID_PROPERTY = "couchbaseClientID";
-  private static final String COUCHBASE_CLIENT_ID_DEFAULT = "caravan-pipeline-cacheadapter-couchbase";
-
-  private static final int MAX_CACHE_KEY_LENGTH = 250;
-
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
 
-  private String couchbaseClientId;
-  private ServiceReference<CouchbaseClient> couchbaseClientServiceReference;
+  @Reference(target = "(" + CouchbaseClient.CLIENT_ID_PROPERTY + "=" + COUCHBASE_CLIENT_ID + ")")
   private CouchbaseClient couchbaseClient;
 
   @Reference
@@ -130,26 +116,6 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "hits"));
     missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
 
-    try {
-      couchbaseClientId = PropertiesUtil.toString(config.get(COUCHBASE_CLIENT_ID_PROPERTY), COUCHBASE_CLIENT_ID_DEFAULT);
-      BundleContext bundleContext = componentContext.getBundleContext();
-      Collection<ServiceReference<CouchbaseClient>> serviceReferences = bundleContext.getServiceReferences(CouchbaseClient.class,
-          "(" + CouchbaseClient.CLIENT_ID_PROPERTY + "=" + couchbaseClientId + ")");
-      if (serviceReferences.size() == 1) {
-        couchbaseClientServiceReference = serviceReferences.iterator().next();
-        couchbaseClient = bundleContext.getService(couchbaseClientServiceReference);
-      }
-      else if (serviceReferences.size() > 1) {
-        log.warn("Multiple couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientId);
-      }
-      else {
-        log.warn("No couchbase clients registered for client id '{}', caching is disabled.", couchbaseClientId);
-      }
-    }
-    catch (InvalidSyntaxException ex) {
-      log.error("Invalid service filter, couchbase caching is disabled.", ex);
-    }
-
     healthCheckRegistry.register(MetricRegistry.name(getClass()), new HealthCheck() {
       @Override
       protected Result check() throws Exception {
@@ -161,10 +127,6 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Deactivate
   private void deactivate(ComponentContext componentContext) {
-    if (couchbaseClientServiceReference != null) {
-      componentContext.getBundleContext().ungetService(couchbaseClientServiceReference);
-    }
-
     metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "get"));
     metricRegistry.remove(MetricRegistry.name(getClass(), "latency", "put"));
     metricRegistry.remove(MetricRegistry.name(getClass(), "hits"));
@@ -178,9 +140,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return Observable.empty();
     }
 
-    if (couchbaseClient == null || !couchbaseClient.isEnabled()) {
-      log.warn("Couchbase client '{}' is disabled, please check the configuration. "
-          + "Additional error details should have been logged when the bundle was activated", couchbaseClientId);
+    if (!couchbaseClient.isEnabled()) {
+      log.warn("Couchbase client '{}' is disabled, please check the configuration.", COUCHBASE_CLIENT_ID);
       return Observable.empty();
     }
 
@@ -218,9 +179,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
       return;
     }
 
-    if (couchbaseClient == null || !couchbaseClient.isEnabled()) {
-      log.warn("Couchbase client '{}' is disabled, please check the configuration. "
-          + "Additional error details should have been logged when the bundle was activated", couchbaseClientId);
+    if (!couchbaseClient.isEnabled()) {
+      log.warn("Couchbase client '{}' is disabled, please check the configuration.", COUCHBASE_CLIENT_ID);
       return;
     }
 
@@ -259,35 +219,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     });
   }
 
-  String getCacheKey(String longKey) {
-    String cacheKey = keyPrefix + longKey;
-
-    if (cacheKey.length() < MAX_CACHE_KEY_LENGTH) {
-      return cacheKey;
-    }
-
-    int charactersToKeep = MAX_CACHE_KEY_LENGTH - keyPrefix.length() - 41;
-
-    String toKeep = longKey.substring(0, charactersToKeep);
-    String toHash = longKey.substring(charactersToKeep);
-
-    String hash = calculateHash(toHash);
-
-    return keyPrefix + toKeep + "#" + hash;
-  }
-
-  private static String calculateHash(String message) {
-
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-1");
-      digest.update(message.getBytes(CharEncoding.UTF_8));
-      byte[] digestBytes = digest.digest();
-
-      return javax.xml.bind.DatatypeConverter.printHexBinary(digestBytes).toLowerCase();
-    }
-    catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
-      throw new RuntimeException("Failed to create sha1 Hash from " + message, ex);
-    }
+  private String getCacheKey(String cacheKey) {
+    return CouchbaseKey.build(cacheKey, keyPrefix);
   }
 
 }
