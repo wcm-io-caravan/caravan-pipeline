@@ -48,7 +48,7 @@ import com.google.common.cache.Weigher;
 /**
  * {@link CacheAdapter} implementation for Guava.
  * Provides guava {@link Cache}, which size is specified in bytes. Default cache size is 10 MB. Provide higher property
- * value {@value #CACHE_MAXIMUM_WEIGHT_IN_MEGABYTES} to set up higher cache capacity.
+ * value {@value #MAX_CACHE_SIZE_MB_PROPERTY} to set up higher cache capacity.
  * items life time depends on the amount and size of stored cache items. Items, which capacity is higher than 1/4 of the
  * declared cache size will not be stored.
  */
@@ -61,15 +61,16 @@ public class GuavaCacheAdapter implements CacheAdapter {
   private static final Logger log = LoggerFactory.getLogger(GuavaCacheAdapter.class);
 
   @Property(label = "Service Ranking", intValue = GuavaCacheAdapter.DEFAULT_RANKING,
-      description = "Priority of parameter persistence providers (lower value = higher priority)",
-      propertyPrivate = false)
+      description = "Used to determine the order of caching layers if you are using multiple Cache Adapters. "
+          + "Fast system-internal caches should have a lower service than slower network caches, so that they are queried first.",
+          propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
   static final int DEFAULT_RANKING = 1000;
 
-  @Property(label = "Cache Maximum Weight In Mega Bytes",
-      description = "Declares the weight of the cache. Each cache entry could not be larger than 1/4 of the declared cache weight")
-  static final String CACHE_MAXIMUM_WEIGHT_IN_MEGABYTES = "cacheMaximumWeightInMegaBytes";
-  private static final Integer CACHE_DEFAULT_WEIGHT_IN_MEGABYTES = 10;
+  @Property(label = "Max. size in MB",
+      description = "Declares the maximum total amount of VM memory in Megabyte that will be used by this cache adapter.")
+  static final String MAX_CACHE_SIZE_MB_PROPERTY = "maxCacheSizeMB";
+  private static final Integer MAX_CACHE_SIZE_MB_DEFAULT = 10;
 
   /**
    * 1024*1024 multiplier used to provide bytes from megabyte values to create correct cache weight
@@ -88,7 +89,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Activate
   void activate(Map<String, Object> config) {
-    cacheWeightInBytes = new BigDecimal(PropertiesUtil.toDouble(config.get(CACHE_MAXIMUM_WEIGHT_IN_MEGABYTES), CACHE_DEFAULT_WEIGHT_IN_MEGABYTES))
+    cacheWeightInBytes = new BigDecimal(PropertiesUtil.toDouble(config.get(MAX_CACHE_SIZE_MB_PROPERTY), MAX_CACHE_SIZE_MB_DEFAULT))
     .multiply(WEIGHT_MULTIPLIER).longValue();
     this.guavaCache = CacheBuilder.newBuilder().weigher(new Weigher<String, String>() {
       @Override

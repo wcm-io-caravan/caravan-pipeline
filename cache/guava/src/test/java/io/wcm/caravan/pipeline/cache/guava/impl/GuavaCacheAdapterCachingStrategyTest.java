@@ -50,7 +50,7 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
     cacheMaximumWeightInMegaBytes = cacheMaximumWeightInMegaBytes * 4;
 
     Map<String, Object> map = new HashMap<String, Object>();
-    map.put("cacheMaximumWeightInMegaBytes", cacheMaximumWeightInMegaBytes);
+    map.put("maxCacheSizeMB", cacheMaximumWeightInMegaBytes);
     return map;
   }
 

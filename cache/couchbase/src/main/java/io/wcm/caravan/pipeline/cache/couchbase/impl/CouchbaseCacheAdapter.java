@@ -66,9 +66,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private static final String COUCHBASE_CLIENT_ID = "caravan-pipeline-cacheadapter-couchbase";
 
   @Property(label = "Service Ranking",
-      description = "Priority of parameter persistence providers (lower value = higher priority)",
-      intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
-      propertyPrivate = false)
+      description = "Used to determine the of caching layers if you are using multiple Cache Adapters. "
+          + "Fast system-internal caches should have a lower service than slower network caches, so that they are queried first.",
+          intValue = CouchbaseCacheAdapter.DEFAULT_RANKING,
+          propertyPrivate = false)
   static final String PROPERTY_RANKING = Constants.SERVICE_RANKING;
   static final int DEFAULT_RANKING = 2000;
 
