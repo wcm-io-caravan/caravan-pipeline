@@ -72,10 +72,10 @@ public class GuavaCacheAdapter implements CacheAdapter {
   static final String MAX_CACHE_SIZE_MB_PROPERTY = "maxCacheSizeMB";
   private static final Integer MAX_CACHE_SIZE_MB_DEFAULT = 10;
 
-  @Property(label = "cacheEnabled",
-      description = "If enabled, guava cache adapter will be available for get and put operations.",
+  @Property(label = "Enabled",
+      description = "Enables or disables the whole cache adapter and all operations.",
       boolValue = GuavaCacheAdapter.CACHE_ENABLED_DEFAULT)
-  static final String CACHE_ENABLED_PROPERTY = "cacheEnabled";
+  static final String CACHE_ENABLED_PROPERTY = "enabled";
   private static final boolean CACHE_ENABLED_DEFAULT = true;
 
   /**

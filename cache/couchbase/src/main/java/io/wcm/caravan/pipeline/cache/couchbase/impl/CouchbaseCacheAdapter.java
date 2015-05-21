@@ -96,10 +96,10 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_ISOLATED_PROPERTY = "cacheIsolated";
   private static final boolean CACHE_ISOLATED_DEFAULT = false;
 
-  @Property(label = "cacheEnabled",
-      description = "If enabled, couchbase cache adapter will be available for get and put operations.",
+  @Property(label = "Enabled",
+      description = "Enables or disables the whole cache adapter and all operations.",
       boolValue = CouchbaseCacheAdapter.CACHE_ENABLED_DEFAULT)
-  static final String CACHE_ENABLED_PROPERTY = "cacheEnabled";
+  static final String CACHE_ENABLED_PROPERTY = "enabled";
   private static final boolean CACHE_ENABLED_DEFAULT = true;
 
 
