@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
@@ -138,9 +138,9 @@ public final class EmbedLinks implements JsonPipelineAction {
         recursiveLinkReplacement(halResource, urlResourceMap);
 
       }
-        else {
+      else {
 
-          // if links should not be resolved for the embedded resources, keep the previous logic (which is much simpler)
+        // if links should not be resolved for the embedded resources, keep the previous logic (which is much simpler)
         for (JsonPipelineOutput output : outputsToEmbed) {
           halResource.addEmbedded(relation, new HalResource((ObjectNode)output.getPayload()));
         }
@@ -168,7 +168,7 @@ public final class EmbedLinks implements JsonPipelineAction {
     List<Link> links = new LinkedList<>();
     links.addAll(halResource.getLinks(relation));
 
-    ImmutableListMultimap<String, HalResource> embeddedResources = halResource.getEmbedded();
+    ListMultimap<String, HalResource> embeddedResources = halResource.getEmbedded();
 
     if (includeLinksInEmbeddedResources && embeddedResources != null) {
       for (String embeddedRel : embeddedResources.keySet()) {
@@ -188,16 +188,16 @@ public final class EmbedLinks implements JsonPipelineAction {
         // create request, and main cache-control headers from previous request
         .map(link -> {
           CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName)
-              .append(link.getHref())
-              .header("Cache-Control", previousHeaders.get("Cache-Control"));
+          .append(link.getHref())
+          .header("Cache-Control", previousHeaders.get("Cache-Control"));
 
           // also make sure that the correlation-id is passed on to the follow-up requests
-            if (previousStepOutput.getCorrelationId() != null) {
-              builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
-            }
+          if (previousStepOutput.getCorrelationId() != null) {
+            builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
+          }
 
-            return builder.build(parameters);
-          });
+          return builder.build(parameters);
+        });
   }
 
 
@@ -216,7 +216,7 @@ public final class EmbedLinks implements JsonPipelineAction {
 
     removeLinks(output);
 
-    ImmutableListMultimap<String, HalResource> embeddedResources = output.getEmbedded();
+    ListMultimap<String, HalResource> embeddedResources = output.getEmbedded();
     for (String embeddedRel : embeddedResources.keySet()) {
       for (HalResource embedded : embeddedResources.get(embeddedRel)) {
         recursiveLinkReplacement(embedded, urlResourceMap);
