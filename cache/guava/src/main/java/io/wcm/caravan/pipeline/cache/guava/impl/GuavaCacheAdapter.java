@@ -72,6 +72,12 @@ public class GuavaCacheAdapter implements CacheAdapter {
   static final String MAX_CACHE_SIZE_MB_PROPERTY = "maxCacheSizeMB";
   private static final Integer MAX_CACHE_SIZE_MB_DEFAULT = 10;
 
+  @Property(label = "cacheEnabled",
+      description = "If enabled, guava cache adapter will be available for get and put operations.",
+      boolValue = GuavaCacheAdapter.CACHE_ENABLED_DEFAULT)
+  static final String CACHE_ENABLED_PROPERTY = "cacheEnabled";
+  private static final boolean CACHE_ENABLED_DEFAULT = true;
+
   /**
    * 1024*1024 multiplier used to provide bytes from megabyte values to create correct cache weight
    */
@@ -79,6 +85,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   private Cache<String, String> guavaCache;
   private long cacheWeightInBytes;
+  private boolean enabled;
 
   @Reference
   private MetricRegistry metricRegistry;
@@ -97,6 +104,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
         return getWeight(key) + getWeight(value);
       }
     }).maximumWeight(cacheWeightInBytes).build();
+    enabled = PropertiesUtil.toBoolean(config.get(CACHE_ENABLED_PROPERTY), CACHE_ENABLED_DEFAULT);
 
     getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
@@ -118,6 +126,9 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
+    if (!enabled) {
+      return Observable.empty();
+    }
 
     return Observable.create(subscriber -> {
       Timer.Context context = getLatencyTimer.time();
@@ -138,6 +149,10 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
+    if (!enabled) {
+      return;
+    }
+
     Timer.Context context = putLatencyTimer.time();
     guavaCache.put(cacheKey, jsonString);
     context.stop();

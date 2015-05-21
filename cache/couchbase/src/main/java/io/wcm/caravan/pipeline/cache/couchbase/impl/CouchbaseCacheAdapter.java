@@ -96,6 +96,13 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   static final String CACHE_ISOLATED_PROPERTY = "cacheIsolated";
   private static final boolean CACHE_ISOLATED_DEFAULT = false;
 
+  @Property(label = "cacheEnabled",
+      description = "If enabled, couchbase cache adapter will be available for get and put operations.",
+      boolValue = CouchbaseCacheAdapter.CACHE_ENABLED_DEFAULT)
+  static final String CACHE_ENABLED_PROPERTY = "cacheEnabled";
+  private static final boolean CACHE_ENABLED_DEFAULT = true;
+
+
   private static final Logger log = LoggerFactory.getLogger(CouchbaseCacheAdapter.class);
 
   @Reference(target = "(" + CouchbaseClient.CLIENT_ID_PROPERTY + "=" + COUCHBASE_CLIENT_ID + ")")
@@ -115,6 +122,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private int timeout;
   private boolean writable;
   private boolean isolated;
+  private boolean enabled;
 
   @Activate
   private void activate(ComponentContext componentContext, Map<String, Object> config) {
@@ -122,6 +130,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     timeout = PropertiesUtil.toInteger(config.get(CACHE_TIMEOUT_PROPERTY), CACHE_TIMEOUT_DEFAULT);
     writable = PropertiesUtil.toBoolean(config.get(CACHE_WRITABLE_PROPERTY), CACHE_WRITABLE_DEFAULT);
     isolated = PropertiesUtil.toBoolean(config.get(CACHE_ISOLATED_PROPERTY), CACHE_ISOLATED_DEFAULT);
+    enabled = PropertiesUtil.toBoolean(config.get(CACHE_ENABLED_PROPERTY), CACHE_ENABLED_DEFAULT);
 
     getLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "get"));
     putLatencyTimer = metricRegistry.timer(MetricRegistry.name(getClass(), "latency", "put"));
@@ -148,7 +157,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
-    if (options == null) {
+    if (!enabled || options == null) {
       return Observable.empty();
     }
 
@@ -187,7 +196,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    if (!writable || options == null || !options.isPersistent()) {
+    if (!enabled || !writable || options == null || !options.isPersistent()) {
       return;
     }
 
