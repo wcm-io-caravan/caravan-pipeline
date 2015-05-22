@@ -70,6 +70,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
   private final List<CaravanHttpRequest> requests;
   private final String descriptor;
   private final CacheStrategy strategy;
+  private final String correlationId;
 
   /**
    * @param context a context of the actual JSON pipeline
@@ -83,6 +84,15 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     this.requests = requests;
     this.descriptor = descriptor;
     this.strategy = strategy;
+    StringBuffer sb = new StringBuffer();
+    for (CaravanHttpRequest request : requests) {
+      if (sb.length() == 0) {
+        sb.append(request.getCorrelationId());
+      } else {
+        sb.append(",").append(request.getCorrelationId());
+      }
+    }
+    this.correlationId = sb.toString();
   }
 
   private static SortedSet<String> getSourceServiceNames(List<CaravanHttpRequest> requests) {
@@ -163,7 +173,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       CacheEnvelope cacheEntry = CacheEnvelope.fromEnvelopeString(cachedContent, cacheKey);
       if (cacheEntry == null) {
 
-        log.warn("CACHE ERROR for " + this.cacheKey + " - the cached response could not be parsed.");
+        log.warn("CACHE ERROR for " + this.cacheKey + " and correlationId " + correlationId + " - the cached response could not be parsed.");
         // ignore cache envelopes that can not be parsed
         return;
       }
@@ -178,7 +188,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       // check if the content from cache is fresh enough to serve it
       if (responseAge < refreshInterval && responseAge < maxAgeFromClient && expirySeconds > 0) {
-        log.debug("CACHE HIT for {}", this.cacheKey);
+        log.debug("CACHE HIT for {} and correlationId {}", this.cacheKey, correlationId);
 
         // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
         serveCachedContent(cacheEntry, refreshInterval);
@@ -196,7 +206,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           reason = "it has expired " + (-expirySeconds) + " seconds ago, according to the original max-age header from the http-response";
         }
 
-        log.debug("CACHE STALE - content for {} is available, but {}", cacheKey, reason);
+        log.debug("CACHE STALE - content for {} and correlationId {} is available, but {}", cacheKey, correlationId, reason);
 
         fetchAndStore(new Subscriber<JsonPipelineOutput>() {
 
@@ -214,7 +224,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           public void onError(Throwable e) {
             Exceptions.throwIfFatal(e);
 
-            log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey, e);
+            log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey, " and correlationId "
+                + correlationId, e);
 
             JsonPipelineOutputImpl pipelineOutput = new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests);
 
@@ -259,7 +270,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     public void onCompleted() {
       if (!cacheHit) {
         // there was no emission, so the response has to be fetched from the service
-        log.debug("CACHE MISS for {} fetching response from {} through pipeline...", cacheKey, getSourceServicePrefix());
+        log.debug("CACHE MISS for {} fetching response from {} through pipeline with correlationId: {}", cacheKey, getSourceServicePrefix(), correlationId);
         fetchAndStore(subscriber);
       }
     }
@@ -269,7 +280,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       Exceptions.throwIfFatal(e);
 
       // also fall back to the actual service if the couchbase request failed
-      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix(), e);
+      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix() + " for correlationId "
+          + correlationId, e);
       fetchAndStore(subscriber);
     }
 
@@ -309,7 +321,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           if (e instanceof JsonPipelineInputException) {
             if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
 
-              log.debug("404 response for {} will be stored in the cache", descriptor);
+              log.debug("404 response for {} and correlationId {} will be stored in the cache", descriptor, correlationId);
               CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
 
               CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getProperties());
