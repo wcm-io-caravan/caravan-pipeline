@@ -71,7 +71,7 @@
       <artifactId>org.apache.sling.commons.osgi</artifactId>
       <scope>compile</scope>
     </dependency>
-    
+
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>

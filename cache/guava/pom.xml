@@ -45,7 +45,7 @@
   </scm>
 
   <dependencies>
-  
+
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.pipeline.api</artifactId>
