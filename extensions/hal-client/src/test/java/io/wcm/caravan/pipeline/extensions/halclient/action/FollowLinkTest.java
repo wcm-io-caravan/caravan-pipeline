@@ -19,38 +19,99 @@
  */
 package io.wcm.caravan.pipeline.extensions.halclient.action;
 
-import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import io.wcm.caravan.commons.hal.resource.HalResource;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
+import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
-public class FollowLinkTest {
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
 
-  private FollowLink action;
+public class FollowLinkTest extends AbstractActionContext {
 
-  @Mock
-  private JsonPipelineOutput previousStepOutput;
-  @Mock
-  private JsonPipelineContext context;
+  @Test
+  public void shouldHaveUniqueId() {
 
-  @Before
-  public void setUp() {
-    action = new FollowLink("test-service", "item", Collections.emptyMap(), 0);
+    FollowLink action = createAction("primary", 99);
+    assertTrue(action.getId().contains("primary"));
+    assertTrue(action.getId().contains("99"));
+
+  }
+
+  private FollowLink createAction(String relation, int index) {
+    return new FollowLink("testService", relation, index, Collections.emptyMap());
+  }
+
+  @Test
+  public void shouldLoadLinkAndReturnContent() {
+
+    HalResource hal = createHalOutput("primary", 1);
+    assertEquals("/resource2", hal.getLink().getHref());
+
+  }
+
+  private HalResource createHalOutput(String relation, int index) {
+
+    FollowLink action = createAction(relation, index);
+    JsonPipelineOutput output = action.execute(getInput(), context).toBlocking().single();
+    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    return hal;
+
   }
 
   @Test(expected = IllegalStateException.class)
-  public void text_execute_linkMissing() {
-    Mockito.when(previousStepOutput.getPayload()).thenReturn(HalResourceFactory.createResource("/").getModel());
-    action.execute(previousStepOutput, context);
+  public void shouldThrowExceptionForunknownRelation() {
+
+    HalResource hal = createHalOutput("unknown", 1);
+
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void shouldThrowExceptionForInknownIndex() {
+
+    HalResource hal = createHalOutput("primary", 99);
+
+  }
+
+  @Test
+  public void shouldUseCacheStrategy() {
+
+    FollowLink action = createAction("primary", 1).setCacheStrategy(cacheStrategy);
+    action.execute(getInput(), context).toBlocking().single();
+    Mockito.verify(cacheStrategy).getCachePersistencyOptions(Matchers.any());
+
+  }
+
+  @Test
+  public void shouldUseCacheControlHeader() {
+
+    FollowLink action = createAction("primary", 1);
+    List<CaravanHttpRequest> requests = ImmutableList.of(new CaravanHttpRequestBuilder().header("Cache-Control", "max-age=10").build());
+    JsonPipelineOutput input = new JsonPipelineOutputImpl(getPayload(), requests);
+    JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
+    assertEquals("10", output.getRequests().get(0).getCacheControl().get("max-age"));
+
+  }
+
+  @Test
+  public void shouldUseCorrelatonId() {
+
+    FollowLink action = createAction("primary", 1);
+    List<CaravanHttpRequest> requests = ImmutableList.of(new CaravanHttpRequestBuilder("test-service", "test-correlation-id").build());
+    JsonPipelineOutput input = new JsonPipelineOutputImpl(getPayload(), requests);
+    JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
+    assertEquals("test-correlation-id", output.getCorrelationId());
+
   }
 
 }

@@ -28,9 +28,11 @@ import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.extensions.halclient.action.BuildResource;
+import io.wcm.caravan.pipeline.extensions.halclient.action.ModifyResource;
+import io.wcm.caravan.pipeline.extensions.halclient.action.DeepEmbedLinks;
+import io.wcm.caravan.pipeline.extensions.halclient.action.EmbedLink;
 import io.wcm.caravan.pipeline.extensions.halclient.action.EmbedLinks;
 import io.wcm.caravan.pipeline.extensions.halclient.action.FollowLink;
-import io.wcm.caravan.pipeline.extensions.halclient.action.ModifyResource;
 
 import java.util.Collections;
 import java.util.Map;
@@ -64,7 +66,7 @@ public final class HalClient {
 
   /**
    * @param serviceName Service name
-   * @param cacheStrategy  default cache strategy to use for all actions that fetch additional resources
+   * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
    * @param contextProperties a Map of properties to pass on to {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
    */
   public HalClient(String serviceName, CacheStrategy cacheStrategy, Map<String, String> contextProperties) {
@@ -77,8 +79,7 @@ public final class HalClient {
   /**
    * @param entryPointRequest the request to be executed to fetch the HAL entry point
    * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
-   * @param contextProperties a Map of properties to pass on to
-   *          {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
+   * @param contextProperties a Map of properties to pass on to {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
    */
   public HalClient(CaravanHttpRequest entryPointRequest, CacheStrategy cacheStrategy, Map<String, String> contextProperties) {
     this.serviceName = entryPointRequest.getServiceName();
@@ -172,7 +173,7 @@ public final class HalClient {
    * @return Follow link action
    */
   public FollowLink follow(String relation, Map<String, Object> parameters, int index) {
-    return new FollowLink(serviceName, relation, parameters, index).setCacheStrategy(cacheStrategy);
+    return new FollowLink(serviceName, relation, index, parameters).setCacheStrategy(cacheStrategy);
   }
 
   /**
@@ -181,7 +182,7 @@ public final class HalClient {
    * @return Embed links action
    */
   public EmbedLinks embed(String relation) {
-    return embed(relation, Collections.emptyMap(), Integer.MIN_VALUE);
+    return embed(relation, Collections.emptyMap());
   }
 
   /**
@@ -191,56 +192,55 @@ public final class HalClient {
    * @return Embed links action
    */
   public EmbedLinks embed(String relation, Map<String, Object> parameters) {
-    return embed(relation, parameters, Integer.MIN_VALUE);
+    return new EmbedLinks(serviceName, relation, parameters).setCacheStrategy(cacheStrategy);
   }
 
   /**
-   * Creates an embed links action for the {@code index} specified link.
+   * Creates an embed link action for the {@code index} specified link.
    * @param relation Link relation
    * @param index Link index
    * @return Embed links action
    */
-  public EmbedLinks embed(String relation, int index) {
+  public EmbedLink embed(String relation, int index) {
     return embed(relation, Collections.emptyMap(), index);
   }
 
   /**
-   * Creates an embed links action for the {@code index} specified link with the given URL parameters.
+   * Creates an embed link action for the {@code index} specified link with the given URL parameters.
    * @param relation Link relation
    * @param parameters URL parameters
    * @param index Link index
    * @return Embed links action
    */
-  public EmbedLinks embed(String relation, Map<String, Object> parameters, int index) {
-    return new EmbedLinks(serviceName, relation, parameters, index).setCacheStrategy(cacheStrategy);
+  public EmbedLink embed(String relation, Map<String, Object> parameters, int index) {
+    return new EmbedLink(serviceName, relation, index, parameters).setCacheStrategy(cacheStrategy);
   }
 
   /**
-   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>,
-   * and replaces the links with the corresponding embedded resources.
+   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>, and replaces the links with the
+   * corresponding embedded resources.
    * @param relation Link relation
-   * @return Embed links action
+   * @return Deep Embed links action
    */
-  public EmbedLinks deepEmbed(String relation) {
-    return new EmbedLinks(serviceName, relation, Collections.emptyMap(), true).setCacheStrategy(cacheStrategy);
+  public DeepEmbedLinks deepEmbed(String relation) {
+    return deepEmbed(relation, Collections.emptyMap());
   }
 
   /**
-   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>,
-   * and replaces the links with the corresponding embedded resources.
+   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>, and replaces the links with the
+   * corresponding embedded resources.
    * @param relation Link relation
    * @param parameters URL parameters
-   * @return Embed links action
+   * @return Deep Embed links action
    */
-  public EmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
-    return new EmbedLinks(serviceName, relation, parameters, true).setCacheStrategy(cacheStrategy);
+  public DeepEmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
+    return new DeepEmbedLinks(serviceName, relation, parameters).setCacheStrategy(cacheStrategy);
   }
 
   /**
    * Allows to create a {@link BuildResource} action by specifying the output href and a lambda
    * @param selfHref the path of the output resource to be used for the self helf
-   * @param buildFunc the lambda that gets the previous step's output and a {@link HalBuilder} with the specified
-   *          self-link
+   * @param buildFunc the lambda that gets the previous step's output and a {@link HalBuilder} with the specified self-link
    * @return the action that executes the lambda build function
    **/
   public BuildResource buildResource(String selfHref, Func2<HalResource, HalBuilder, HalResource> buildFunc) {

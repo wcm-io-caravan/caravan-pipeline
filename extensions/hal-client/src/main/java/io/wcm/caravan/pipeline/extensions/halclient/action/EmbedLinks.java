@@ -19,218 +19,65 @@
  */
 package io.wcm.caravan.pipeline.extensions.halclient.action;
 
-import static io.wcm.caravan.io.http.request.CaravanHttpRequest.CORRELATION_ID_HEADER_NAME;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 
 /**
- * Action to load a HAL link and insert the content as embedded resource.
+ * Action to load one or all links of the main HAL resource and insert the content as embedded resource(s).
  */
 @ProviderType
-public final class EmbedLinks implements JsonPipelineAction {
-
-  private static final Logger log = LoggerFactory.getLogger(EmbedLinks.class);
-
-  private final String serviceName;
-  private final String relation;
-  private final Map<String, Object> parameters;
-  private final int index;
-
-  private boolean includeLinksInEmbeddedResources;
-
-  private CacheStrategy cacheStrategy;
-  private JsonPipelineExceptionHandler exceptionHandler;
+public final class EmbedLinks extends AbstractEmbedLinks {
 
   /**
    * @param serviceName Logical name of the service
    * @param relation Link relation to embed
    * @param parameters URI parameters
-   * @param index Index of the link to embed. If equals {@code Integer.MIN_VALUE} embeds all links
    */
-  public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters, int index) {
-    this.serviceName = serviceName;
-    this.relation = relation;
-    this.parameters = parameters;
-    this.index = index;
+  public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters) {
+    super(serviceName, relation, parameters);
+  }
+
+  @Override
+  public String getId() {
+    return "EMBED-LINKS(" + getRelation() + '-' + getParameters().hashCode() + ")";
+  }
+
+  @Override
+  List<Link> getLinksForRequestedRelation(HalResource halResource) {
+    return halResource.getLinks(getRelation());
+  }
+
+  @Override
+  void setEmbeddedResourcesAndRemoveLink(HalResource halResource, List<Link> links, List<HalResource> resourcesToEmbed) {
+    halResource.addEmbedded(getRelation(), resourcesToEmbed);
+    halResource.removeLinks(getRelation());
   }
 
   /**
-   * @param serviceName Logical name of the service
-   * @param relation Link relation to embed
-   * @param parameters URI parameters
-   * @param includeLinksInEmbeddedResources whether links in embedded resources should also be resolved
+   * Sets the exception handler for this action.
+   * @param newExceptionHandler The exceptionHandler to set.
+   * @return Embed Links action
    */
-  public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters, boolean includeLinksInEmbeddedResources) {
-    this.serviceName = serviceName;
-    this.relation = relation;
-    this.parameters = parameters;
-    this.index = Integer.MIN_VALUE;
-    this.includeLinksInEmbeddedResources = includeLinksInEmbeddedResources;
+  public EmbedLinks setExceptionHandler(JsonPipelineExceptionHandler newExceptionHandler) {
+    super.setExceptionHandlerInternal(newExceptionHandler);
+    return this;
   }
 
   /**
    * Sets the cache strategy for this action.
    * @param newCacheStrategy Caching strategy
-   * @return Embed links action
+   * @return Embed Links action
    */
   public EmbedLinks setCacheStrategy(CacheStrategy newCacheStrategy) {
-    this.cacheStrategy = newCacheStrategy;
+    super.setCacheStrategyInternal(newCacheStrategy);
     return this;
-  }
-
-  /**
-   * Sets the exception handler for this action.
-   * @param exceptionHandler The exceptionHandler to set.
-   * @return Embed links action
-   */
-  public EmbedLinks setExceptionHandler(JsonPipelineExceptionHandler exceptionHandler) {
-    this.exceptionHandler = exceptionHandler;
-    return this;
-  }
-
-  @Override
-  public String getId() {
-    return "EMBED-LINKS(" + relation + '-' + parameters.hashCode() + (index == Integer.MIN_VALUE ? "" : ('-' + index)) + ")";
-  }
-
-  @Override
-  public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
-    HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
-
-    final List<Link> links = getLinks(halResource);
-
-    Observable<JsonPipeline> pipelinesToEmbed = getPipelinesForEachLink(links, previousStepOutput, context, halResource);
-
-    return CacheControlUtils.zipWithLowestMaxAge(pipelinesToEmbed, (outputsToEmbed) -> {
-
-      if (includeLinksInEmbeddedResources) {
-
-        Map<String, HalResource> urlResourceMap = new HashMap<>();
-        for (int i = 0; i < links.size(); i++) {
-          urlResourceMap.put(links.get(i).getHref(), new HalResource((ObjectNode)outputsToEmbed.get(i).getPayload()));
-        }
-
-        recursiveLinkReplacement(halResource, urlResourceMap);
-
-      }
-      else {
-
-        // if links should not be resolved for the embedded resources, keep the previous logic (which is much simpler)
-        for (JsonPipelineOutput output : outputsToEmbed) {
-          halResource.addEmbedded(relation, new HalResource((ObjectNode)output.getPayload()));
-        }
-        removeLinks(halResource);
-      }
-
-      return previousStepOutput.withPayload(halResource.getModel());
-    });
-  }
-
-  private Observable<JsonPipeline> getPipelinesForEachLink(List<Link> links, JsonPipelineOutput previousStepOutput, JsonPipelineContext context,
-      HalResource halResource) {
-
-    Observable<CaravanHttpRequest> requests = getRequests(previousStepOutput, links);
-    return requests
-        // create pipeline
-        .map(request -> context.getFactory().create(request, context.getProperties()))
-        // add Caching
-        .map(pipeline -> cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy))
-        // add exception handler
-        .map(pipeline -> exceptionHandler == null ? pipeline : pipeline.handleException(exceptionHandler));
-  }
-
-  private List<Link> getLinks(HalResource halResource) {
-    List<Link> links = new LinkedList<>();
-    links.addAll(halResource.getLinks(relation));
-
-    ListMultimap<String, HalResource> embeddedResources = halResource.getEmbedded();
-
-    if (includeLinksInEmbeddedResources && embeddedResources != null) {
-      for (String embeddedRel : embeddedResources.keySet()) {
-        for (HalResource embedded : embeddedResources.get(embeddedRel)) {
-          links.addAll(getLinks(embedded));
-        }
-      }
-    }
-
-    return index == Integer.MIN_VALUE ? links : Lists.newArrayList(links.get(index));
-  }
-
-
-  private Observable<CaravanHttpRequest> getRequests(JsonPipelineOutput previousStepOutput, List<Link> links) {
-    Multimap<String, String> previousHeaders = previousStepOutput.getRequests().get(0).getHeaders();
-    return Observable.from(links)
-        // create request, and main cache-control headers from previous request
-        .map(link -> {
-          CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName)
-          .append(link.getHref())
-          .header("Cache-Control", previousHeaders.get("Cache-Control"));
-
-          // also make sure that the correlation-id is passed on to the follow-up requests
-          if (previousStepOutput.getCorrelationId() != null) {
-            builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
-          }
-
-          return builder.build(parameters);
-        });
-  }
-
-
-  private void recursiveLinkReplacement(HalResource output, Map<String, HalResource> urlResourceMap) {
-    List<Link> links = output.getLinks(relation);
-
-    for (Link link : links) {
-      HalResource resource = urlResourceMap.get(link.getHref());
-      if (resource != null) {
-        output.addEmbedded(relation, resource);
-      }
-      else {
-        log.error("Did not find resource for href " + link.getHref());
-      }
-    }
-
-    removeLinks(output);
-
-    ListMultimap<String, HalResource> embeddedResources = output.getEmbedded();
-    for (String embeddedRel : embeddedResources.keySet()) {
-      for (HalResource embedded : embeddedResources.get(embeddedRel)) {
-        recursiveLinkReplacement(embedded, urlResourceMap);
-      }
-    }
-  }
-
-  private void removeLinks(HalResource halResource) {
-    if (index == Integer.MIN_VALUE) {
-      halResource.removeLinks(relation);
-    }
-    else {
-      halResource.removeLink(relation, index);
-    }
   }
 
 }

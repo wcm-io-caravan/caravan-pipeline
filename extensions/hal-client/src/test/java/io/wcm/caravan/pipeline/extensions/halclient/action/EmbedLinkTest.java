@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.commons.hal.resource.HalResource;
+import io.wcm.caravan.commons.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.Collections;
@@ -32,35 +33,36 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class EmbedLinksTest extends AbstractActionContext {
+
+public class EmbedLinkTest extends AbstractActionContext {
 
   @Test
   public void shouldHaveAnUniqueId() {
 
-    EmbedLinks action = createAction("primary");
+    EmbedLink action = createAction("primary", 99);
     assertTrue(action.getId().contains("primary"));
+    assertTrue(action.getId().contains("99"));
 
   }
 
-  private EmbedLinks createAction(String relation) {
-    return new EmbedLinks("testService", relation, Collections.emptyMap());
+  private EmbedLink createAction(String relation, int index) {
+    return new EmbedLink("testService", relation, index, Collections.emptyMap());
   }
 
   @Test
-  public void shouldLoadAllLinksForRelationAndEmbedAsResource() {
+  public void shouldLoadOneLinkForRelationAndIndexAndEmbedAsResource() {
 
-    HalResource hal = createHalOutput("primary");
+    HalResource hal = createHalOutput("primary", 1);
 
     List<HalResource> resources = hal.getEmbedded("primary");
-    assertEquals(2, resources.size());
-    assertEquals("/resource1", resources.get(0).getLink().getHref());
-    assertEquals("/resource2", resources.get(1).getLink().getHref());
+    assertEquals(1, resources.size());
+    assertEquals("/resource2", resources.get(0).getLink().getHref());
 
   }
 
-  private HalResource createHalOutput(String relation) {
+  private HalResource createHalOutput(String relation, int index) {
 
-    EmbedLinks action = createAction(relation);
+    EmbedLink action = createAction(relation, index);
     JsonPipelineOutput output = action.execute(getInput(), context).toBlocking().single();
     HalResource hal = new HalResource((ObjectNode)output.getPayload());
     return hal;
@@ -68,23 +70,37 @@ public class EmbedLinksTest extends AbstractActionContext {
   }
 
   @Test
-  public void shouldDeleteAllLinksForRelation() {
+  public void shouldDeleteOneLinkForRelationAndIndex() {
 
-    HalResource hal = createHalOutput("primary");
-    assertFalse(hal.hasLink("primary"));
-    assertTrue(hal.hasLink("secondary"));
+    HalResource hal = createHalOutput("primary", 1);
+
+    List<Link> links = hal.getLinks("primary");
+    assertEquals(1, links.size());
+    assertEquals("/resource1", links.get(0).getHref());
 
   }
 
   @Test
   public void shouldDoNothingForMissingRelations() {
 
-    HalResource hal = createHalOutput("unknown");
+    HalResource hal = createHalOutput("unknown", 0);
 
     assertTrue(hal.hasLink("secondary"));
     assertTrue(hal.hasLink("primary"));
     assertFalse(hal.hasEmbedded("primary"));
 
   }
+
+  @Test
+  public void shouldDoNothingForWrongIndex() {
+
+    HalResource hal = createHalOutput("primary", 55);
+
+    assertTrue(hal.hasLink("secondary"));
+    assertTrue(hal.hasLink("primary"));
+    assertFalse(hal.hasEmbedded("primary"));
+
+  }
+
 
 }

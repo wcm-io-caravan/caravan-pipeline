@@ -37,6 +37,9 @@ public abstract class ModifyResource implements JsonPipelineAction {
 
   private final String selfHref;
 
+  /**
+   * @param selfHref New self HREF
+   */
   public ModifyResource(String selfHref) {
     this.selfHref = selfHref;
   }
@@ -68,4 +71,5 @@ public abstract class ModifyResource implements JsonPipelineAction {
    *          self link, that you can modify to fine-tune your output
    */
   public abstract void modify(HalResource output);
+
 }

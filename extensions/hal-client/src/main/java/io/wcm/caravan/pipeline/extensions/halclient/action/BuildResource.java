@@ -82,4 +82,5 @@ public abstract class BuildResource implements JsonPipelineAction {
    * @return the new HalResource that will be returned as the result of the pipeline action
    */
   public abstract HalResource build(HalResource input, HalBuilder outputBuilder);
+
 }

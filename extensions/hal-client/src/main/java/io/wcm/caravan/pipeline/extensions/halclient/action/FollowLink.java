@@ -57,14 +57,14 @@ public final class FollowLink implements JsonPipelineAction {
   /**
    * @param serviceName Logical name of the service
    * @param relation Link relation to embed
-   * @param parameters URI parameters
    * @param index Index of the link to embed
+   * @param parameters URI parameters
    */
-  public FollowLink(String serviceName, String relation, Map<String, Object> parameters, int index) {
+  public FollowLink(String serviceName, String relation, int index, Map<String, Object> parameters) {
     this.serviceName = serviceName;
     this.relation = relation;
-    this.parameters = parameters;
     this.index = index;
+    this.parameters = parameters;
   }
 
   /**
@@ -86,24 +86,17 @@ public final class FollowLink implements JsonPipelineAction {
     CaravanHttpRequest request = getRequest(previousStepOutput);
     JsonPipeline pipeline = createPipeline(context, request);
     return pipeline.getOutput().map(jsonPipelineOutput ->
-    jsonPipelineOutput.withMaxAge(CacheControlUtils.getLowestMaxAge(jsonPipelineOutput, previousStepOutput))
-        );
+        jsonPipelineOutput.withMaxAge(CacheControlUtils.getLowestMaxAge(jsonPipelineOutput, previousStepOutput)));
   }
 
   private CaravanHttpRequest getRequest(JsonPipelineOutput previousStepOutput) {
+
     String href = getHref(previousStepOutput);
-    Collection<String> cacheControlHeader = getCacheControlHeader(previousStepOutput);
-    // create follow-up request, and main cache-control headers from previous request
-    CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName)
-    .append(href)
-    .header("Cache-Control", cacheControlHeader);
-
-    // also make sure that the correlation-id is passed on to the follow-up requests
-    if (previousStepOutput.getCorrelationId() != null) {
-      builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
-    }
-
+    CaravanHttpRequestBuilder builder = new CaravanHttpRequestBuilder(serviceName).append(href);
+    builder = setCacheControlHeaderIfExists(builder, previousStepOutput);
+    builder = setCorrelationIdIfExists(builder, previousStepOutput);
     return builder.build(parameters);
+
   }
 
   private String getHref(JsonPipelineOutput previousStepOutput) {
@@ -115,9 +108,27 @@ public final class FollowLink implements JsonPipelineAction {
     return links.get(index).getHref();
   }
 
-  private Collection<String> getCacheControlHeader(JsonPipelineOutput previousStepOutput) {
+  private CaravanHttpRequestBuilder setCacheControlHeaderIfExists(CaravanHttpRequestBuilder builder, JsonPipelineOutput previousStepOutput) {
+
+    if (previousStepOutput.getRequests().isEmpty()) {
+      return builder;
+    }
     CaravanHttpRequest previousRequest = previousStepOutput.getRequests().get(0);
-    return previousRequest.getHeaders().get("Cache-Control");
+    Collection<String> cacheControlHeader = previousRequest.getHeaders().get("Cache-Control");
+    if (cacheControlHeader == null || cacheControlHeader.isEmpty()) {
+      return builder;
+    }
+    return builder.header("Cache-Control", cacheControlHeader);
+
+  }
+
+  private CaravanHttpRequestBuilder setCorrelationIdIfExists(CaravanHttpRequestBuilder builder, JsonPipelineOutput previousStepOutput) {
+
+    if (previousStepOutput.getCorrelationId() == null) {
+      return builder;
+    }
+    return builder.header(CORRELATION_ID_HEADER_NAME, previousStepOutput.getCorrelationId());
+
   }
 
   private JsonPipeline createPipeline(JsonPipelineContext context, CaravanHttpRequest request) {

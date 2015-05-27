@@ -47,7 +47,13 @@
 
   <dependencies>
 
-    <!-- WCM io -->
+    <!-- wcm.io -->
+    <dependency>
+      <groupId>io.wcm.caravan</groupId>
+      <artifactId>io.wcm.caravan.commons.hal</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.commons.jsonpath</artifactId>
@@ -66,17 +72,31 @@
       <version>0.2.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>io.wcm.caravan</groupId>
-      <artifactId>io.wcm.caravan.commons.hal</artifactId>
-      <version>0.2.0-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
 
     <!-- Commons -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <!-- wcm.io testing -->
+    <dependency>
+      <groupId>io.wcm.caravan</groupId>
+      <artifactId>io.wcm.caravan.testing.http</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.wcm.caravan</groupId>
+      <artifactId>io.wcm.caravan.testing.json</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.wcm.caravan</groupId>
+      <artifactId>io.wcm.caravan.testing.pipeline</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
 
@@ -89,13 +109,6 @@
     <dependency>
       <groupId>net.javacrumbs.json-unit</groupId>
       <artifactId>json-unit</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.wcm.caravan</groupId>
-      <artifactId>io.wcm.caravan.pipeline.impl</artifactId>
-      <version>0.2.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
 
