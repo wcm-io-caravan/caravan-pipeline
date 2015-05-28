@@ -35,7 +35,7 @@
   <packaging>bundle</packaging>
 
   <name>JSON Pipeline Cache Adapter for Guava</name>
-  <description>Pipeline caching adapter implementation for Guava cache 18.</description>
+  <description>Pipeline caching adapter implementation for Guava Cache.</description>
 
   <scm>
     <connection>scm:git:git@github.com:wcm-io/wcm-io-caravan.git</connection>
