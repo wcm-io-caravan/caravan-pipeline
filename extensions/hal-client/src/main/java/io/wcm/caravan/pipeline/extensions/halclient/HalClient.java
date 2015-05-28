@@ -25,14 +25,15 @@ import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineFactory;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.extensions.halclient.action.BuildResource;
-import io.wcm.caravan.pipeline.extensions.halclient.action.ModifyResource;
 import io.wcm.caravan.pipeline.extensions.halclient.action.DeepEmbedLinks;
 import io.wcm.caravan.pipeline.extensions.halclient.action.EmbedLink;
 import io.wcm.caravan.pipeline.extensions.halclient.action.EmbedLinks;
 import io.wcm.caravan.pipeline.extensions.halclient.action.FollowLink;
+import io.wcm.caravan.pipeline.extensions.halclient.action.ModifyResource;
 
 import java.util.Collections;
 import java.util.Map;
@@ -55,6 +56,8 @@ public final class HalClient {
   private final Map<String, String> contextProperties;
 
   private final CaravanHttpRequest entryPointRequest;
+
+  private JsonPipelineExceptionHandler exceptionHandler;
 
   /**
    * @param serviceName Service name
@@ -86,6 +89,22 @@ public final class HalClient {
     this.cacheStrategy = cacheStrategy;
     this.contextProperties = contextProperties;
     this.entryPointRequest = entryPointRequest;
+  }
+
+  /**
+   * @return Returns the exceptionHandler.
+   */
+  public JsonPipelineExceptionHandler getExceptionHandler() {
+    return this.exceptionHandler;
+  }
+
+  /**
+   * Sets the default exception handler for {@link EmbedLinks} and {@link DeepEmbedLinks} which perform multiple HTTP requests.
+   * @param exceptionHandler The exceptionHandler to set.
+   */
+  public HalClient setExceptionHandler(JsonPipelineExceptionHandler exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+    return this;
   }
 
   /**
@@ -192,7 +211,7 @@ public final class HalClient {
    * @return Embed links action
    */
   public EmbedLinks embed(String relation, Map<String, Object> parameters) {
-    return new EmbedLinks(serviceName, relation, parameters).setCacheStrategy(cacheStrategy);
+    return new EmbedLinks(serviceName, relation, parameters).setCacheStrategy(cacheStrategy).setExceptionHandler(exceptionHandler);
   }
 
   /**
@@ -234,7 +253,7 @@ public final class HalClient {
    * @return Deep Embed links action
    */
   public DeepEmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
-    return new DeepEmbedLinks(serviceName, relation, parameters).setCacheStrategy(cacheStrategy);
+    return new DeepEmbedLinks(serviceName, relation, parameters).setCacheStrategy(cacheStrategy).setExceptionHandler(exceptionHandler);
   }
 
   /**

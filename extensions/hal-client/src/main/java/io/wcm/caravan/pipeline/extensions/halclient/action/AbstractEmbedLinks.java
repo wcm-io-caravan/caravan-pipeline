@@ -81,6 +81,12 @@ public abstract class AbstractEmbedLinks implements JsonPipelineAction {
     this.exceptionHandler = newExceptionHandler;
   }
 
+  /**
+   * @return Returns the exceptionHandler.
+   */
+  public JsonPipelineExceptionHandler getExceptionHandler() {
+    return this.exceptionHandler;
+  }
 
   /**
    * @return Returns the serviceName.
@@ -89,14 +95,12 @@ public abstract class AbstractEmbedLinks implements JsonPipelineAction {
     return this.serviceName;
   }
 
-
   /**
    * @return Returns the relation.
    */
   public String getRelation() {
     return this.relation;
   }
-
 
   /**
    * @return Returns the parameters.
