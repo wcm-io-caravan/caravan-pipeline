@@ -101,6 +101,7 @@ public final class HalClient {
   /**
    * Sets the default exception handler for {@link EmbedLinks} and {@link DeepEmbedLinks} which perform multiple HTTP requests.
    * @param exceptionHandler The exceptionHandler to set.
+   * @return This HAL client
    */
   public HalClient setExceptionHandler(JsonPipelineExceptionHandler exceptionHandler) {
     this.exceptionHandler = exceptionHandler;
