@@ -44,6 +44,10 @@ public final class HalResourceFilters {
 
   private static final Configuration JSON_PATH_CONF = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
 
+  private HalResourceFilters() {
+    // nothing to do
+  }
+
   /**
    * Executes all predicates and combines the result by logical {@code and}. If there are negative predicate results, all further predicates still get executed.
    * @param predicates Predicates to check

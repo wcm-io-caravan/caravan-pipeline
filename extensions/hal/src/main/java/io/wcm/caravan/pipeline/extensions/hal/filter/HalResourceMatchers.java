@@ -28,6 +28,10 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class HalResourceMatchers {
 
+  private HalResourceMatchers() {
+    // nothing to do
+  }
+
   /**
    * @param relationToMatch HAL resource relation
    * @return True if resource has given relation

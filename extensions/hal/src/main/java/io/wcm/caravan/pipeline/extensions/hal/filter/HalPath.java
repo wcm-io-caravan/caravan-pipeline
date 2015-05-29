@@ -47,7 +47,7 @@ public class HalPath {
    * @return New HAL path
    */
   public HalPath add(String relation) {
-    return new HalPath(ImmutableList.<String> builder().addAll(relations).add(relation).build());
+    return new HalPath(ImmutableList.<String>builder().addAll(relations).add(relation).build());
   }
 
   /**
