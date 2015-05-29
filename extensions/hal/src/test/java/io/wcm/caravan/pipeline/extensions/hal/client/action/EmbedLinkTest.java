@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.extensions.hal.client.action.EmbedLink;
 
 import java.util.Collections;
 import java.util.List;

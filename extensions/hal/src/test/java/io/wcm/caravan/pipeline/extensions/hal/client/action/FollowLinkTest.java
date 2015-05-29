@@ -25,7 +25,6 @@ import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.extensions.hal.client.action.FollowLink;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
@@ -72,16 +71,13 @@ public class FollowLinkTest extends AbstractActionContext {
 
   @Test(expected = IllegalStateException.class)
   public void shouldThrowExceptionForunknownRelation() {
-
-    HalResource hal = createHalOutput("unknown", 1);
+    createHalOutput("unknown", 1);
 
   }
 
   @Test(expected = IllegalStateException.class)
   public void shouldThrowExceptionForInknownIndex() {
-
-    HalResource hal = createHalOutput("primary", 99);
-
+    createHalOutput("primary", 99);
   }
 
   @Test

@@ -22,7 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.filter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import io.wcm.caravan.pipeline.extensions.hal.filter.HalPath;
 
 import org.junit.Test;
 

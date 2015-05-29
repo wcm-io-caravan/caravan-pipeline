@@ -103,7 +103,6 @@ public final class JsonPipelineImpl implements JsonPipeline {
     return cloneWith(newObservable, descriptorSuffix, action, null);
   }
 
-  @SuppressWarnings("unchecked")
   JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action, Class actionClass) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
     clone.sourceServiceNames.addAll(this.sourceServiceNames);
@@ -234,7 +233,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
       try {
         return action.execute(output, context);
       }
-      catch (Exception e) {
+      catch (Throwable e) {
         log.error("Failed to execute action " + action.getId(), e);
         return Observable.error(e);
       }

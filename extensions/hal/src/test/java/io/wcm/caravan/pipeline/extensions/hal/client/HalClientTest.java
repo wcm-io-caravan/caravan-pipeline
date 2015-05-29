@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
-import io.wcm.caravan.pipeline.extensions.hal.client.HalClient;
 import io.wcm.caravan.pipeline.extensions.hal.client.action.DeepEmbedLinks;
 import io.wcm.caravan.pipeline.extensions.hal.client.action.EmbedLink;
 import io.wcm.caravan.pipeline.extensions.hal.client.action.EmbedLinks;

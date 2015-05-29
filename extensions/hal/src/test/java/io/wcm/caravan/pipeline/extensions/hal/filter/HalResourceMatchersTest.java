@@ -23,9 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.extensions.hal.filter.HalPath;
-import io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceMatchers;
-import io.wcm.caravan.pipeline.extensions.hal.filter.HalResourcePredicate;
 
 import org.junit.Test;
 
