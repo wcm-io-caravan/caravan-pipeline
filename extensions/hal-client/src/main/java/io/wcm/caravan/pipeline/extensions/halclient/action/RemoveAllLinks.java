@@ -1,3 +1,22 @@
+/*
+ * #%L
+ * wcm.io
+ * %%
+ * Copyright (C) 2014 wcm.io
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.wcm.caravan.pipeline.extensions.halclient.action;
 
 import io.wcm.caravan.commons.hal.resource.HalResource;
@@ -20,18 +39,11 @@ import com.google.common.collect.Sets;
  */
 public class RemoveAllLinks implements JsonPipelineAction {
 
-  private final Set<String> relationsToIgnore;
-
-  /**
-   * @param relationsToIgnore Link relations not to remove
-   */
-  public RemoveAllLinks(String... relationsToIgnore) {
-    this.relationsToIgnore = Sets.newHashSet(relationsToIgnore);
-  }
+  private final Set<String> relationsToIgnore = Sets.newHashSet();
 
   @Override
   public String getId() {
-    return "REMOVE-LINKS(" + StringUtils.join(relationsToIgnore, '-') + ")";
+    return relationsToIgnore.isEmpty() ? "REMOVE-AL-LINKS" : "REMOVE-ALL-LINKS-EXCEPT(" + StringUtils.join(relationsToIgnore, '-') + ")";
   }
 
   @Override
@@ -40,6 +52,17 @@ public class RemoveAllLinks implements JsonPipelineAction {
     HalResource hal = new HalResource((ObjectNode)previousStepOutput.getPayload());
     removeLinksRecursive(hal);
     return Observable.just(previousStepOutput);
+
+  }
+
+  /**
+   * @param relations Relation name of links not to delete
+   * @return This action
+   */
+  public RemoveAllLinks except(String... relations) {
+
+    Streams.of(relations).forEach(relation -> relationsToIgnore.add(relation));
+    return this;
 
   }
 

@@ -1,6 +1,26 @@
+/*
+ * #%L
+ * wcm.io
+ * %%
+ * Copyright (C) 2014 wcm.io
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package io.wcm.caravan.pipeline.extensions.halclient.action;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
@@ -36,11 +56,18 @@ public class RemoveAllLinksTest {
       .getModel();
 
   @Test
-  public void shouldHaveUniqueId() {
+  public void getId_shouldAnswerWithoutRelations() {
 
-    String id = new RemoveAllLinks("links1", "link2").getId();
+    assertNotNull(new RemoveAllLinks().getId());
+
+  }
+
+  @Test
+  public void getId_shouldBeUniqueForRelations() {
+
+    String id = new RemoveAllLinks().except("links1").except("links2").getId();
     assertTrue(id.contains("links1"));
-    assertTrue(id.contains("link2"));
+    assertTrue(id.contains("links2"));
 
   }
 
@@ -57,7 +84,7 @@ public class RemoveAllLinksTest {
   private HalResource getHalOutput(String... relations) {
 
     JsonPipelineOutput input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
-    RemoveAllLinks action = new RemoveAllLinks(relations);
+    RemoveAllLinks action = new RemoveAllLinks().except(relations);
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
     return new HalResource((ObjectNode)output.getPayload());
 
