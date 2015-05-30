@@ -110,13 +110,12 @@ public final class DeepEmbedLinks extends AbstractEmbedLinks {
       HalResource resourceToEmbed = index.get(link.getHref());
       if (resourceToEmbed != null) {
         halResource.addEmbedded(getRelation(), resourceToEmbed);
+        halResource.removeLinkWithHref(getRelation(), link.getHref());
       }
       else {
-        LOGGER.error("Did not find resource for href " + link.getHref());
+        LOGGER.debug("Did not find resource for href " + link.getHref());
       }
     }
-
-    halResource.removeLinks(getRelation());
 
     for (HalResource embedded : halResource.getEmbedded().values()) {
       recursiveLinkReplacement(embedded, index);
