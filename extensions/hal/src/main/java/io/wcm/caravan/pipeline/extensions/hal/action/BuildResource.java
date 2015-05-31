@@ -25,9 +25,6 @@ import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
-
-import org.apache.commons.lang3.StringUtils;
-
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -62,12 +59,6 @@ public abstract class BuildResource implements JsonPipelineAction {
     }
 
     HalResource input = new HalResource(((ObjectNode)previousStepOutput.getPayload()));
-
-    if (input.getLink() == null || StringUtils.isBlank(input.getLink().getHref())) {
-      throw new JsonPipelineOutputException(BuildResource.class.getName() +
-          " expects the output of the previous step to already be a HAL resource, but got "
-          + previousStepOutput.getPayload().toString());
-    }
 
     HalBuilder outputBuilder = new HalBuilder(selfHref);
 

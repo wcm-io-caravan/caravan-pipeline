@@ -87,22 +87,25 @@ public class BuildResourceTest {
 
   }
 
-  @Test(expected = JsonPipelineOutputException.class)
-  public void shouldThrowExceptionIfInputIsNoHalResource() {
+  @Test
+  public void shouldAddSelfLinkIfInputIsNoHalResource() {
 
     JsonPipelineOutput input = new JsonPipelineOutputImpl(OBJECT_MAPPER.createObjectNode(), Collections.emptyList());
-    action.execute(input, context).toBlocking().single();
+    JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
+
+    assertEquals("/new", new HalResource((ObjectNode)output.getPayload()).getLink().getHref());
 
   }
 
-  @Test(expected = JsonPipelineOutputException.class)
-  public void shouldThrowExceptionIfInputHalResourceHasNoLink() {
+  @Test
+  public void shouldAddSelfLinkIfInputHalResourceHasNoLink() {
 
     ObjectNode errorInput = OBJECT_MAPPER.createObjectNode();
     errorInput.putObject("_links").putObject("self");
     JsonPipelineOutput input = new JsonPipelineOutputImpl(errorInput, Collections.emptyList());
-    action.execute(input, context).toBlocking().single();
+    JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
 
+    assertEquals("/new", new HalResource((ObjectNode)output.getPayload()).getLink().getHref());
   }
 
   @Test
