@@ -50,7 +50,7 @@ public class RemoveAllProperties implements JsonPipelineAction {
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
     HalResource hal = new HalResource((ObjectNode)previousStepOutput.getPayload());
-    removePropertiesRecursive(hal);
+    removePropertiesRecursive(hal, propertiesToKeep);
     return Observable.just(previousStepOutput);
 
   }
@@ -66,7 +66,12 @@ public class RemoveAllProperties implements JsonPipelineAction {
 
   }
 
-  private void removePropertiesRecursive(HalResource hal) {
+  /**
+   * Removes all properties except the specified ones from the given resource and all embedded resources
+   * @param hal a HAL resource
+   * @param propertiesToKeep all properties that should be left untouched
+   */
+  public static void removePropertiesRecursive(HalResource hal, Set<String> propertiesToKeep) {
 
     // remove properties
     Streams.of(hal.getStateFieldNames())
@@ -75,7 +80,7 @@ public class RemoveAllProperties implements JsonPipelineAction {
 
     // check embedded resources
     Streams.of(hal.getEmbedded().values())
-        .forEach(embedded -> removePropertiesRecursive(embedded));
+        .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
 
   }
 
