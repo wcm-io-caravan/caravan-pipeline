@@ -35,8 +35,8 @@
   <version>0.2.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
-  <name>JSON Pipeline Extension: HAL Client</name>
-  <description>Client to navigate inside HAL JSON resources.</description>
+  <name>JSON Pipeline Extension for HAL</name>
+  <description>Client and actions to navigate inside HAL JSON resources.</description>
 
   <scm>
     <connection>scm:git:https://github.com/wcm-io/wcm-io-caravan.git</connection>
