@@ -152,9 +152,6 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
    */
   public final class CacheResponseObserver implements Observer<String> {
 
-    /** a suffix being appended to the reason phrase for cached 404 responses */
-    public static final String SUFFIX_FOR_CACHED_404_REASON_STRING = " (Cached!)";
-
     private final String cacheKey;
     private final Observable<JsonPipelineOutput> originalSource;
     private final Subscriber<? super JsonPipelineOutput> subscriber;
@@ -254,7 +251,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       if (cacheEntry.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
         // the cache entry is a 404 response that should be thrown as an exception to be handled by the subscriber
-        subscriber.onError(new JsonPipelineInputException(HttpStatus.SC_NOT_FOUND, cacheEntry.getReasonString() + SUFFIX_FOR_CACHED_404_REASON_STRING));
+        String cachedInfoSuffix = " (Cached from " + cacheEntry.getSources() + " at " + cacheEntry.getGeneratedDate() + ")";
+        subscriber.onError(new JsonPipelineInputException(HttpStatus.SC_NOT_FOUND, cacheEntry.getReasonString() + cachedInfoSuffix));
       }
       else {
         // make sure to set the max-age content-header just to the time the cached content will become stale
@@ -321,8 +319,9 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           if (e instanceof JsonPipelineInputException) {
             if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
 
-              log.debug("404 response for {} and correlationId {} will be stored in the cache", descriptor, correlationId);
-              CachePersistencyOptions options = strategy.getCachePersistencyOptions(requests);
+              CachePersistencyOptions options = CachePersistencyOptions.createTransient(60);
+              log.debug("CACHE PUT - 404 response for {} and correlationId {} will be stored in the cache, max-age={} sec",
+                  descriptor, correlationId, options.getRefreshInterval());
 
               CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getProperties());
               context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), options);
@@ -476,9 +475,16 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       return metadataNode.at("/reason").asText("Not Found");
     }
 
+    String getSources() {
+      return metadataNode.at("/sources").toString();
+    }
+
     int getResponseAge() {
-      String generatedDate = metadataNode.at("/generated").asText();
-      return CacheDateUtils.getSecondsSince(generatedDate);
+      return CacheDateUtils.getSecondsSince(getGeneratedDate());
+    }
+
+    String getGeneratedDate() {
+      return metadataNode.at("/generated").asText();
     }
 
     int getExpirySeconds() {

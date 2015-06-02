@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -35,7 +36,6 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheDateUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
 
 import java.util.LinkedList;
@@ -271,7 +271,9 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
 
     int timeToLiveSeconds = 30;
 
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getContextProperties());
+    String originalReason = "original reason";
+
+    CacheEnvelope cached404 = CacheEnvelope.from404Response(originalReason, new LinkedList<CaravanHttpRequest>(), null, null, getContextProperties());
     cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
 
     Mockito.when(cacheAdapter.get(anyString(), anyObject()))
@@ -286,7 +288,9 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
     }
     catch (JsonPipelineInputException e) {
       assertEquals(404, e.getStatusCode());
-      assertEquals("original reason" + CachePointTransformer.CacheResponseObserver.SUFFIX_FOR_CACHED_404_REASON_STRING, e.getMessage());
+
+      assertTrue("the message should contain reason phrase from the original response", e.getMessage().startsWith(originalReason));
+      assertTrue("but something should have been appended to indicate it's coming from cache", e.getMessage().length() > originalReason.length());
     }
   }
 
