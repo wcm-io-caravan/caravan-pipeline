@@ -166,8 +166,7 @@ public class HalResourceFiltersTest {
 
   }
 
-  private static class Item {
-
+  static class Item {
     public String key;
     public String particularNull;
   }

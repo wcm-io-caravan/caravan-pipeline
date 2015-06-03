@@ -89,7 +89,6 @@ public class FilterEmbeddedHalResourceTest {
   @Test
   public void shouldRemoveFilteredResource() {
 
-    ArgumentCaptor<HalResource> captor = ArgumentCaptor.forClass(HalResource.class);
     Mockito.when(predicate.apply(Matchers.any(), Matchers.argThat(new ArgumentMatcher<HalResource>() {
 
       @Override
