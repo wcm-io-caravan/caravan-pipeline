@@ -19,22 +19,15 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
-import static io.wcm.caravan.io.http.request.CaravanHttpRequest.CORRELATION_ID_HEADER_NAME;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
 import io.wcm.caravan.commons.stream.Collectors;
 import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -45,14 +38,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * Base link embedding action to load links for a given relation and store them as embedded resources.
  */
-public abstract class AbstractEmbedLinks implements JsonPipelineAction {
+public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
 
   private final String serviceName;
   private final String relation;
   private final Map<String, Object> parameters;
-
-  private CacheStrategy cacheStrategy;
-  private JsonPipelineExceptionHandler exceptionHandler;
 
   /**
    * @param serviceName Logical name of the service
@@ -65,48 +55,9 @@ public abstract class AbstractEmbedLinks implements JsonPipelineAction {
     this.parameters = parameters;
   }
 
-  /**
-   * Sets the cache strategy for this action.
-   * @param newCacheStrategy Caching strategy
-   */
-  void setCacheStrategyInternal(CacheStrategy newCacheStrategy) {
-    this.cacheStrategy = newCacheStrategy;
-  }
-
-  /**
-   * Sets the exception handler for this action.
-   * @param newExceptionHandler The exceptionHandler to set.
-   */
-  void setExceptionHandlerInternal(JsonPipelineExceptionHandler newExceptionHandler) {
-    this.exceptionHandler = newExceptionHandler;
-  }
-
-  /**
-   * @return Returns the exceptionHandler.
-   */
-  public JsonPipelineExceptionHandler getExceptionHandler() {
-    return this.exceptionHandler;
-  }
-
-  /**
-   * @return Returns the serviceName.
-   */
-  public String getServiceName() {
-    return this.serviceName;
-  }
-
-  /**
-   * @return Returns the relation.
-   */
-  public String getRelation() {
-    return this.relation;
-  }
-
-  /**
-   * @return Returns the parameters.
-   */
-  public Map<String, Object> getParameters() {
-    return this.parameters;
+  @Override
+  public String getId() {
+    return relation + '-' + parameters.hashCode();
   }
 
   @Override
@@ -118,7 +69,7 @@ public abstract class AbstractEmbedLinks implements JsonPipelineAction {
       return Observable.just(previousStepOutput);
     }
 
-    Observable<JsonPipeline> linkPipelines = getPipelinesForLinks(links, previousStepOutput, context);
+    Observable<JsonPipeline> linkPipelines = getPipelinesForLinks(previousStepOutput, context, links);
     return CacheControlUtils.zipWithLowestMaxAge(linkPipelines, (outputsToEmbed) -> {
 
       List<HalResource> resourcesToEmbed = Streams.of(outputsToEmbed)
@@ -136,37 +87,25 @@ public abstract class AbstractEmbedLinks implements JsonPipelineAction {
 
   abstract void setEmbeddedResourcesAndRemoveLink(HalResource halResource, List<Link> links, List<HalResource> resourcesToEmbed);
 
+  private Observable<JsonPipeline> getPipelinesForLinks(JsonPipelineOutput previousStepOutput, JsonPipelineContext context, List<Link> links) {
 
-  private Observable<JsonPipeline> getPipelinesForLinks(List<Link> links, JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
-
-    Collection<String> cacheControlHeader = getCacheControlHeader(previousStepOutput);
-    String correlationId = previousStepOutput.getCorrelationId();
-
+    JsonPipeline pipeline = context.getFactory().createEmpty(context.getProperties());
     return Observable.from(links)
-        // extract URI
-        .map(link -> link.getHref())
-        // create request builder
-        .map(href -> new CaravanHttpRequestBuilder(serviceName).append(href))
-        // add cacheControlHeader if exists
-        .map(requestBuilder -> cacheControlHeader == null ? requestBuilder : requestBuilder.header("Cache-Control", cacheControlHeader))
-        // add correlation ID if exists
-        .map(builder -> correlationId == null ? builder : builder.header(CORRELATION_ID_HEADER_NAME, correlationId))
-        // build request
-        .map(builder -> builder.build(parameters))
-        // create pipeline
-        .map(request -> context.getFactory().create(request, context.getProperties()))
-        // add Caching
-        .map(pipeline -> cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy))
-        // add exception handler
-        .map(pipeline -> exceptionHandler == null ? pipeline : pipeline.handleException(exceptionHandler));
+        .map(link -> {
+          return new LoadLink(serviceName, link, parameters)
+              .setCacheStrategy(getCacheStrategy())
+              .setExceptionHandlers(getExceptionHandlers())
+              .setLogger(getLogger());
+        })
+        .map(action -> pipeline.applyAction(action));
 
   }
 
-  private Collection<String> getCacheControlHeader(JsonPipelineOutput previousStepOutput) {
-
-    List<CaravanHttpRequest> requests = previousStepOutput.getRequests();
-    return requests.isEmpty() ? null : requests.get(0).getHeaders().get("Cache-Control");
-
+  /**
+   * @return Returns the relation.
+   */
+  protected String getRelation() {
+    return this.relation;
   }
 
 }

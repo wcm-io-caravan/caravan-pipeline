@@ -21,8 +21,6 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
-import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +44,7 @@ public final class EmbedLinks extends AbstractEmbedLinks {
 
   @Override
   public String getId() {
-    return "EMBED-LINKS(" + getRelation() + '-' + getParameters().hashCode() + ")";
+    return "EMBED-LINKS(" + super.getId() + ")";
   }
 
   @Override
@@ -58,26 +56,6 @@ public final class EmbedLinks extends AbstractEmbedLinks {
   void setEmbeddedResourcesAndRemoveLink(HalResource halResource, List<Link> links, List<HalResource> resourcesToEmbed) {
     halResource.addEmbedded(getRelation(), resourcesToEmbed);
     halResource.removeLinks(getRelation());
-  }
-
-  /**
-   * Sets the exception handler for this action.
-   * @param newExceptionHandler The exceptionHandler to set.
-   * @return Embed Links action
-   */
-  public EmbedLinks setExceptionHandler(JsonPipelineExceptionHandler newExceptionHandler) {
-    super.setExceptionHandlerInternal(newExceptionHandler);
-    return this;
-  }
-
-  /**
-   * Sets the cache strategy for this action.
-   * @param newCacheStrategy Caching strategy
-   * @return Embed Links action
-   */
-  public EmbedLinks setCacheStrategy(CacheStrategy newCacheStrategy) {
-    super.setCacheStrategyInternal(newCacheStrategy);
-    return this;
   }
 
 }

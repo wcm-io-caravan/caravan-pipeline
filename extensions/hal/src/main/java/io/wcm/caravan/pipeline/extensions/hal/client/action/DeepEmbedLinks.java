@@ -22,8 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
 import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
 
 import java.util.List;
 import java.util.Map;
@@ -53,7 +51,7 @@ public final class DeepEmbedLinks extends AbstractEmbedLinks {
 
   @Override
   public String getId() {
-    return "DEEP-EMBED(" + getRelation() + '-' + getParameters().hashCode() + ")";
+    return "DEEP-EMBED(" + super.getId() + ")";
   }
 
   @Override
@@ -71,26 +69,6 @@ public final class DeepEmbedLinks extends AbstractEmbedLinks {
   void setEmbeddedResourcesAndRemoveLink(HalResource halResource, List<Link> links, List<HalResource> resourcesToEmbed) {
     Map<String, HalResource> index = createIndex(links, resourcesToEmbed);
     recursiveLinkReplacement(halResource, index);
-  }
-
-  /**
-   * Sets the exception handler for this action.
-   * @param newExceptionHandler The exceptionHandler to set.
-   * @return Deep Embed Links action
-   */
-  public DeepEmbedLinks setExceptionHandler(JsonPipelineExceptionHandler newExceptionHandler) {
-    super.setExceptionHandlerInternal(newExceptionHandler);
-    return this;
-  }
-
-  /**
-   * Sets the cache strategy for this action.
-   * @param newCacheStrategy Caching strategy
-   * @return Deep Embed Links action
-   */
-  public DeepEmbedLinks setCacheStrategy(CacheStrategy newCacheStrategy) {
-    super.setCacheStrategyInternal(newCacheStrategy);
-    return this;
   }
 
   private Map<String, HalResource> createIndex(List<Link> links, List<HalResource> resourcesToEmbed) {

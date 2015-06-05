@@ -83,7 +83,7 @@ public class FollowLinkTest extends AbstractActionContext {
   @Test
   public void shouldUseCacheStrategy() {
 
-    FollowLink action = createAction("primary", 1).setCacheStrategy(cacheStrategy);
+    FollowLink action = (FollowLink)createAction("primary", 1).setCacheStrategy(cacheStrategy);
     action.execute(getInput(), context).toBlocking().single();
     Mockito.verify(cacheStrategy).getCachePersistencyOptions(Matchers.any());
 

@@ -20,7 +20,6 @@
 package io.wcm.caravan.pipeline.extensions.hal.client;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandlers;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
@@ -43,14 +42,14 @@ public class HalClientTest {
   @Before
   public void setUp() {
     client = new HalClient("test-service", CacheStrategies.noCache(), Collections.emptyMap())
-        .setExceptionHandler(handler);
+        .addExceptionHandler(handler);
   }
 
   @Test
   public void shouldSetExceptionHandlerForEmbedLinks() {
 
     EmbedLinks action = client.embed("item");
-    assertEquals(handler, action.getExceptionHandler());
+    assertEquals(handler, action.getExceptionHandlers().get(0));
 
   }
 
@@ -58,15 +57,15 @@ public class HalClientTest {
   public void shouldSetExceptionHandlerForDeepEmbedLinks() {
 
     DeepEmbedLinks action = client.deepEmbed("item");
-    assertEquals(handler, action.getExceptionHandler());
+    assertEquals(handler, action.getExceptionHandlers().get(0));
 
   }
 
   @Test
-  public void shouldNotSetExceptionHandlerForEmbedLink() {
+  public void shouldSetExceptionHandlerForEmbedLink() {
 
     EmbedLink action = client.embed("item", 1);
-    assertNull(action.getExceptionHandler());
+    assertEquals(handler, action.getExceptionHandlers().get(0));
 
   }
 
