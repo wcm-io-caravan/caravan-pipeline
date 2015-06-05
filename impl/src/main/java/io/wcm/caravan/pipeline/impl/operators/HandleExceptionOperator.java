@@ -20,17 +20,19 @@
 package io.wcm.caravan.pipeline.impl.operators;
 
 import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+
+import java.util.List;
+
 import rx.Observable;
 import rx.Observable.Operator;
 import rx.Subscriber;
 import rx.exceptions.Exceptions;
-
-import com.google.common.collect.ImmutableList;
 
 /**
  * An operator that delegates all non-fatal exception-handling to the given function, allowing the user of the
@@ -38,13 +40,15 @@ import com.google.common.collect.ImmutableList;
  */
 public class HandleExceptionOperator implements Operator<JsonPipelineOutput, JsonPipelineOutput> {
 
+  private final List<CaravanHttpRequest> requests;
   private final JsonPipelineExceptionHandler handler;
 
   /**
+   * @param requests the outgoing REST request(s)
    * @param handler the function to call when an exception is caught
    */
-  public HandleExceptionOperator(JsonPipelineExceptionHandler handler) {
-    super();
+  public HandleExceptionOperator(List<CaravanHttpRequest> requests, JsonPipelineExceptionHandler handler) {
+    this.requests = requests;
     this.handler = handler;
   }
 
@@ -71,7 +75,7 @@ public class HandleExceptionOperator implements Operator<JsonPipelineOutput, Jso
           statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
         }
 
-        JsonPipelineOutput defaultFallbackContent = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject(), ImmutableList.of())
+        JsonPipelineOutput defaultFallbackContent = new JsonPipelineOutputImpl(JacksonFunctions.emptyObject(), requests)
             .withStatusCode(statusCode)
             .withMaxAge(0);
 

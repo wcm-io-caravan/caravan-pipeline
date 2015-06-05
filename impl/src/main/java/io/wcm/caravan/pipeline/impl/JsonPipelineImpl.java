@@ -259,7 +259,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
   @Override
   public JsonPipeline handleException(JsonPipelineExceptionHandler handler) {
 
-    Observable<JsonPipelineOutput> exceptionHandlingObservable = observable.lift(new HandleExceptionOperator(handler));
+    Observable<JsonPipelineOutput> exceptionHandlingObservable = observable.lift(new HandleExceptionOperator(requests, handler));
 
     return cloneWith(exceptionHandlingObservable, null, "HANDLE_EXCEPTION");
   }
