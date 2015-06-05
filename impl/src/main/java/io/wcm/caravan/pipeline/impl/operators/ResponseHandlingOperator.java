@@ -80,15 +80,15 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
         }
 
-        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.getUrl() + ", correlationId: <"
-            + request.getCorrelationId() + ">", e));
+        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.getUrl() + ",\n"
+            + request.getCorrelationId(), e));
       }
 
       @Override
       public void onNext(CaravanHttpResponse response) {
         try (Body body = response.body()) {
           final int statusCode = response.status();
-          log.debug("received {} response ({}) with from {}, correlationId: <{}>", statusCode, response.reason(), request.getUrl(), request.getCorrelationId());
+          log.debug("received {} response ({}) with from {},\n{}", statusCode, response.reason(), request.getUrl(), request.getCorrelationId());
           if (statusCode == HttpServletResponse.SC_OK) {
 
             JsonNode payload = JacksonFunctions.stringToNode(body.asString());
@@ -98,16 +98,16 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
             subscriber.onNext(model);
           }
           else {
-            String msg = "Request for " + request.getUrl() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + "), correlationId: <"
-                + request.getCorrelationId() + ">";
+            String msg = "Request for " + request.getUrl() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + "), "
+                + request.getCorrelationId();
             log.warn(msg);
 
             subscriber.onError(new JsonPipelineInputException(statusCode, msg));
           }
         }
         catch (IOException ex) {
-          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.getUrl() + ", correlationId: <"
-              + request.getCorrelationId() + ">", ex));
+          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.getUrl() + ",\n"
+              + request.getCorrelationId(), ex));
         }
       }
     };

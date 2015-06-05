@@ -170,7 +170,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       CacheEnvelope cacheEntry = CacheEnvelope.fromEnvelopeString(cachedContent, cacheKey);
       if (cacheEntry == null) {
 
-        log.warn("CACHE ERROR for {} - the cached response could not be parsed, correlationId <{}>.", this.cacheKey, correlationId);
+        log.warn("CACHE ERROR for {} - the cached response could not be parsed,\n{}", this.cacheKey, correlationId);
         // ignore cache envelopes that can not be parsed
         return;
       }
@@ -185,7 +185,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       // check if the content from cache is fresh enough to serve it
       if (responseAge < refreshInterval && responseAge < maxAgeFromClient && expirySeconds > 0) {
-        log.debug("CACHE HIT for {}, correlationId <{}>.", this.cacheKey, correlationId);
+        log.debug("CACHE HIT for {},\n{}", this.cacheKey, correlationId);
 
         // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
         serveCachedContent(cacheEntry, refreshInterval);
@@ -203,7 +203,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           reason = "it has expired " + (-expirySeconds) + " seconds ago, according to the original max-age header from the http-response";
         }
 
-        log.debug("CACHE STALE - content for {} is available, but {}, correlationId <{}>.", cacheKey, reason, correlationId);
+        log.debug("CACHE STALE - content for {} is available, but {},\n{}", cacheKey, reason, correlationId);
 
         fetchAndStore(new Subscriber<JsonPipelineOutput>() {
 
@@ -221,8 +221,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           public void onError(Throwable e) {
             Exceptions.throwIfFatal(e);
 
-            log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey, " correlationId <"
-                + correlationId + ">", e);
+            log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
+                + correlationId, e);
 
             JsonPipelineOutputImpl pipelineOutput = new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests);
 
@@ -268,7 +268,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     public void onCompleted() {
       if (!cacheHit) {
         // there was no emission, so the response has to be fetched from the service
-        log.debug("CACHE MISS for {} fetching response from {} through pipeline, correlationId: <{}>.", cacheKey, getSourceServicePrefix(), correlationId);
+        log.debug("CACHE MISS for {} fetching response from {} through pipeline,\n{}", cacheKey, getSourceServicePrefix(), correlationId);
         fetchAndStore(subscriber);
       }
     }
@@ -278,8 +278,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       Exceptions.throwIfFatal(e);
 
       // also fall back to the actual service if the couchbase request failed
-      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix() + ", correlationId <"
-          + correlationId + ">.", e);
+      log.warn("Failed to connect to couchbase server, falling back to direct connection to " + getSourceServicePrefix() + ",\n"
+          + correlationId, e);
       fetchAndStore(subscriber);
     }
 
@@ -297,7 +297,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
             contentMaxAge = Math.min(contentMaxAge, fetchedModel.getMaxAge());
           }
 
-          log.debug("CACHE PUT - response for {} has been fetched and will be put in the cache, max-age={} sec, correlationId <{}>.", cacheKey, contentMaxAge,
+          log.debug("CACHE PUT - response for {} has been fetched and will be put in the cache, max-age={} sec,\n{}", cacheKey, contentMaxAge,
               correlationId);
 
           CacheEnvelope cacheEntry = CacheEnvelope.from200Response(fetchedModel.getPayload(), contentMaxAge, requests,
@@ -321,7 +321,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
             if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
 
               CachePersistencyOptions options = CachePersistencyOptions.createTransient(60);
-              log.debug("CACHE PUT - 404 response for {} will be stored in the cache, max-age={} sec, correlationId <{}>.",
+              log.debug("CACHE PUT - 404 response for {} will be stored in the cache, max-age={} sec,\n{}",
                   descriptor, options.getRefreshInterval(), correlationId);
 
               CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getProperties());
