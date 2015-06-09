@@ -30,26 +30,33 @@ import rx.Observable.Operator;
 import rx.Observable.Transformer;
 import rx.Observer;
 import rx.Subscriber;
+import rx.schedulers.Schedulers;
 
 import com.google.common.base.Ticker;
 
 
 public class PerformanceMetricsTransformerTest {
 
+  private static final String EMISSION_RESULT = "Hello world!";
+
   @Test
   public void test_withDelayingTransformer() throws Exception {
+
+    int subscriptionDelayMillis = 1000;
+    long observationDelayMillis = 750;
+    int emissionDelayMillis = 500;
 
     // use a custom ticker that can simulate waiting time
     SimulationTicker ticker = new SimulationTicker();
 
     // create a transformer that simulates two delay: one during subscription and one during emission of events
-    DelayingTransformer transformer = new DelayingTransformer(ticker, 1000, 500);
+    DelayingTransformer transformer = new DelayingTransformer(ticker, subscriptionDelayMillis, emissionDelayMillis);
 
     // wrap this transformer with a PerformanceMetricsTransformer that measures the time spend during subscription and emission
     PerformanceMetricsTransformer<String> performanceMetricsTransformer = new PerformanceMetricsTransformer<>(transformer, ticker);
 
-    // use a simple source observable that emits a single string
-    Observable<String> sourceObservable = Observable.just("Hello world!");
+    // use a simple source observable that emits a single string after a delay of 100ms
+    Observable<String> sourceObservable = createDelayingObservable(ticker, observationDelayMillis);
 
     // transform it to an observable that applies the delay and performance metrics transformations
     Observable<String> performanceMetricsObservable = performanceMetricsTransformer.call(sourceObservable);
@@ -58,28 +65,31 @@ public class PerformanceMetricsTransformerTest {
     String result = performanceMetricsObservable.toBlocking().single();
 
     // make sure that the emission matches that of the source observable
-    assertEquals("Hello world!", result);
+    assertEquals(EMISSION_RESULT, result);
 
     // check that the delays have been correctly captured by the stopwatch
     assertEquals(transformer.subscriptionDelayMillis, performanceMetricsTransformer.getSubscriptionMillis());
-    assertEquals(0, performanceMetricsTransformer.getObservationMillis());
+    assertEquals(observationDelayMillis, performanceMetricsTransformer.getObservationMillis());
     assertEquals(transformer.emissionDelayMillis, performanceMetricsTransformer.getEmissionMillis());
   }
 
   @Test
   public void test_withDelayingOperator() throws Exception {
 
+    long observationDelayMillis = 750;
+    int emissionDelayMillis = 500;
+
     // use a custom ticker that can simulate waiting time
     SimulationTicker ticker = new SimulationTicker();
 
     // create a operator that simulates a delay during emission of events
-    DelayingOperator operator = new DelayingOperator(ticker, 500);
+    DelayingOperator operator = new DelayingOperator(ticker, emissionDelayMillis);
 
     // wrap this operator with a PerformanceMetricsTransformer that measures the time spend during subscription and emission
     PerformanceMetricsTransformer<String> performanceMetricsTransformer = new PerformanceMetricsTransformer<>(operator, ticker);
 
-    // use a simple source observable that emits a single string
-    Observable<String> sourceObservable = Observable.just("Hello world!");
+    // use a simple source observable that emits a single string after the specified delay
+    Observable<String> sourceObservable = createDelayingObservable(ticker, observationDelayMillis);
 
     // transform it to an observable that applies the delay and performance metrics transformations
     Observable<String> performanceMetricsObservable = performanceMetricsTransformer.call(sourceObservable);
@@ -88,11 +98,11 @@ public class PerformanceMetricsTransformerTest {
     String result = performanceMetricsObservable.toBlocking().single();
 
     // make sure that the emission matches that of the source observable
-    assertEquals("Hello world!", result);
+    assertEquals(EMISSION_RESULT, result);
 
     // check that the delays have been correctly captured by the stopwatch
     assertEquals(0, performanceMetricsTransformer.getSubscriptionMillis());
-    assertEquals(0, performanceMetricsTransformer.getObservationMillis());
+    assertEquals(observationDelayMillis, performanceMetricsTransformer.getObservationMillis());
     assertEquals(operator.emissionDelayMillis, performanceMetricsTransformer.getEmissionMillis());
   }
 
@@ -100,17 +110,13 @@ public class PerformanceMetricsTransformerTest {
   @Test
   public void test_withDelayingObservable() throws Exception {
 
+    long observationDelayMillis = 750;
+
     // use a custom ticker that can simulate waiting time
     SimulationTicker ticker = new SimulationTicker();
 
-    long observationDelayMillis = 1000;
-
-    // create a operator that simulates a delay during emission of events
-    Observable<String> sourceObservable = Observable.create(subscriber -> {
-      ticker.simulateWait(observationDelayMillis);
-      subscriber.onNext("Hello world!");
-      subscriber.onCompleted();
-    });
+    // use a simple source observable that emits a single string after the specified delay
+    Observable<String> sourceObservable = createDelayingObservable(ticker, observationDelayMillis);
 
     // wrap this observable with a PerformanceMetricsTransformer that measures the time spend during subscription and emission
     PerformanceMetricsTransformer<String> performanceMetricsTransformer = new PerformanceMetricsTransformer<>(sourceObservable, ticker);
@@ -120,12 +126,29 @@ public class PerformanceMetricsTransformerTest {
     String result = performanceMetricsObservable.toBlocking().single();
 
     // make sure that the emission matches that of the source observable
-    assertEquals("Hello world!", result);
+    assertEquals(EMISSION_RESULT, result);
 
     // check that the subscription and emission delays have been correctly captured by the stopwatch
     assertEquals(0, performanceMetricsTransformer.getSubscriptionMillis());
     assertEquals(observationDelayMillis, performanceMetricsTransformer.getObservationMillis());
     assertEquals(0, performanceMetricsTransformer.getEmissionMillis());
+  }
+
+  public Observable<String> createDelayingObservable(SimulationTicker ticker, long observationDelayMillis) {
+    // create an observable that simulates a delay before it emits events
+    Observable<String> sourceObservable = Observable.create(subscriber -> {
+
+      ticker.simulateWait(observationDelayMillis);
+
+      // we use a scheduler here, so that the delay is not added during subscription
+      Schedulers.computation().createWorker().schedule(() -> {
+
+        subscriber.onNext(EMISSION_RESULT);
+        subscriber.onCompleted();
+      });
+
+    });
+    return sourceObservable;
   }
 
   /**
@@ -147,7 +170,7 @@ public class PerformanceMetricsTransformerTest {
   }
 
   /**
-   * a transformer that increases the time of the given ticker by the specified amounts
+   * a transformer that increases the time of the given ticker by the specified amounts during subscription and emission
    */
   static class DelayingTransformer implements Transformer<String, String> {
 
@@ -197,7 +220,7 @@ public class PerformanceMetricsTransformerTest {
   }
 
   /**
-   * an operator that increases the time of the given ticker by the specified amounts
+   * an operator that increases the time of the given ticker by the specified amounts before it forward the emissions
    */
   static class DelayingOperator implements Operator<String, String> {
 
