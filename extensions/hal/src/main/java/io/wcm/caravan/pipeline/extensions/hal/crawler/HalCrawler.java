@@ -27,6 +27,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.extensions.hal.client.HalClient;
 import io.wcm.caravan.pipeline.extensions.hal.client.action.LoadLink;
 
@@ -60,6 +61,8 @@ public class HalCrawler implements JsonPipelineAction {
   private final UriParametersProvider uriParametersProvider;
   private final OutputProcessor outputProcessor;
 
+  private CacheStrategy cacheStrategy;
+
   /**
    * @param client HAL client
    * @param linkExtractor Link extractor
@@ -71,6 +74,15 @@ public class HalCrawler implements JsonPipelineAction {
     this.linkExtractor = linkExtractor;
     this.uriParametersProvider = uriParametersProvider;
     this.outputProcessor = outputProcessor;
+  }
+
+  /**
+   * @param cacheStrategy The cacheStrategy to set.
+   * @return This crawler
+   */
+  public HalCrawler setCacheStrategy(CacheStrategy cacheStrategy) {
+    this.cacheStrategy = cacheStrategy;
+    return this;
   }
 
   @Override
@@ -96,6 +108,7 @@ public class HalCrawler implements JsonPipelineAction {
           Map<String, Object> parameters = uriParametersProvider.getParameters(currentHalResource, relation, link);
           LoadLink action = client.load(link, parameters);
           action.setHttpHeaders(ImmutableMultimap.of(HEADER_CRAWLER_RELATION, relation));
+          action.setCacheStrategy(cacheStrategy);
           return action;
         })
         // filter unique by URL
