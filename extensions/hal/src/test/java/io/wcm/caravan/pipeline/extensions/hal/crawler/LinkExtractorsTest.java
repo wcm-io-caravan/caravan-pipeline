@@ -20,6 +20,8 @@
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
 import io.wcm.caravan.commons.hal.resource.Link;
@@ -39,17 +41,24 @@ public class LinkExtractorsTest {
 
     payload = HalResourceFactory.createResource("/resource")
         .addLinks("item", HalResourceFactory.createLink("/link-1"), HalResourceFactory.createLink("/link-2"))
+        .addLinks("templated", HalResourceFactory.createLink("/template{?param}"))
         .addEmbedded("item", HalResourceFactory.createResource("/embedded-1")
             .addLinks("item", HalResourceFactory.createLink("/embedded-1-link1"), HalResourceFactory.createLink("/embedded-1-link2")));
   }
 
   @Test
   public void all_shouldReturnAllLinks() {
-
     ListMultimap<String, Link> links = LinkExtractors.all().extract(payload);
-    assertEquals(6, links.size());
+    assertEquals(7, links.size());
     assertEquals("/resource", links.get("self").get(0).getHref());
+    assertTrue(links.containsKey("templated"));
+  }
 
+  @Test
+  public void noUriTemplate_shouldReturnOnlyLinksWithoutTemplateExpresssion() {
+    ListMultimap<String, Link> links = LinkExtractors.noUriTemplates().extract(payload);
+    assertEquals(6, links.size());
+    assertFalse(links.containsKey("templated"));
   }
 
 }

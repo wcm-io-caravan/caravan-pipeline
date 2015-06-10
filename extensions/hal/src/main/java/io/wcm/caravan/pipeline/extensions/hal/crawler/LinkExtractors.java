@@ -23,6 +23,10 @@ import io.wcm.caravan.commons.hal.HalUtil;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.damnhandy.uri.template.UriTemplate;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ListMultimap;
 
 /**
@@ -35,7 +39,7 @@ public final class LinkExtractors {
   }
 
   /**
-   * Returns all relations and links in a HAL resource.
+   * Returns all relations and links in a HAL resource except CURI links.
    * @return All links
    */
   public static LinkExtractor all() {
@@ -55,23 +59,30 @@ public final class LinkExtractors {
   }
 
   /**
-   * Returns all relations and links in a HAL resource except the CURI links.
-   * @return All links
+   * Returns all relations and links in a HAL resource having no URI template expressions.
+   * @return Filtered links
    */
-  public static LinkExtractor allExceptCuries() {
-
+  public static LinkExtractor noUriTemplates() {
     return new LinkExtractor() {
 
       @Override
-      public String getId() {
-        return "ALL-EXCEPT-CURIES";
+      public ListMultimap<String, Link> extract(HalResource hal) {
+        return HalUtil.getAllLinks(hal, new Predicate<Pair<String, Link>>() {
+
+          @Override
+          public boolean apply(Pair<String, Link> input) {
+            return UriTemplate.fromTemplate(input.getValue().getHref()).expressionCount() == 0;
+          }
+        });
       }
 
       @Override
-      public ListMultimap<String, Link> extract(HalResource hal) {
-        return HalUtil.getAllLinksExceptCuries(hal);
+      public String getId() {
+        return "NO-URI-TEMPLATES";
       }
-    };
 
+
+    };
   }
+
 }
