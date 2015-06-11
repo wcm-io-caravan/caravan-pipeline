@@ -39,26 +39,26 @@ abstract class AbstractHalClientAction implements HalClientAction {
   private Multimap<String, String> httpHeaders = ImmutableMultimap.of();
 
   @Override
-  public HalClientAction setCacheStrategy(CacheStrategy newCacheStrategy) {
-    this.cacheStrategy = newCacheStrategy;
+  public HalClientAction setCacheStrategy(CacheStrategy value) {
+    this.cacheStrategy = value;
     return this;
   }
 
   @Override
-  public HalClientAction setExceptionHandlers(List<JsonPipelineExceptionHandler> exceptionHandlers) {
-    this.exceptionHandlers = exceptionHandlers;
+  public HalClientAction setExceptionHandlers(List<JsonPipelineExceptionHandler> value) {
+    this.exceptionHandlers = value;
     return this;
   }
 
   @Override
-  public HalClientAction setLogger(Logger logger) {
-    this.logger = logger;
+  public HalClientAction setLogger(Logger value) {
+    this.logger = value;
     return this;
   }
 
   @Override
-  public HalClientAction setHttpHeaders(Multimap<String, String> httpHeaders) {
-    this.httpHeaders = httpHeaders;
+  public HalClientAction setHttpHeaders(Multimap<String, String> value) {
+    this.httpHeaders = value;
     return this;
   }
 

@@ -77,11 +77,11 @@ public class HalCrawler implements JsonPipelineAction {
   }
 
   /**
-   * @param cacheStrategy The cacheStrategy to set.
+   * @param strategy The cacheStrategy to set.
    * @return This crawler
    */
-  public HalCrawler setCacheStrategy(CacheStrategy cacheStrategy) {
-    this.cacheStrategy = cacheStrategy;
+  public HalCrawler setCacheStrategy(CacheStrategy strategy) {
+    this.cacheStrategy = strategy;
     return this;
   }
 

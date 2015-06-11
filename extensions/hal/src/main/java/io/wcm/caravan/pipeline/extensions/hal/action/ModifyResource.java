@@ -33,7 +33,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * An action that can take any JSON object as input (already HAL or not), sets the specified self-link and allows
  * arbitrary manipulation of the output HalResource by implementing the build function.
  */
+//CHECKSTYLE:OFF
 public abstract class ModifyResource implements JsonPipelineAction {
+  //CHECKSTYLE:ON
 
   private final String selfHref;
 

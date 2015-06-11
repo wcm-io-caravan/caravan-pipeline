@@ -109,11 +109,11 @@ public final class HalClient {
 
   /**
    * Sets the logger for the pipeline actions.
-   * @param logger Logger to set.
+   * @param value Logger to set.
    * @return This HAL client
    */
-  public HalClient setLogger(Logger logger) {
-    this.logger = logger;
+  public HalClient setLogger(Logger value) {
+    this.logger = value;
     return this;
   }
 

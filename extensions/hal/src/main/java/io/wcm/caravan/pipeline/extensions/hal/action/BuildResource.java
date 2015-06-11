@@ -33,7 +33,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * A pipeline action you can use if you want to build a new {@link HalResource} based on another {@link HalResource}
  * from the previous step's output.
  */
+//CHECKSTYLE:OFF
 public abstract class BuildResource implements JsonPipelineAction {
+  //CHECKSTYLE:ON
 
   private final String selfHref;
 

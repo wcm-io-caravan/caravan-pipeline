@@ -57,14 +57,18 @@ public class HalCrawlerTest {
 
   @Rule
   public RuleChain chain = RuleChain
-      .outerRule(osgiCtx)
-      .around(pipelineCtx);
+  .outerRule(osgiCtx)
+  .around(pipelineCtx);
 
   private HalClient client;
   private HalCrawler crawler;
   private JsonPipeline pipeline;
 
-  private HalResource entryPoint, resourceLink1, resourceLink1Section1, resourceLink2, resourceEmbedded1;
+  private HalResource entryPoint;
+  private HalResource resourceLink1;
+  private HalResource resourceLink1Section1;
+  private HalResource resourceLink2;
+  private HalResource resourceEmbedded1;
 
   @Before
   public void setUp() {
@@ -100,10 +104,10 @@ public class HalCrawlerTest {
     Map<RequestMatcher, AtomicInteger> counter = pipelineCtx.getCaravanHttpClient().getMatchingCounter();
     assertEquals(5, counter.size());
     Streams.of(counter.entrySet())
-        .filter(entry -> entry.getValue().get() != 1)
-        .forEach(entry -> {
-          fail(entry.getKey() + " was invoked " + entry.getValue() + " times");
-        });
+    .filter(entry -> entry.getValue().get() != 1)
+    .forEach(entry -> {
+      fail(entry.getKey() + " was invoked " + entry.getValue() + " times");
+    });
 
   }
 

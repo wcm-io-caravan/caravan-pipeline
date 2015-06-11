@@ -30,6 +30,10 @@ import java.util.Map;
  */
 public final class UriParametersProviders {
 
+  private UriParametersProviders() {
+    // static methods only
+  }
+
   /**
    * Only returns the HREF of the link as expanded URI.
    * @return URI expander
