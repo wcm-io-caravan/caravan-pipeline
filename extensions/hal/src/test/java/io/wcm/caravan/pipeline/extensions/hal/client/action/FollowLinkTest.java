@@ -104,7 +104,7 @@ public class FollowLinkTest extends AbstractActionContext {
   public void shouldUseCorrelatonId() {
 
     FollowLink action = createAction("primary", 1);
-    List<CaravanHttpRequest> requests = ImmutableList.of(new CaravanHttpRequestBuilder("test-service", "test-correlation-id").build());
+    List<CaravanHttpRequest> requests = ImmutableList.of(new CaravanHttpRequestBuilder("test-service").correlationId("test-correlation-id").build());
     JsonPipelineOutput input = new JsonPipelineOutputImpl(getPayload(), requests);
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
     assertEquals("test-correlation-id", output.getCorrelationId());
