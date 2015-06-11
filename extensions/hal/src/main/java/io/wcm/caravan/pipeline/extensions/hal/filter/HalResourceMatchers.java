@@ -22,10 +22,12 @@ package io.wcm.caravan.pipeline.extensions.hal.filter;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * Default HAL resource matchers.
  */
+@ProviderType
 public final class HalResourceMatchers {
 
   private HalResourceMatchers() {

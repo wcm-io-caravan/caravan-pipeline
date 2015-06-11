@@ -27,6 +27,7 @@ import io.wcm.caravan.commons.stream.Streams;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.annotation.versioning.ProviderType;
 
 import rx.functions.Func1;
 
@@ -40,6 +41,7 @@ import com.jayway.jsonpath.Option;
 /**
  * Default filtering predicates for HAL resources.
  */
+@ProviderType
 public final class HalResourceFilters {
 
   private static final Configuration JSON_PATH_CONF = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);

@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.annotation.versioning.ProviderType;
 
 import rx.Observable;
 
@@ -37,7 +38,8 @@ import com.google.common.collect.Sets;
 /**
  * Removes all links for a HAL resource and it's embedded resources which don't fit the given relation names.
  */
-public class RemoveAllLinks implements JsonPipelineAction {
+@ProviderType
+public final class RemoveAllLinks implements JsonPipelineAction {
 
   private final Set<String> relationsToIgnore = Sets.newHashSet();
 
@@ -70,11 +72,11 @@ public class RemoveAllLinks implements JsonPipelineAction {
 
     // remove links
     Streams.of(hal.getLinks().keySet())
-        .filter(relation -> !relationsToIgnore.contains(relation))
-        .forEach(relation -> hal.removeLinks(relation));
+    .filter(relation -> !relationsToIgnore.contains(relation))
+    .forEach(relation -> hal.removeLinks(relation));
     // check embedded resources
     Streams.of(hal.getEmbedded().values())
-        .forEach(embedded -> removeLinksRecursive(embedded));
+    .forEach(embedded -> removeLinksRecursive(embedded));
 
   }
 

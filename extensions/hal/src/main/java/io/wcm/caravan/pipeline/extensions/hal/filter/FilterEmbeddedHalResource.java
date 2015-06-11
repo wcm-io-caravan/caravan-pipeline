@@ -24,6 +24,9 @@ import io.wcm.caravan.commons.stream.Streams;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+
+import org.osgi.annotation.versioning.ProviderType;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -32,7 +35,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * Walks recursive through the HAL resource and its embedded resources. Given {@code matcher} determines which embedded HAL resource should get filtered by the
  * given {@code predicate}.
  */
-public class FilterEmbeddedHalResource implements JsonPipelineAction {
+@ProviderType
+public final class FilterEmbeddedHalResource implements JsonPipelineAction {
 
   private final HalResourcePredicate matcher;
   private final HalResourcePredicate predicate;
@@ -88,7 +92,7 @@ public class FilterEmbeddedHalResource implements JsonPipelineAction {
   private void processEmbeddedResources(HalPath halPath, HalResource hal) {
 
     Streams.of(hal.getEmbedded(halPath.current()))
-        .forEach(resource -> process(halPath, resource));
+    .forEach(resource -> process(halPath, resource));
 
   }
 

@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import rx.Observable;
 import rx.functions.Func1;
 import rx.observers.SafeSubscriber;
@@ -33,10 +35,11 @@ import rx.observers.SafeSubscriber;
 /**
  * Cache control utilities aid to manage pipeline output cache control meta data.
  */
+@ProviderType
 public final class CacheControlUtils {
 
   private CacheControlUtils() {
-
+    // static methods only
   }
 
   /**
@@ -129,4 +132,5 @@ public final class CacheControlUtils {
       zippingObservable.subscribe(new SafeSubscriber<JsonPipelineOutput>(subscriber));
     });
   }
+
 }

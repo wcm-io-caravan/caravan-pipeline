@@ -26,6 +26,7 @@ import io.wcm.caravan.commons.stream.Streams;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ProviderType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,7 @@ import com.google.common.collect.Maps;
  * Action to load all links for a given relation in a HAL document and store them as embedded resources. In opposite to {@link EmbedLinks} this action takes the
  * links of the main and all embedded resources.
  */
+@ProviderType
 public final class DeepEmbedLinks extends AbstractEmbedLinks {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DeepEmbedLinks.class);
@@ -59,8 +61,8 @@ public final class DeepEmbedLinks extends AbstractEmbedLinks {
 
     List<Link> links = Lists.newArrayList(halResource.getLinks(getRelation()));
     Streams.of(halResource.getEmbedded().values())
-        .map(embedded -> getLinksForRequestedRelation(embedded))
-        .forEach(embeddedLinks -> links.addAll(embeddedLinks));
+    .map(embedded -> getLinksForRequestedRelation(embedded))
+    .forEach(embeddedLinks -> links.addAll(embeddedLinks));
     return links;
 
   }

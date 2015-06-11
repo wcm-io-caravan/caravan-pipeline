@@ -26,7 +26,7 @@ import org.osgi.annotation.versioning.ConsumerType;
 import rx.Observable;
 
 /**
- * Common interface for Couchbase-, In-Memory- and Mock-Caches.
+ * Provides cache support for pipelines.
  */
 @ConsumerType
 public interface CacheAdapter {
@@ -34,7 +34,7 @@ public interface CacheAdapter {
   /**
    * Retrieve an item from cache.
    * @param cacheKey Cache key
-   * @param options valid cache persistency options
+   * @param options valid cache persistence options
    * @return an observable that will either emit the cached JSON string, or complete without emitting on a cache miss
    */
   Observable<String> get(String cacheKey, CachePersistencyOptions options);
@@ -43,7 +43,7 @@ public interface CacheAdapter {
    * Store an item in the cache.
    * @param cacheKey Cache key
    * @param jsonString JSON data
-   * @param options valid cache persistency options
+   * @param options valid cache persistence options
    */
   void put(String cacheKey, String jsonString, CachePersistencyOptions options);
 

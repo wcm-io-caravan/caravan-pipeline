@@ -25,9 +25,12 @@ import io.wcm.caravan.commons.hal.resource.Link;
 import java.util.Collections;
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * Default URI parameters provider implementations.
  */
+@ProviderType
 public final class UriParametersProviders {
 
   private UriParametersProviders() {

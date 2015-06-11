@@ -24,6 +24,7 @@ import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.damnhandy.uri.template.UriTemplate;
 import com.google.common.base.Predicate;
@@ -32,6 +33,7 @@ import com.google.common.collect.ListMultimap;
 /**
  * Common link extractors.
  */
+@ProviderType
 public final class LinkExtractors {
 
   private LinkExtractors() {

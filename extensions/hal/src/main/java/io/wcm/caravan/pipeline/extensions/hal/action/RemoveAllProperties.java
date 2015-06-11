@@ -28,6 +28,7 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.annotation.versioning.ProviderType;
 
 import rx.Observable;
 
@@ -37,7 +38,8 @@ import com.google.common.collect.Sets;
 /**
  * Removes all properties for a HAL resource and its embedded resources. (use {@link #except(String...)} to specify properties you want to keep.
  */
-public class RemoveAllProperties implements JsonPipelineAction {
+@ProviderType
+public final class RemoveAllProperties implements JsonPipelineAction {
 
   private final Set<String> propertiesToKeep = Sets.newHashSet();
 
@@ -75,12 +77,12 @@ public class RemoveAllProperties implements JsonPipelineAction {
 
     // remove properties
     Streams.of(hal.getStateFieldNames())
-        .filter(property -> !propertiesToKeep.contains(property))
-        .forEach(property -> hal.getModel().remove(property));
+    .filter(property -> !propertiesToKeep.contains(property))
+    .forEach(property -> hal.getModel().remove(property));
 
     // check embedded resources
     Streams.of(hal.getEmbedded().values())
-        .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
+    .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
 
   }
 

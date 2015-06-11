@@ -25,6 +25,9 @@ import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
+
+import org.osgi.annotation.versioning.ConsumerType;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +37,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * arbitrary manipulation of the output HalResource by implementing the build function.
  */
 //CHECKSTYLE:OFF
+@ConsumerType
 public abstract class ModifyResource implements JsonPipelineAction {
   //CHECKSTYLE:ON
 
@@ -52,7 +56,7 @@ public abstract class ModifyResource implements JsonPipelineAction {
   }
 
   @Override
-  public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
+  public final Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
     if (!previousStepOutput.getPayload().isObject()) {
       throw new JsonPipelineOutputException(ModifyResource.class.getName()

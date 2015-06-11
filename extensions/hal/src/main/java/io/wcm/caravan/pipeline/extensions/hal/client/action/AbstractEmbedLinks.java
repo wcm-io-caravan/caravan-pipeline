@@ -31,6 +31,8 @@ import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ConsumerType;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -38,6 +40,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * Base link embedding action to load links for a given relation and store them as embedded resources.
  */
+@ConsumerType
 public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
 
   private final String serviceName;
@@ -61,7 +64,7 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
   }
 
   @Override
-  public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
+  public final Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
 
     HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
     List<Link> links = getLinksForRequestedRelation(halResource);
@@ -93,9 +96,9 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
     return Observable.from(links)
         .map(link -> {
           return new LoadLink(serviceName, link, parameters)
-              .setCacheStrategy(getCacheStrategy())
-              .setExceptionHandlers(getExceptionHandlers())
-              .setLogger(getLogger());
+          .setCacheStrategy(getCacheStrategy())
+          .setExceptionHandlers(getExceptionHandlers())
+          .setLogger(getLogger());
         })
         .map(action -> pipeline.applyAction(action));
 
@@ -104,7 +107,7 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
   /**
    * @return Returns the relation.
    */
-  protected String getRelation() {
+  protected final String getRelation() {
     return this.relation;
   }
 

@@ -20,13 +20,15 @@
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.annotation.versioning.ProviderType;
 
 import com.google.common.collect.ImmutableList;
 
 /**
  * Represents a path of embedded resources in a HAL resource by concatenating the relation names of the embedded ones.
  */
-public class HalPath {
+@ProviderType
+public final class HalPath {
 
   private final ImmutableList<String> relations;
 

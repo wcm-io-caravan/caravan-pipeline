@@ -26,12 +26,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import com.google.common.collect.Lists;
 
 /**
  * Embeds only one link for the given relation and index as embedded resource.
  */
-public class EmbedLink extends AbstractEmbedLinks {
+@ProviderType
+public final class EmbedLink extends AbstractEmbedLinks {
 
   private final int index;
 

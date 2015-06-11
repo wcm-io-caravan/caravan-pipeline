@@ -39,7 +39,7 @@ public final class CacheDateUtils {
   private static final TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
 
   private CacheDateUtils() {
-
+    // static methods only
   }
 
   private static DateFormat getDateFormat() {
@@ -95,4 +95,5 @@ public final class CacheDateUtils {
   public static int getSecondsUntil(String rfc1123Date) {
     return -getSecondsSince(rfc1123Date);
   }
+
 }

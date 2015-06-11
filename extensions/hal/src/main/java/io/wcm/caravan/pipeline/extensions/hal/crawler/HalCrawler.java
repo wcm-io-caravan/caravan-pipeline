@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,7 +48,8 @@ import com.google.common.collect.Sets;
 /**
  * Crawler walking on a HAL resource graph.
  */
-public class HalCrawler implements JsonPipelineAction {
+@ProviderType
+public final class HalCrawler implements JsonPipelineAction {
 
   /**
    * HTTP header for HAL link relation

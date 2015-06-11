@@ -25,6 +25,9 @@ import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
+
+import org.osgi.annotation.versioning.ConsumerType;
+
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +37,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * from the previous step's output.
  */
 //CHECKSTYLE:OFF
+@ConsumerType
 public abstract class BuildResource implements JsonPipelineAction {
   //CHECKSTYLE:ON
 
@@ -52,7 +56,7 @@ public abstract class BuildResource implements JsonPipelineAction {
   }
 
   @Override
-  public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
+  public final Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
     if (!previousStepOutput.getPayload().isObject()) {
       throw new JsonPipelineOutputException(BuildResource.class.getName()

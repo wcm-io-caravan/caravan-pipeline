@@ -27,12 +27,15 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.List;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterables;
 
 /**
  * Default output processors
  */
+@ProviderType
 public final class OutputProcessors {
 
   private OutputProcessors() {
@@ -59,10 +62,10 @@ public final class OutputProcessors {
         }
         // add child links
         Streams.of(loadedLinkOutputs)
-            .map(loadedLinkOutput -> new HalResource((ObjectNode)loadedLinkOutput.getPayload()))
-            .flatMap(loadedLinkHal -> Streams.of(loadedLinkHal.getLinks().entries()))
-            .filter(entry -> !"self".equals(entry.getKey()))
-            .forEach(entry -> hal.addLinks(entry.getKey(), entry.getValue()));
+        .map(loadedLinkOutput -> new HalResource((ObjectNode)loadedLinkOutput.getPayload()))
+        .flatMap(loadedLinkHal -> Streams.of(loadedLinkHal.getLinks().entries()))
+        .filter(entry -> !"self".equals(entry.getKey()))
+        .forEach(entry -> hal.addLinks(entry.getKey(), entry.getValue()));
         // output
         return previousStepOutput.withPayload(hal.getModel());
 
