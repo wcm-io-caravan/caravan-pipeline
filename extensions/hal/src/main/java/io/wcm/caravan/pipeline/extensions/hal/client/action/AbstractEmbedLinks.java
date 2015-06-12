@@ -43,17 +43,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @ConsumerType
 public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
 
-  private final String serviceName;
+  private final String serviceId;
   private final String relation;
   private final Map<String, Object> parameters;
 
   /**
-   * @param serviceName Logical name of the service
+   * @param serviceId Service ID
    * @param relation Link relation to embed
    * @param parameters URI parameters
    */
-  public AbstractEmbedLinks(String serviceName, String relation, Map<String, Object> parameters) {
-    this.serviceName = serviceName;
+  public AbstractEmbedLinks(String serviceId, String relation, Map<String, Object> parameters) {
+    this.serviceId = serviceId;
     this.relation = relation;
     this.parameters = parameters;
   }
@@ -95,7 +95,7 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
     JsonPipeline pipeline = context.getFactory().createEmpty(context.getProperties());
     return Observable.from(links)
         .map(link -> {
-          return new LoadLink(serviceName, link, parameters)
+          return new LoadLink(serviceId, link, parameters)
           .setCacheStrategy(getCacheStrategy())
           .setExceptionHandlers(getExceptionHandlers())
           .setLogger(getLogger());

@@ -47,24 +47,24 @@ import com.google.common.collect.Multimap;
 @ProviderType
 public final class LoadLink extends AbstractHalClientAction {
 
-  private final String serviceName;
+  private final String serviceId;
   private final Link link;
   private final Map<String, Object> parameters;
 
   /**
-   * @param serviceName Logical name of the service
+   * @param serviceId Service ID
    * @param link Link to load
    * @param parameters URI parameters
    */
-  public LoadLink(String serviceName, Link link, Map<String, Object> parameters) {
-    this.serviceName = serviceName;
+  public LoadLink(String serviceId, Link link, Map<String, Object> parameters) {
+    this.serviceId = serviceId;
     this.link = link;
     this.parameters = parameters;
   }
 
   @Override
   public String getId() {
-    return "LOAD-LINK(" + serviceName + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
+    return "LOAD-LINK(" + serviceId + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
   }
 
   @Override
@@ -111,7 +111,7 @@ public final class LoadLink extends AbstractHalClientAction {
   }
 
   private CaravanHttpRequestBuilder getRequestBuilder() {
-    return new CaravanHttpRequestBuilder(serviceName).append(link.getHref());
+    return new CaravanHttpRequestBuilder(serviceId).append(link.getHref());
   }
 
   /**

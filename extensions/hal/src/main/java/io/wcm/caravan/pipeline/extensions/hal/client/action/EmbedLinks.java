@@ -34,12 +34,12 @@ import org.osgi.annotation.versioning.ProviderType;
 public final class EmbedLinks extends AbstractEmbedLinks {
 
   /**
-   * @param serviceName Logical name of the service
+   * @param serviceId Service ID
    * @param relation Link relation to embed
    * @param parameters URI parameters
    */
-  public EmbedLinks(String serviceName, String relation, Map<String, Object> parameters) {
-    super(serviceName, relation, parameters);
+  public EmbedLinks(String serviceId, String relation, Map<String, Object> parameters) {
+    super(serviceId, relation, parameters);
   }
 
   @Override

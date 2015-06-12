@@ -56,13 +56,13 @@ public interface JsonPipeline {
   /**
    * Provides a string representation of all the actions executed by this pipeline. Description is supposed to help
    * in creation of understandable logging messages. It could be also used to generate cache keys.
-   * See sample of action description: "GET(serviceName/path)+SELECT($..someProperty into targetPeropty)"
+   * See sample of action description: "GET(serviceId/path)+SELECT($..someProperty into targetPeropty)"
    * @return description of pipeline actions
    */
   String getDescriptor();
 
   /**
-   * @return all logical service names that were used in generating the pipeline's result
+   * @return all logical service IDs that were used in generating the pipeline's result
    */
   SortedSet<String> getSourceServices();
 

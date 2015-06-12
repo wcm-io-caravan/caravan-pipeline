@@ -63,7 +63,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   private static final Logger log = LoggerFactory.getLogger(JsonPipelineImpl.class);
 
-  private final SortedSet<String> sourceServiceNames = new TreeSet<String>();
+  private final SortedSet<String> sourceServiceIds = new TreeSet<String>();
   private final List<CaravanHttpRequest> requests = new LinkedList<CaravanHttpRequest>();
   private JsonPipelineContextImpl context;
   private String descriptor;
@@ -76,11 +76,11 @@ public final class JsonPipelineImpl implements JsonPipeline {
    * @param context preinitialized JSON pipeline context
    */
   public JsonPipelineImpl(final CaravanHttpRequest request, final Observable<CaravanHttpResponse> responseObservable, final JsonPipelineContextImpl context) {
-    if (isNotBlank(request.getServiceName())) {
-      this.sourceServiceNames.add(request.getServiceName());
+    if (isNotBlank(request.getServiceId())) {
+      this.sourceServiceIds.add(request.getServiceId());
     }
     this.requests.add(request);
-    this.descriptor = isNotBlank(request.getUrl()) ? "GET(//" + request.getServiceName() + request.getUrl() + ")" : "EMPTY()";
+    this.descriptor = isNotBlank(request.getUrl()) ? "GET(//" + request.getServiceId() + request.getUrl() + ")" : "EMPTY()";
     this.observable = responseObservable.lift(new ResponseHandlingOperator(request)).cache();
     this.context = context;
     if (request.getPerformanceMetrics() != null) {
@@ -105,7 +105,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   JsonPipelineImpl cloneWith(Observable<JsonPipelineOutput> newObservable, String descriptorSuffix, String action, Class actionClass) {
     JsonPipelineImpl clone = new JsonPipelineImpl();
-    clone.sourceServiceNames.addAll(this.sourceServiceNames);
+    clone.sourceServiceIds.addAll(this.sourceServiceIds);
     clone.requests.addAll(this.requests);
 
     clone.descriptor = this.descriptor;
@@ -131,7 +131,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   @Override
   public SortedSet<String> getSourceServices() {
-    return this.sourceServiceNames;
+    return this.sourceServiceIds;
   }
 
   @Override
@@ -202,7 +202,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + ")";
 
     JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc, "MERGE");
-    mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
+    mergedPipeline.sourceServiceIds.addAll(secondarySource.getSourceServices());
     mergedPipeline.requests.addAll(secondarySource.getRequests());
 
     return mergedPipeline;
@@ -219,7 +219,7 @@ public final class JsonPipelineImpl implements JsonPipeline {
     String transformationDesc = "MERGE(" + secondarySource.getDescriptor() + " INTO " + targetProperty + ")";
 
     JsonPipelineImpl mergedPipeline = cloneWith(mergedObservable, transformationDesc, "MERGE");
-    mergedPipeline.sourceServiceNames.addAll(secondarySource.getSourceServices());
+    mergedPipeline.sourceServiceIds.addAll(secondarySource.getSourceServices());
     mergedPipeline.requests.addAll(secondarySource.getRequests());
 
     return mergedPipeline;

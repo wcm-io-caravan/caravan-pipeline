@@ -43,12 +43,12 @@ public final class DeepEmbedLinks extends AbstractEmbedLinks {
   private static final Logger LOGGER = LoggerFactory.getLogger(DeepEmbedLinks.class);
 
   /**
-   * @param serviceName Logical name of the service
+   * @param serviceId Service ID
    * @param relation Link relation to embed
    * @param parameters URI parameters
    */
-  public DeepEmbedLinks(String serviceName, String relation, Map<String, Object> parameters) {
-    super(serviceName, relation, parameters);
+  public DeepEmbedLinks(String serviceId, String relation, Map<String, Object> parameters) {
+    super(serviceId, relation, parameters);
   }
 
   @Override

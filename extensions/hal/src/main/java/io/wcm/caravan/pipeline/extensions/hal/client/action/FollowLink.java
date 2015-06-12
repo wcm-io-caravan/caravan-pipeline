@@ -39,19 +39,19 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @ProviderType
 public final class FollowLink extends AbstractHalClientAction {
 
-  private final String serviceName;
+  private final String serviceId;
   private final String relation;
   private final Map<String, Object> parameters;
   private final int index;
 
   /**
-   * @param serviceName Logical name of the service
+   * @param serviceId Service ID
    * @param relation Link relation to embed
    * @param index Index of the link to embed
    * @param parameters URI parameters
    */
-  public FollowLink(String serviceName, String relation, int index, Map<String, Object> parameters) {
-    this.serviceName = serviceName;
+  public FollowLink(String serviceId, String relation, int index, Map<String, Object> parameters) {
+    this.serviceId = serviceId;
     this.relation = relation;
     this.index = index;
     this.parameters = parameters;
@@ -66,11 +66,11 @@ public final class FollowLink extends AbstractHalClientAction {
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
 
     Link link = getLink(previousStepOutput);
-    return new LoadLink(serviceName, link, parameters)
-        .setCacheStrategy(getCacheStrategy())
-        .setExceptionHandlers(getExceptionHandlers())
-        .setLogger(getLogger())
-        .execute(previousStepOutput, context);
+    return new LoadLink(serviceId, link, parameters)
+    .setCacheStrategy(getCacheStrategy())
+    .setExceptionHandlers(getExceptionHandlers())
+    .setLogger(getLogger())
+    .execute(previousStepOutput, context);
   }
 
   private Link getLink(JsonPipelineOutput previousStepOutput) {

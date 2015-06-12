@@ -39,13 +39,13 @@ public final class EmbedLink extends AbstractEmbedLinks {
   private final int index;
 
   /**
-   * @param serviceName Logical name of the service
+   * @param serviceId Service ID
    * @param relation Link relation to embed
    * @param index Index of the link to embed
    * @param parameters URI parameters
    */
-  public EmbedLink(String serviceName, String relation, int index, Map<String, Object> parameters) {
-    super(serviceName, relation, parameters);
+  public EmbedLink(String serviceId, String relation, int index, Map<String, Object> parameters) {
+    super(serviceId, relation, parameters);
     this.index = index;
   }
 

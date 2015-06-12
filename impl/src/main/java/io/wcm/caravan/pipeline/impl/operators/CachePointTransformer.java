@@ -95,16 +95,16 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     this.correlationId = sb.toString();
   }
 
-  private static SortedSet<String> getSourceServiceNames(List<CaravanHttpRequest> requests) {
-    SortedSet<String> sourceServiceNames = new TreeSet<String>();
+  private static SortedSet<String> getSourceServiceIds(List<CaravanHttpRequest> requests) {
+    SortedSet<String> sourceServiceIds = new TreeSet<String>();
     for (CaravanHttpRequest request : requests) {
-      sourceServiceNames.add(request.getServiceName());
+      sourceServiceIds.add(request.getServiceId());
     }
-    return sourceServiceNames;
+    return sourceServiceIds;
   }
 
   private String getSourceServicePrefix() {
-    return StringUtils.join(getSourceServiceNames(requests), '+');
+    return StringUtils.join(getSourceServiceIds(requests), '+');
   }
 
   @Override
@@ -428,7 +428,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       ObjectNode metadata = envelope.putObject(CACHE_METADATA_PROPERTY);
 
       metadata.put("cacheKey", cacheKey);
-      metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServiceNames(requests)));
+      metadata.set("sources", JacksonFunctions.pojoToNode(getSourceServiceIds(requests)));
       metadata.put("pipeline", pipelineDescriptor);
       metadata.put("generated", CacheDateUtils.formatCurrentTime());
       if (maxAge > 0) {
