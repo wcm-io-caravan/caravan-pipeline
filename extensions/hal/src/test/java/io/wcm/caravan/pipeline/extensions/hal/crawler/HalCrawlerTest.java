@@ -21,6 +21,8 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.never;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
 import io.wcm.caravan.commons.stream.Streams;
@@ -31,10 +33,12 @@ import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategies;
+import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.extensions.hal.client.HalClient;
 import io.wcm.caravan.testing.http.RequestMatcher;
 import io.wcm.caravan.testing.pipeline.JsonPipelineContext;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,12 +47,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 
 import rx.Observable;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 
 public class HalCrawlerTest {
 
@@ -147,6 +152,45 @@ public class HalCrawlerTest {
     JsonPipelineOutput output = pipeline.applyAction(crawler).getOutput().toBlocking().single();
     HalResource hal = new HalResource((ObjectNode)output.getPayload());
     assertEquals(6, hal.getLinks().size());
+
+  }
+
+  @Test
+  public void shouldUseClientCacheStrategy() {
+
+    CacheStrategy cacheStrategy = createCacheStrategyMock();
+    client = new HalClient("test-service", cacheStrategy);
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report());
+
+    pipeline.applyAction(crawler).getOutput().toBlocking().single();
+
+    Mockito.verify(cacheStrategy, atLeast(1)).getCachePersistencyOptions(Matchers.any());
+
+  }
+
+  private CacheStrategy createCacheStrategyMock() {
+
+    CacheStrategy cacheStrategy = Mockito.mock(CacheStrategy.class);
+    Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.any())).thenReturn(
+        CacheStrategies.noCache().getCachePersistencyOptions(Collections.emptyList()));
+    return cacheStrategy;
+
+  }
+
+  @Test
+  public void shouldUseGivenCacheStrategyIfProvided() {
+
+    CacheStrategy clientCacheStrategy = createCacheStrategyMock();
+    client = new HalClient("test-service", clientCacheStrategy);
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report());
+
+    CacheStrategy extraCacheStrategy = createCacheStrategyMock();
+    crawler.setCacheStrategy(extraCacheStrategy);
+
+    pipeline.applyAction(crawler).getOutput().toBlocking().single();
+
+    Mockito.verify(clientCacheStrategy, never()).getCachePersistencyOptions(Matchers.any());
+    Mockito.verify(extraCacheStrategy, atLeast(1)).getCachePersistencyOptions(Matchers.any());
 
   }
 

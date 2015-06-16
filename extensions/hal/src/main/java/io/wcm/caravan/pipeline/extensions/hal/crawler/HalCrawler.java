@@ -111,7 +111,9 @@ public final class HalCrawler implements JsonPipelineAction {
           Map<String, Object> parameters = uriParametersProvider.getParameters(currentHalResource, relation, link);
           LoadLink action = client.load(link, parameters);
           action.setHttpHeaders(ImmutableMultimap.of(HEADER_CRAWLER_RELATION, relation));
-          action.setCacheStrategy(cacheStrategy);
+          if (cacheStrategy != null) {
+            action.setCacheStrategy(cacheStrategy);
+          }
           return action;
         })
         // filter unique by URL
