@@ -51,7 +51,8 @@ public final class HalResourceFilters {
   }
 
   /**
-   * Executes all predicates and combines the result by logical {@code and}. If there are negative predicate results, all further predicates still get executed.
+   * Executes all predicates and combines the result by logical {@code and}. If there are negative predicate results,
+   * remaining predicates will not get executed.
    * @param predicates Predicates to check
    * @return True if all predicates return true
    */
@@ -61,18 +62,19 @@ public final class HalResourceFilters {
       @Override
       public boolean apply(HalPath halPath, HalResource hal) {
 
-        boolean result = true;
         for (HalResourcePredicate predicate : predicates) {
-          result = predicate.apply(halPath, hal) && result;
+          if (!predicate.apply(halPath, hal)) {
+            return false;
+          }
         }
-        return result;
+        return true;
 
       }
 
       @Override
       public String getId() {
         List<String> ids = Streams.of(predicates).map(matcher -> matcher.getId()).collect(Collectors.toList());
-        return "ALL(" + StringUtils.join(ids, '-') + ")";
+        return "ALL(" + StringUtils.join(ids, '+') + ")";
       }
     };
   }

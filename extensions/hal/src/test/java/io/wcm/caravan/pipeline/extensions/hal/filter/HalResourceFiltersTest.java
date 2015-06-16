@@ -88,7 +88,7 @@ public class HalResourceFiltersTest {
   }
 
   @Test
-  public void all_shouldReturnFlaseForOneNegative() {
+  public void all_shouldReturnFalseForOneNegative() {
 
     HalResourcePredicate[] predicates = new HalResourcePredicate[10];
     for (int i = 0; i < predicates.length; i++) {
@@ -97,23 +97,6 @@ public class HalResourceFiltersTest {
     }
     HalResourcePredicate predicate = all(predicates);
     assertFalse(predicate.apply(new HalPath(), payload));
-
-  }
-
-  @Test
-  public void all_shouldExecuteAlwaysAllPredicates() {
-
-    HalResourcePredicate[] predicates = new HalResourcePredicate[10];
-    for (int i = 0; i < predicates.length; i++) {
-      predicates[i] = Mockito.mock(HalResourcePredicate.class);
-      Mockito.when(predicates[i].apply(Matchers.any(), Matchers.any())).thenReturn(i != 5);
-    }
-    HalResourcePredicate predicate = all(predicates);
-    predicate.apply(new HalPath(), payload);
-
-    for (int i = 0; i < predicates.length; i++) {
-      Mockito.verify(predicates[i]).apply(Matchers.any(), Matchers.any());
-    }
 
   }
 
