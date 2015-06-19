@@ -25,7 +25,7 @@
   <parent>
     <groupId>io.wcm.caravan</groupId>
     <artifactId>io.wcm.caravan.parent_toplevel</artifactId>
-    <version>0.5.0</version>
+    <version>0.5.1-SNAPSHOT</version>
     <relativePath>../../parent_toplevel/pom.xml</relativePath>
   </parent>
 
@@ -86,7 +86,7 @@
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.commons.osgi</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -106,12 +106,29 @@
     </dependency>
   </dependencies>
 
+  <dependencyManagement>
+    <dependencies>
+      <!-- we need a new version for the RankedServices, but we embed the necessary classes in this bundle -->
+      <dependency>
+        <groupId>org.apache.sling</groupId>
+        <artifactId>org.apache.sling.commons.osgi</artifactId>
+        <version>2.3.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <build>
     <plugins>
 
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <!-- Embed the nessecary parts of the commons.osgi bundle as described in http://njbartlett.name/2014/05/26/static-linking.html -->
+            <Conditional-Package>org.apache.sling.commons.osgi</Conditional-Package>
+          </instructions>
+        </configuration>
       </plugin>
 
       <plugin>
