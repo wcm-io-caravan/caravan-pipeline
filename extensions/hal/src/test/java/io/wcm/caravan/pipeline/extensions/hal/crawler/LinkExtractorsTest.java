@@ -28,7 +28,10 @@ import io.wcm.caravan.commons.hal.resource.Link;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
 
 
@@ -59,6 +62,19 @@ public class LinkExtractorsTest {
     ListMultimap<String, Link> links = LinkExtractors.noUriTemplates().extract(payload);
     assertEquals(6, links.size());
     assertFalse(links.containsKey("templated"));
+  }
+
+  @Test
+  public void onlyUrisStartingWith_shouldFilterLinksWithOtherPrefixes() {
+
+    LinkExtractor delegate = Mockito.mock(LinkExtractor.class);
+    ListMultimap<String, Link> inputList = ImmutableListMultimap.of("item", HalResourceFactory.createLink("/correct/item/1"), "item",
+        HalResourceFactory.createLink("/other/item/2"));
+    Mockito.when(delegate.extract(Matchers.any())).thenReturn(inputList);
+    ListMultimap<String, Link> result = LinkExtractors.filterByPrefix("/correct", delegate).extract(null);
+    assertEquals(1, result.size());
+    assertEquals("/correct/item/1", result.get("item").get(0).getHref());
+
   }
 
 }

@@ -22,12 +22,16 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 import io.wcm.caravan.commons.hal.HalUtil;
 import io.wcm.caravan.commons.hal.resource.HalResource;
 import io.wcm.caravan.commons.hal.resource.Link;
+import io.wcm.caravan.commons.stream.Streams;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.osgi.annotation.versioning.ProviderType;
 
 import com.damnhandy.uri.template.UriTemplate;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableListMultimap.Builder;
 import com.google.common.collect.ListMultimap;
 
 /**
@@ -84,6 +88,35 @@ public final class LinkExtractors {
       }
 
 
+    };
+  }
+
+  /**
+   * Returns all relations and links provided by the {@code delegate}d {@link LinkExtractor} where the URI starts with
+   * the given prefix.
+   * @param prefix URI prefix
+   * @param delegate Delegated link extractor
+   * @return Link extractor for prefixed URIs
+   */
+  public static LinkExtractor filterByPrefix(String prefix, LinkExtractor delegate) {
+    return new LinkExtractor() {
+
+      @Override
+      public String getId() {
+        return "ONLY-STARTING-WITH('" + prefix + "', " + delegate.getId() + ")";
+      }
+
+      @Override
+      public ListMultimap<String, Link> extract(HalResource hal) {
+
+        ListMultimap<String, Link> fromDelegate = delegate.extract(hal);
+        Builder<String, Link> builder = ImmutableListMultimap.builder();
+        Streams.of(fromDelegate.entries())
+            .filter(entry -> StringUtils.startsWith(entry.getValue().getHref(), prefix))
+            .forEach(entry -> builder.put(entry));
+        return builder.build();
+
+      }
     };
   }
 
