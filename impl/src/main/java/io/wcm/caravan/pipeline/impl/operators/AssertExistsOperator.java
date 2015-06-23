@@ -83,7 +83,8 @@ public class AssertExistsOperator implements Operator<JsonPipelineOutput, JsonPi
 
         // if this #assertExist is chained after an #extract call, the responseNode or its child node can be a MissingNode and we should bail out early
 
-        if (jsonResponse == null || jsonResponse.isMissingNode() || (jsonResponse.isObject() && jsonResponse.iterator().next().isMissingNode())) {
+        if (jsonResponse == null || jsonResponse.isMissingNode() || !jsonResponse.iterator().hasNext()
+            || (jsonResponse.isObject() && jsonResponse.iterator().next().isMissingNode())) {
           onAssertionFailed();
           return;
         }

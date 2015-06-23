@@ -27,6 +27,7 @@
       <action type="update" dev="sseifert">
         Embed the necessary parts from org.apache.sling.commons.osgi 2.3.0 instead of referencing it to be compatible with older bundles as well.
       </action>
+      <action type="update" dev="cnagel">Fixes non-checked iterator access in AssertExistsOperator.</action>
     </release>
 
     <release version="0.5.0" date="2015-06-11">
