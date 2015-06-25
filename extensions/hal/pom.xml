@@ -95,7 +95,7 @@
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.testing.pipeline</artifactId>
-      <version>0.5.1-SNAPSHOT</version>
+      <version>0.5.2</version>
       <scope>test</scope>
     </dependency>
 
