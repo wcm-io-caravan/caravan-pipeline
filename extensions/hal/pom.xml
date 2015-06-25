@@ -83,7 +83,7 @@
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.testing.http</artifactId>
-      <version>0.5.1-SNAPSHOT</version>
+      <version>0.6.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
