@@ -25,8 +25,8 @@ import static io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceFilters.h
 import static io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceFilters.hasPathNonNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.commons.hal.resource.HalResource;
-import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.commons.resource.HalResourceFactory;
 import io.wcm.caravan.testing.json.JsonTestEnvironment;
 
 import org.junit.Before;

@@ -20,7 +20,7 @@
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.commons.resource.HalResourceFactory;
 
 import java.util.Map;
 

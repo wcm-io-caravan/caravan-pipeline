@@ -20,8 +20,8 @@
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertEquals;
-import io.wcm.caravan.commons.hal.resource.HalResource;
-import io.wcm.caravan.commons.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.commons.resource.HalResourceFactory;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;

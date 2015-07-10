@@ -22,8 +22,8 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.commons.hal.resource.HalResource;
-import io.wcm.caravan.commons.hal.resource.Link;
+import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.commons.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.Collections;

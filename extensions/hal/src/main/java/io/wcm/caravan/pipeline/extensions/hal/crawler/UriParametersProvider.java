@@ -19,8 +19,8 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
-import io.wcm.caravan.commons.hal.resource.HalResource;
-import io.wcm.caravan.commons.hal.resource.Link;
+import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.commons.resource.Link;
 
 import java.util.Map;
 

@@ -19,8 +19,8 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
-import io.wcm.caravan.commons.hal.resource.HalResource;
-import io.wcm.caravan.commons.hal.resource.Link;
+import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.commons.resource.Link;
 import io.wcm.caravan.commons.stream.Collectors;
 import io.wcm.caravan.commons.stream.Streams;
 import io.wcm.caravan.pipeline.JsonPipeline;

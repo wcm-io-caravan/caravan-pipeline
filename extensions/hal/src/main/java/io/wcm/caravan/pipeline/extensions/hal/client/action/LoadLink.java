@@ -20,7 +20,7 @@
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import static io.wcm.caravan.io.http.request.CaravanHttpRequest.CORRELATION_ID_HEADER_NAME;
-import io.wcm.caravan.commons.hal.resource.Link;
+import io.wcm.caravan.hal.commons.resource.Link;
 import io.wcm.caravan.commons.stream.Streams;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;

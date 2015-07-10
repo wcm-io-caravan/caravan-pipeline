@@ -19,9 +19,9 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
-import io.wcm.caravan.commons.hal.HalUtil;
-import io.wcm.caravan.commons.hal.resource.HalResource;
-import io.wcm.caravan.commons.hal.resource.Link;
+import io.wcm.caravan.hal.commons.HalUtil;
+import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.commons.resource.Link;
 import io.wcm.caravan.commons.stream.Streams;
 
 import org.apache.commons.lang3.StringUtils;
