@@ -1,4 +1,4 @@
-<img src="http://wcm.io/images/favicon-16@2x.png"/> Caravan Pipeline
+<img src="http://wcm.io/images/favicon-16@2x.png"/> wcm.io Caravan Pipeline
 ======
 [![Build Status](https://travis-ci.org/wcm-io-caravan/caravan-pipeline.png?branch=master)](https://travis-ci.org/wcm-io-caravan/caravan-pipeline)
 
