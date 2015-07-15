@@ -38,9 +38,9 @@
   <description>Pipeline caching adapter implementation for Guava Cache.</description>
 
   <scm>
-    <connection>scm:git:https://github.com/wcm-io/wcm-io-caravan.git</connection>
-    <developerConnection>scm:git:https://github.com/wcm-io/wcm-io-caravan.git</developerConnection>
-    <url>https://github.com/wcm-io/wcm-io-caravan</url>
+    <connection>scm:git:https://github.com/wcm-io-caravan/caravan-pipeline.git</connection>
+    <developerConnection>scm:git:https://github.com/wcm-io-caravan/caravan-pipeline.git</developerConnection>
+    <url>https://github.com/wcm-io-caravan/caravan-pipeline</url>
     <tag>HEAD</tag>
   </scm>
 
