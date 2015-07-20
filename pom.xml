@@ -36,8 +36,10 @@
   <packaging>pom</packaging>
 
   <name>Caravan Pipeline Root</name>
+  <description>JSON Data Pipelining and Caching.</description>
 
   <modules>
+    <module>parent</module>
     <module>api</module>
     <module>impl</module>
     <module>cache/couchbase</module>
