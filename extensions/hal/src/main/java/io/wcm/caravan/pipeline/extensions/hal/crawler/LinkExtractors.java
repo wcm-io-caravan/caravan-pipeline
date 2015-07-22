@@ -19,10 +19,10 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
-import io.wcm.caravan.hal.commons.HalUtil;
-import io.wcm.caravan.hal.commons.resource.HalResource;
-import io.wcm.caravan.hal.commons.resource.Link;
 import io.wcm.caravan.commons.stream.Streams;
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.hal.resource.util.HalUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;

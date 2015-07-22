@@ -22,9 +22,9 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.commons.resource.HalResource;
-import io.wcm.caravan.hal.commons.resource.HalResourceFactory;
-import io.wcm.caravan.hal.commons.resource.Link;
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.resource.Link;
 
 import org.junit.Before;
 import org.junit.Test;

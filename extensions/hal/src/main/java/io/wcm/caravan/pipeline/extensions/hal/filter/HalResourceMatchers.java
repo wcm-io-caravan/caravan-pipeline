@@ -19,7 +19,7 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
-import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResource;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.annotation.versioning.ProviderType;
