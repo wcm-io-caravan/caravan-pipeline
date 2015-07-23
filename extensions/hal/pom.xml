@@ -24,9 +24,9 @@
 
   <parent>
     <groupId>io.wcm.caravan</groupId>
-    <artifactId>io.wcm.caravan.parent_toplevel</artifactId>
-    <version>0.5.3-SNAPSHOT</version>
-    <relativePath>../../../parent_toplevel/pom.xml</relativePath>
+    <artifactId>io.wcm.caravan.pipeline.parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
   <groupId>io.wcm.caravan</groupId>
@@ -44,13 +44,17 @@
     <tag>HEAD</tag>
   </scm>
 
+  <properties>
+    <site.url.module.prefix>pipeline/extensions/hal</site.url.module.prefix>
+  </properties>
+
   <dependencies>
 
     <!-- wcm.io -->
     <dependency>
       <groupId>io.wcm.caravan</groupId>
-      <artifactId>io.wcm.caravan.hal.commons</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <artifactId>io.wcm.caravan.hal.resource</artifactId>
+      <version>1.0.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -62,7 +66,7 @@
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.io.http</artifactId>
-      <version>0.7.0</version>
+      <version>0.7.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -112,5 +116,12 @@
     </dependency>
 
   </dependencies>
+
+  <distributionManagement>
+    <site>
+      <id>${site.deploy.id}</id>
+      <url>${site.deploy.url}${site.url.module.prefix}</url>
+    </site>
+  </distributionManagement>
 
 </project>

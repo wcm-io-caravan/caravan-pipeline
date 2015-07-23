@@ -24,9 +24,9 @@
 
   <parent>
     <groupId>io.wcm.caravan</groupId>
-    <artifactId>io.wcm.caravan.parent_toplevel</artifactId>
-    <version>0.5.3-SNAPSHOT</version>
-    <relativePath/>
+    <artifactId>io.wcm.caravan.pipeline.parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../parent/pom.xml</relativePath>
   </parent>
 
   <groupId>io.wcm.caravan</groupId>
@@ -44,12 +44,16 @@
     <tag>HEAD</tag>
   </scm>
 
+  <properties>
+    <site.url.module.prefix>pipeline/api</site.url.module.prefix>
+  </properties>
+
   <dependencies>
 
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.io.http</artifactId>
-      <version>0.7.0</version>
+      <version>0.7.2</version>
       <scope>compile</scope>
     </dependency>
 
@@ -80,20 +84,14 @@
         <artifactId>maven-scr-plugin</artifactId>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.sling</groupId>
-        <artifactId>maven-sling-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>validate-bundle</id>
-            <goals>
-              <goal>validate</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
   </build>
+
+  <distributionManagement>
+    <site>
+      <id>${site.deploy.id}</id>
+      <url>${site.deploy.url}${site.url.module.prefix}</url>
+    </site>
+  </distributionManagement>
 
 </project>

@@ -19,7 +19,7 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
-import io.wcm.caravan.hal.commons.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResource;
 
 /**
  * Predicate getting applied on a HAL resource.

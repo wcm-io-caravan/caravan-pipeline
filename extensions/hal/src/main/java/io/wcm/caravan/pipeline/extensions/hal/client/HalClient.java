@@ -19,9 +19,9 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.client;
 
-import io.wcm.caravan.hal.commons.HalBuilder;
-import io.wcm.caravan.hal.commons.resource.HalResource;
-import io.wcm.caravan.hal.commons.resource.Link;
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.hal.resource.util.HalBuilder;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
