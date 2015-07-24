@@ -73,14 +73,14 @@ public class ReportHalResourceFiltersTest {
   public void report_shouldSetHalPathForErrorResource() {
     Mockito.when(delegate1.apply(HAL_PATH, input)).thenReturn(false);
     ReportHalResourceFilters.report(report, delegate1).apply(HAL_PATH, input);
-    assertEquals("/section/item", report.getEmbedded("item").get(0).getModel().get("halPath").asText());
+    assertEquals("/section/item", report.getEmbedded("item").get(0).getModel().get("halPath").asText(null));
   }
 
   @Test
   public void report_shouldSetMessageForErrorResource() {
     Mockito.when(delegate1.apply(HAL_PATH, input)).thenReturn(false);
     ReportHalResourceFilters.report(report, delegate1).apply(HAL_PATH, input);
-    assertEquals("HAS-EMBEDDED(x)", report.getEmbedded("item").get(0).getModel().get("errors").get(0).asText());
+    assertEquals("HAS-EMBEDDED(x)", report.getEmbedded("item").get(0).getModel().get("errors").get(0).asText(null));
   }
 
   @Test
@@ -117,7 +117,7 @@ public class ReportHalResourceFiltersTest {
   public void all_shouldSetHalPathForErrorResource() {
     Mockito.when(delegate1.apply(HAL_PATH, input)).thenReturn(false);
     ReportHalResourceFilters.all(report, delegate1, delegate2).apply(HAL_PATH, input);
-    assertEquals("/section/item", report.getEmbedded("item").get(0).getModel().get("halPath").asText());
+    assertEquals("/section/item", report.getEmbedded("item").get(0).getModel().get("halPath").asText(null));
   }
 
   @Test
@@ -126,8 +126,8 @@ public class ReportHalResourceFiltersTest {
     Mockito.when(delegate1.apply(HAL_PATH, input)).thenReturn(false);
     Mockito.when(delegate2.apply(HAL_PATH, input)).thenReturn(false);
     ReportHalResourceFilters.all(report, delegate1, delegate2).apply(HAL_PATH, input);
-    assertEquals("HAS-EMBEDDED(x)", report.getEmbedded("item").get(0).getModel().get("errors").get(0).asText());
-    assertEquals("HAS-EMBEDDED(y)", report.getEmbedded("item").get(0).getModel().get("errors").get(1).asText());
+    assertEquals("HAS-EMBEDDED(x)", report.getEmbedded("item").get(0).getModel().get("errors").get(0).asText(null));
+    assertEquals("HAS-EMBEDDED(y)", report.getEmbedded("item").get(0).getModel().get("errors").get(1).asText(null));
 
   }
 

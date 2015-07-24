@@ -87,7 +87,7 @@ public class InlineEmbeddedTest {
 
     JsonNode container = hal.getModel().get("singular");
     assertTrue(container.isObject());
-    assertEquals("val1", container.get("key").asText());
+    assertEquals("val1", container.get("key").asText(null));
 
   }
 
@@ -99,7 +99,7 @@ public class InlineEmbeddedTest {
     JsonNode container = hal.getModel().get("multiple");
     assertTrue(container.isArray());
     assertEquals(2, container.size());
-    assertEquals("val2", container.get(0).get("key").asText());
+    assertEquals("val2", container.get(0).get("key").asText(null));
 
   }
 

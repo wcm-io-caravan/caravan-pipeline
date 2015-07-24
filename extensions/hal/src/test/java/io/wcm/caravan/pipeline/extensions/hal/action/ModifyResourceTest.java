@@ -93,8 +93,8 @@ public class ModifyResourceTest {
   @Test
   public void shouldHaveCombinedState() {
 
-    assertEquals("value", hal.getModel().get("oldAttribute").asText());
-    assertEquals("value", hal.getModel().get("newAttribute").asText());
+    assertEquals("value", hal.getModel().get("oldAttribute").asText(null));
+    assertEquals("value", hal.getModel().get("newAttribute").asText(null));
 
   }
 
