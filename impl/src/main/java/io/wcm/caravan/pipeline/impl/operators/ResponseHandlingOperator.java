@@ -97,8 +97,15 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
             subscriber.onNext(model);
           }
           else {
-            String msg = "Request for " + request.getUrl() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")";
-            log.warn(msg + ", " + request.getCorrelationId());
+            String msg = "Request for " + request.getUrl() + " failed with HTTP status code: " + statusCode + " (" + response.reason() + ")" + ", "
+                + request.getCorrelationId();
+
+            if (statusCode / 100 == 4) {
+              log.info(msg);
+            }
+            else {
+              log.warn(msg);
+            }
 
             subscriber.onError(new JsonPipelineInputException(statusCode, msg));
           }
