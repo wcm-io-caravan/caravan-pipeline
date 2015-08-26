@@ -23,12 +23,12 @@
     xsi:schemaLocation="http://maven.apache.org/changes/1.0.0 http://maven.apache.org/plugins/maven-changes-plugin/xsd/changes-1.0.0.xsd">
   <body>
 
-    <release version="0.5.3" date="not-released-yet">
+    <release version="0.5.4" date="2015-08-26">
       <action type="update" dev="cnagel">
-        Changes logging for non 200 HTTP responses
+        Changes logging for non 200 HTTP responses.
       </action>
       <action type="update" dev="cnagel">
-        Changes logging of 404 errors in CachePointTransformer
+        Changes logging of 404 errors in CachePointTransformer.
       </action>
     </release>
 
