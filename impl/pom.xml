@@ -25,13 +25,13 @@
   <parent>
     <groupId>io.wcm.caravan</groupId>
     <artifactId>io.wcm.caravan.pipeline.parent</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
 
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.impl</artifactId>
-  <version>0.5.3-SNAPSHOT</version>
+  <version>0.5.4</version>
   <packaging>bundle</packaging>
 
   <name>JSON Pipeline Implementation</name>
