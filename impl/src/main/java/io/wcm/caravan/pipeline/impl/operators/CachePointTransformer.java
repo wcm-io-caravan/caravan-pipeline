@@ -221,8 +221,14 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           public void onError(Throwable e) {
             Exceptions.throwIfFatal(e);
 
-            log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
-                + correlationId, e);
+            if (e instanceof JsonPipelineInputException && ((JsonPipelineInputException)e).getStatusCode() == 404) {
+              log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
+                  + correlationId + "\n" + e.getMessage());
+            }
+            else {
+              log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
+                  + correlationId, e);
+            }
 
             JsonPipelineOutputImpl pipelineOutput = new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests);
 

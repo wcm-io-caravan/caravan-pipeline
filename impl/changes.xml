@@ -27,6 +27,9 @@
       <action type="update" dev="cnagel">
         Changes logging for non 200 HTTP responses
       </action>
+      <action type="update" dev="cnagel">
+        Changes logging of 404 errors in CachePointTransformer
+      </action>
     </release>
 
     <release version="0.5.2" date="2015-06-25">
