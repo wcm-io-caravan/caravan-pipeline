@@ -86,7 +86,7 @@ public class InlineEmbeddedCollectionTest {
     JsonNode container = hal.getModel().get("embedded");
     assertTrue(container.isArray());
     assertEquals(2, container.size());
-    assertEquals("val1", container.get(0).get("key").asText());
+    assertEquals("val1", container.get(0).get("key").asText(null));
 
   }
 

@@ -118,7 +118,7 @@ public class BuildResourceTest {
   @Test
   public void shouldHaveNewState() {
 
-    assertEquals("value", hal.getModel().get("newAttribute").asText());
+    assertEquals("value", hal.getModel().get("newAttribute").asText(null));
     assertFalse(hal.getModel().has("oldAttribute"));
 
   }
