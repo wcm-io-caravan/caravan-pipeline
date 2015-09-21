@@ -63,6 +63,7 @@ public final class HalCrawler implements JsonPipelineAction {
   private final LinkExtractor linkExtractor;
   private final UriParametersProvider uriParametersProvider;
   private final OutputProcessor outputProcessor;
+  private final StopCriteria stopCriteria;
 
   private CacheStrategy cacheStrategy;
 
@@ -71,12 +72,15 @@ public final class HalCrawler implements JsonPipelineAction {
    * @param linkExtractor Link extractor
    * @param uriParametersProvider URI parameter provider
    * @param outputProcessor Output processor
+   * @param stopCriteria Stop Criteria
    */
-  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor) {
+  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor, StopCriteria stopCriteria) {
     this.client = client;
     this.linkExtractor = linkExtractor;
     this.uriParametersProvider = uriParametersProvider;
     this.outputProcessor = outputProcessor;
+    this.stopCriteria = stopCriteria;
+    
   }
 
   /**
@@ -102,6 +106,7 @@ public final class HalCrawler implements JsonPipelineAction {
 
     HalResource currentHalResource = getCurrentHalResource(previousStepOutput, currentUrl);
     ListMultimap<String, Link> links = linkExtractor.extract(currentHalResource);
+    
 
     return Observable.from(links.entries())
         // create pipeline action
@@ -120,6 +125,8 @@ public final class HalCrawler implements JsonPipelineAction {
         .distinct(action -> action.getUrl())
         // filter already processed URLs
         .filter(action -> !startedUrls.contains(action.getUrl()) && !processedUrls.contains(action.getUrl()))
+        // filter actions for stopped crawler
+        .filter(action -> !stopCriteria.isStopped())
         // add URL to processed and create pipeline
         .map(action -> {
           startedUrls.add(action.getUrl());
@@ -157,6 +164,10 @@ public final class HalCrawler implements JsonPipelineAction {
     }
     return new HalResource((ObjectNode)json);
 
+  }
+  
+  public boolean isStopped(){
+	return stopCriteria.isStopped();
   }
 
 }

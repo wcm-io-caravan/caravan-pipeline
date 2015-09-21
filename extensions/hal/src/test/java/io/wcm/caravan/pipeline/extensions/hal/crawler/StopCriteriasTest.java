@@ -17,8 +17,18 @@
  * limitations under the License.
  * #L%
  */
-/**
- * HAL Crawler.
- */
-@org.osgi.annotation.versioning.Version("2.0.0")
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
+
+import static org.junit.Assert.assertFalse;
+
+import org.junit.Test;
+
+public class StopCriteriasTest {
+
+  @Test
+  public void testAlwaysEnabled() {
+	  StopCriteria stopCriteria = StopCriterias.alwaysEnabled();
+	  assertFalse(stopCriteria.isStopped());
+  }
+
+}
