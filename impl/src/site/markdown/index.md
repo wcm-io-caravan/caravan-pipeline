@@ -8,7 +8,7 @@ JSON data pipeline implementation.
 <dependency>
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.impl</artifactId>
-  <version>0.5.2</version>
+  <version>0.5.4</version>
 </dependency>
 ```
 
