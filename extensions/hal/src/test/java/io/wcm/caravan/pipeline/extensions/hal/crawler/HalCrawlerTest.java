@@ -99,7 +99,7 @@ public class HalCrawlerTest {
     pipelineCtx.getCaravanHttpClient().mockRequest().url(resourceEmbedded1.getLink().getHref()).response(resourceEmbedded1.getModel().toString());
 
     client = new HalClient("test-service", CacheStrategies.noCache());
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(), StopCriterias.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(), StopCriteria.alwaysEnabled());
     pipeline = pipelineCtx.getJsonPipelineFactory().create(new CaravanHttpRequestBuilder().append(entryPoint.getLink().getHref()).build());
 
   }
@@ -137,7 +137,7 @@ public class HalCrawlerTest {
   @Test
   public void shouldNotCrashWithExceptionHandler() {
 
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriterias.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriteria.alwaysEnabled());
 
     // add Not Found Link to HAL Entry Point
     resourceLink1.addLinks("item", HalResourceFactory.createLink("/not-found"));
@@ -165,7 +165,7 @@ public class HalCrawlerTest {
 
     CacheStrategy cacheStrategy = createCacheStrategyMock();
     client = new HalClient("test-service", cacheStrategy);
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriterias.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriteria.alwaysEnabled());
 
     pipeline.applyAction(crawler).getOutput().toBlocking().single();
 
@@ -187,7 +187,7 @@ public class HalCrawlerTest {
 
     CacheStrategy clientCacheStrategy = createCacheStrategyMock();
     client = new HalClient("test-service", clientCacheStrategy);
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriterias.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriteria.alwaysEnabled());
 
     CacheStrategy extraCacheStrategy = createCacheStrategyMock();
     crawler.setCacheStrategy(extraCacheStrategy);

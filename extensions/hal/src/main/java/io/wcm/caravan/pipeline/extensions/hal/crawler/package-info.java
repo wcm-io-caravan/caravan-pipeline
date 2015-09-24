@@ -20,5 +20,5 @@
 /**
  * HAL Crawler.
  */
-@org.osgi.annotation.versioning.Version("2.0.0")
+@org.osgi.annotation.versioning.Version("1.1.0")
 package io.wcm.caravan.pipeline.extensions.hal.crawler;

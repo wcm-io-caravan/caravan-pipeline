@@ -1,15 +1,30 @@
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
-public interface StopCriteria {
-	
-  /**
-   * @return true if crawler should be stopped
-   */
-  boolean isStopped();
+
+public final class StopCriteria {
+
+  private StopCriteria() {
+    // nothing to do
+  }
 
   /**
-   * @return Unique ID
+   * Allows crawler to be enabled always
+   * @return stop criteria which is always enabled
    */
-  String getId();  	  
+  public static StopCriterion alwaysEnabled() {
+    return new StopCriterion() {
 
+      @Override
+      public boolean isStopRequested() {
+        return false;
+      }
+
+      @Override
+      public String getId() {
+        return "ALWAYS-ENABLED";
+      }
+
+    };
+  }
+  
 }

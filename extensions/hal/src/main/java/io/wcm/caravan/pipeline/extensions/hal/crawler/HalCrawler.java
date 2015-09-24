@@ -63,23 +63,38 @@ public final class HalCrawler implements JsonPipelineAction {
   private final LinkExtractor linkExtractor;
   private final UriParametersProvider uriParametersProvider;
   private final OutputProcessor outputProcessor;
-  private final StopCriteria stopCriteria;
+  private final StopCriterion stopCriterion;
 
   private CacheStrategy cacheStrategy;
+  
+  /**
+   * @param client HAL client
+   * @param linkExtractor Link extractor
+   * @param uriParametersProvider URI parameter provider
+   * @param outputProcessor Output processor
+   */
+  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor) {
+    this.client = client;
+    this.linkExtractor = linkExtractor;
+    this.uriParametersProvider = uriParametersProvider;
+    this.outputProcessor = outputProcessor;
+    this.stopCriterion = StopCriteria.alwaysEnabled();
+    
+  }
 
   /**
    * @param client HAL client
    * @param linkExtractor Link extractor
    * @param uriParametersProvider URI parameter provider
    * @param outputProcessor Output processor
-   * @param stopCriteria Stop Criteria
+   * @param stopCriterion Stop Criterion
    */
-  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor, StopCriteria stopCriteria) {
+  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor, StopCriterion stopCriterion) {
     this.client = client;
     this.linkExtractor = linkExtractor;
     this.uriParametersProvider = uriParametersProvider;
     this.outputProcessor = outputProcessor;
-    this.stopCriteria = stopCriteria;
+    this.stopCriterion = stopCriterion;
     
   }
 
@@ -126,7 +141,7 @@ public final class HalCrawler implements JsonPipelineAction {
         // filter already processed URLs
         .filter(action -> !startedUrls.contains(action.getUrl()) && !processedUrls.contains(action.getUrl()))
         // filter actions for stopped crawler
-        .filter(action -> !stopCriteria.isStopped())
+        .filter(action -> !stopCriterion.isStopRequested())
         // add URL to processed and create pipeline
         .map(action -> {
           startedUrls.add(action.getUrl());
@@ -166,8 +181,8 @@ public final class HalCrawler implements JsonPipelineAction {
 
   }
   
-  public boolean isStopped(){
-	return stopCriteria.isStopped();
+  public boolean isStopRequested(){
+	return stopCriterion.isStopRequested();
   }
 
 }

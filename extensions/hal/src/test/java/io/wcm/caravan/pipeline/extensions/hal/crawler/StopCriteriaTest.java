@@ -23,12 +23,12 @@ import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
 
-public class StopCriteriasTest {
+public class StopCriteriaTest {
 
   @Test
   public void testAlwaysEnabled() {
-	  StopCriteria stopCriteria = StopCriterias.alwaysEnabled();
-	  assertFalse(stopCriteria.isStopped());
+	  StopCriterion stopCriteria = StopCriteria.alwaysEnabled();
+	  assertFalse(stopCriteria.isStopRequested());
   }
 
 }
