@@ -80,6 +80,26 @@ public final class CacheStrategies {
       }
     };
   }
+  
+  /**
+   * Invalidate item after a time-to-idle interval: The content is considered immutable, and storage time will be
+   * extended to specified value on each get operation on this item, so it is kept in cache as long as it is requested.
+   * Cache operations should be ignored by transient adapters and passed to the persistent adapters only.
+   * @param duration Time-to-idle duration
+   * @param unit Time unit
+   * @return Cache strategy
+   */
+  public static CacheStrategy nonTransientAndTimeToIdle(int duration, TimeUnit unit) {
+    int refreshInterval = toSeconds(365, DAYS);
+    int storageTime = toSeconds(duration, unit);
+    return new CacheStrategy() {
+
+      @Override
+      public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
+        return CachePersistencyOptions.createPersistentAndNonTransientAndTimeToIdle(refreshInterval, storageTime);
+      }
+    };
+  }
 
   /**
    * Stores items only in the local, non-persistent {@link CacheAdapter} for the given maximum duration.

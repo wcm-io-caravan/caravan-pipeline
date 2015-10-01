@@ -20,5 +20,5 @@
 /**
  * JSON Pipeline API for Cache Handling.
  */
-@org.osgi.annotation.versioning.Version("0.5.0")
+@org.osgi.annotation.versioning.Version("0.6.0")
 package io.wcm.caravan.pipeline.cache;

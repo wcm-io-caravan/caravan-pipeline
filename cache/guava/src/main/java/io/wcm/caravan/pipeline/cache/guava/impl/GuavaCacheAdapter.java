@@ -126,7 +126,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
-    if (!enabled) {
+    if (!enabled && !options.isTransient()) {
       return Observable.empty();
     }
 
@@ -149,7 +149,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    if (!enabled) {
+    if (!enabled && !options.isTransient()) {
       return;
     }
 
