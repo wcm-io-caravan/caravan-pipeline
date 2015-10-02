@@ -133,6 +133,7 @@ public final class CachePersistencyOptions {
   }
   
   /**
+   * Use {@link #shouldUsePersistentCaches()} instead of deprecated {@link #isPersistent()}
    * Check if the entry should be cached by persistent cache implementation.
    * A configuration to enable or disable cache operations by persistent adapters.
    * @return true if persistent adapters should be supported (storage time is specified, more than 0).
