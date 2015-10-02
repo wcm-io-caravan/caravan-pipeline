@@ -166,7 +166,7 @@ public final class CachePersistencyOptions {
   @Override
   public String toString() {
     return "CachePersistencyOptions [refreshInterval=" + this.refreshInterval + ", storageTime=" + this.storageTime + ", extendStorageTimeOnGet="
-        + this.extendStorageTimeOnGet + "]";
+        + this.extendStorageTimeOnGet  + ", shouldUseTransientCaches=" + this.shouldUseTransientCaches + "]";
   }
 
 
