@@ -19,7 +19,12 @@
  */
 package io.wcm.caravan.pipeline.cache.guava.impl;
 
+import static org.junit.Assert.assertTrue;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
+
 import org.junit.Test;
+
+import rx.Observable;
 
 
 public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
@@ -29,23 +34,41 @@ public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
     cacheAdapter.put("key", "value", options);
     assertGet("key", options, "value");
   }
-
+  
   @Test
+  public void testPutWithDisabledShouldUseTransientCachesAndGet() {
+	CachePersistencyOptions optionsDisabledShouldUseTransientCaches = new CachePersistencyOptions(100, 10, true, false);
+    cacheAdapter.put("key", "value", optionsDisabledShouldUseTransientCaches);
+    Observable<String> cachedValueObservable = cacheAdapter.get("key", options);
+    assertTrue(cachedValueObservable.isEmpty().toBlocking().first());
+  }
+  
+  @Test
+  public void testPutAndGetWithDisabledShouldUseTransientCaches() {
+	CachePersistencyOptions optionsDisabledShouldUseTransientCaches = new CachePersistencyOptions(100, 10, true, false);
+    cacheAdapter.put("key", "value", options);
+    Observable<String> cachedValueObservable = cacheAdapter.get("key", optionsDisabledShouldUseTransientCaches);
+    assertTrue(cachedValueObservable.isEmpty().toBlocking().first());
+  }
+
+  @Test(expected = NullPointerException.class)
   public void testPutAndGetNullOptions() {
     cacheAdapter.put("key", "value", null);
     assertGet("key", null, "value");
   }
 
-  @Test
+  @Test(expected = NullPointerException.class)
   public void testPutNullOptionsAndGetWithOptions() {
     cacheAdapter.put("key", "value", null);
     assertGet("key", options, "value");
   }
 
-  @Test
+  @Test(expected = NullPointerException.class)
   public void testPutWithOptionsAndGetNoOptions() {
     cacheAdapter.put("key", "value", options);
     assertGet("key", null, "value");
   }
+  
+  
 
 }

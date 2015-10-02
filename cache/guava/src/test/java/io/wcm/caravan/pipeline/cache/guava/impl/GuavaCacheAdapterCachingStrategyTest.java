@@ -56,7 +56,7 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
 
   @Test
   public void testCachingStrategySingleEntry() {
-    cacheAdapter.put("entryKey", ENTRY_SAMPLE, null);
+    cacheAdapter.put("entryKey", ENTRY_SAMPLE, options);
     assertEntry("entryKey", ENTRY_SAMPLE);
   }
 
@@ -71,9 +71,9 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
 
   @Test
   public void testCachingStrategyDoubleEntry() {
-    cacheAdapter.put("entryKey", ENTRY_SAMPLE, null);
+    cacheAdapter.put("entryKey", ENTRY_SAMPLE, options);
     assertEntry("entryKey", ENTRY_SAMPLE);
-    cacheAdapter.put("entryKey2", ENTRY_SAMPLE, null);
+    cacheAdapter.put("entryKey2", ENTRY_SAMPLE, options);
     assertEntry("entryKey", ENTRY_SAMPLE);
     assertEntry("entryKey2", ENTRY_SAMPLE);
   }
@@ -172,7 +172,7 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
 
   private void assertAddNewEntryAndExpectedToBeRemoved(String newKey, String entry, String expectedToRemoveKey, List<String> entryKeys) {
     entryKeys.add(newKey);
-    cacheAdapter.put(newKey, entry, null);
+    cacheAdapter.put(newKey, entry, options);
     if (expectedToRemoveKey != null) {
       assertEntryRemoved(expectedToRemoveKey);
       entryKeys.remove(expectedToRemoveKey);
@@ -181,7 +181,7 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
   }
 
   private void assertAddNewEntry(String newKey, String entry, List<String> entryKeys) {
-    cacheAdapter.put(newKey, entry, null);
+    cacheAdapter.put(newKey, entry, options);
     entryKeys.add(newKey);
     assertEntries(entryKeys, entry);
   }
@@ -193,11 +193,11 @@ public class GuavaCacheAdapterCachingStrategyTest extends AbstractGuavaTestCase 
   }
 
   private void assertEntry(String entryKey, String entry) {
-    String receivedEntry = cacheAdapter.get(entryKey, null).toBlocking().first();
+    String receivedEntry = cacheAdapter.get(entryKey, options).toBlocking().first();
     assertEquals("EntryKey: " + entryKey, entry, receivedEntry);
   }
 
   private void assertEntryRemoved(String entryKey) {
-    assertTrue("EntryKey: " + entryKey, cacheAdapter.get(entryKey, null).isEmpty().toBlocking().single());
+    assertTrue("EntryKey: " + entryKey, cacheAdapter.get(entryKey, options).isEmpty().toBlocking().single());
   }
 }
