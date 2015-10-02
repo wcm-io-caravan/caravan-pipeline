@@ -35,7 +35,7 @@ public class CacheStrategiesTest {
     CacheStrategy underTest = CacheStrategies.timeToLive(55, TimeUnit.SECONDS);
     CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
     assertTrue(options.isCacheable());
-    assertTrue(options.isPersistent());
+    assertTrue(options.shouldUsePersistentCaches());
     assertEquals(55, options.getStorageTime());
     assertEquals(55, options.getRefreshInterval());
     assertFalse(options.isExtendStorageTimeOnGet());
@@ -83,7 +83,7 @@ public class CacheStrategiesTest {
     CacheStrategy underTest = CacheStrategies.timeToIdle(55, TimeUnit.SECONDS);
     CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
     assertTrue(options.isCacheable());
-    assertTrue(options.isPersistent());
+    assertTrue(options.shouldUsePersistentCaches());
     assertEquals(DAYS.toSeconds(365), options.getRefreshInterval());
     assertEquals(55, options.getStorageTime());
     assertTrue(options.isExtendStorageTimeOnGet());
@@ -94,7 +94,7 @@ public class CacheStrategiesTest {
     CacheStrategy underTest = CacheStrategies.noCache();
     CachePersistencyOptions options = underTest.getCachePersistencyOptions(null);
     assertFalse(options.isCacheable());
-    assertFalse(options.isPersistent());
+    assertFalse(options.shouldUsePersistentCaches());
     assertEquals(0, options.getRefreshInterval());
     assertEquals(0, options.getStorageTime());
     assertFalse(options.isExtendStorageTimeOnGet());

@@ -96,7 +96,7 @@ public final class CacheStrategies {
 
       @Override
       public CachePersistencyOptions getCachePersistencyOptions(Collection<CaravanHttpRequest> requests) {
-        return CachePersistencyOptions.createPersistentAndNonTransientAndTimeToIdle(refreshInterval, storageTime);
+        return new CachePersistencyOptions(refreshInterval, storageTime, true, false);
       }
     };
   }
