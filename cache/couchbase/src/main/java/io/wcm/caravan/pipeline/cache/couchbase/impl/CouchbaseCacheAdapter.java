@@ -196,7 +196,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    if (!enabled || !writable || options == null || !options.isPersistent()) {
+    if (!enabled || !writable || options == null || !options.shouldUsePersistentCaches()) {
       return;
     }
 
