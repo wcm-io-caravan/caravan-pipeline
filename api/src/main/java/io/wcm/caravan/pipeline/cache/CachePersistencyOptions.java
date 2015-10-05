@@ -49,7 +49,7 @@ public final class CachePersistencyOptions {
     this.extendStorageTimeOnGet = extendStorageTimeOnGet;
     this.shouldUseTransientCaches = true;
   }
-  
+
   /**
    * Default constructor for complete initialization of cache persistency and transient options.
    * @param refreshInterval cached response refresh interval in seconds
@@ -131,18 +131,17 @@ public final class CachePersistencyOptions {
   public boolean isCacheable() {
     return refreshInterval > 0;
   }
-  
+
   /**
-   * Use {@link #shouldUsePersistentCaches()} instead of deprecated {@link #isPersistent()}
-   * Check if the entry should be cached by persistent cache implementation.
+   * Check if theentry should be cached by persistent cache implementation.
    * A configuration to enable or disable cache operations by persistent adapters.
    * @return true if persistent adapters should be supported (storage time is specified, more than 0).
+   * @deprecated Use {@link #shouldUsePersistentCaches()} instead of deprecated {@link #isPersistent()}.
    */
   @Deprecated
-  public boolean isPersistent(){
-	  return storageTime > 0;
+  public boolean isPersistent() {
+    return storageTime > 0;
   }
-  
 
   /**
    * Check if the entry should be cached by persistent cache implementation.
@@ -152,22 +151,21 @@ public final class CachePersistencyOptions {
   public boolean shouldUsePersistentCaches() {
     return storageTime > 0;
   }
-  
+
   /**
    * Check if the entry should be cached by transient cache implementation.
    * A configuration to enable or disable cache operations by transient adapters.
    * @return true if transient adapter should be supported
    */
-  public boolean shouldUseTransientCaches(){
-	return shouldUseTransientCaches;
-	  
+  public boolean shouldUseTransientCaches() {
+    return shouldUseTransientCaches;
+
   }
 
   @Override
   public String toString() {
     return "CachePersistencyOptions [refreshInterval=" + this.refreshInterval + ", storageTime=" + this.storageTime + ", extendStorageTimeOnGet="
-        + this.extendStorageTimeOnGet  + ", shouldUseTransientCaches=" + this.shouldUseTransientCaches + "]";
+        + this.extendStorageTimeOnGet + ", shouldUseTransientCaches=" + this.shouldUseTransientCaches + "]";
   }
-
 
 }

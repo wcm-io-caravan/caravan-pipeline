@@ -27,8 +27,8 @@ public class StopCriteriaTest {
 
   @Test
   public void testAlwaysEnabled() {
-	  StopCriterion stopCriteria = StopCriteria.alwaysEnabled();
-	  assertFalse(stopCriteria.isStopRequested());
+    StopCriterion stopCriteria = StopCriteria.alwaysEnabled();
+    assertFalse(stopCriteria.isStopRequested());
   }
 
 }
