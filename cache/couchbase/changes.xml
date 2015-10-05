@@ -23,9 +23,9 @@
     xsi:schemaLocation="http://maven.apache.org/changes/1.0.0 http://maven.apache.org/plugins/maven-changes-plugin/xsd/changes-1.0.0.xsd">
   <body>
 
-    <release version="0.5.5" date="2015-10-05">
+    <release version="0.6.0" date="2015-10-05">
       <action type="update" dev="ssauder">
-        Avoid usage of CachePersistencyOptions#isPersistent (which was deprecated in io.wcm.caravan.pipeline.api 0.6.0)
+        Avoid usage of CachePersistencyOptions#isPersistent (which was deprecated in io.wcm.caravan.pipeline.api 0.6.0).
       </action>
     </release>
 
