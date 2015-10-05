@@ -66,7 +66,7 @@ public final class HalCrawler implements JsonPipelineAction {
   private final StopCriterion stopCriterion;
 
   private CacheStrategy cacheStrategy;
-  
+
   /**
    * @param client HAL client
    * @param linkExtractor Link extractor
@@ -79,7 +79,7 @@ public final class HalCrawler implements JsonPipelineAction {
     this.uriParametersProvider = uriParametersProvider;
     this.outputProcessor = outputProcessor;
     this.stopCriterion = StopCriteria.alwaysEnabled();
-    
+
   }
 
   /**
@@ -95,7 +95,7 @@ public final class HalCrawler implements JsonPipelineAction {
     this.uriParametersProvider = uriParametersProvider;
     this.outputProcessor = outputProcessor;
     this.stopCriterion = stopCriterion;
-    
+
   }
 
   /**
@@ -121,7 +121,7 @@ public final class HalCrawler implements JsonPipelineAction {
 
     HalResource currentHalResource = getCurrentHalResource(previousStepOutput, currentUrl);
     ListMultimap<String, Link> links = linkExtractor.extract(currentHalResource);
-    
+
 
     return Observable.from(links.entries())
         // create pipeline action
@@ -180,9 +180,12 @@ public final class HalCrawler implements JsonPipelineAction {
     return new HalResource((ObjectNode)json);
 
   }
-  
-  public boolean isStopRequested(){
-	return stopCriterion.isStopRequested();
+
+  /**
+   * @return true if crawling has been stopped by the {@link StopCriterion}
+   */
+  public boolean isStopRequested() {
+    return stopCriterion.isStopRequested();
   }
 
 }
