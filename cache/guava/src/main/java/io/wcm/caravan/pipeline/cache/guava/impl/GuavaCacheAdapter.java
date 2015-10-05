@@ -126,7 +126,7 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
-    if (!enabled) {
+    if (!enabled || !options.shouldUseTransientCaches()) {
       return Observable.empty();
     }
 
@@ -149,14 +149,14 @@ public class GuavaCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    if (!enabled) {
+    if (!enabled || !options.shouldUseTransientCaches()) {
       return;
     }
 
     Timer.Context context = putLatencyTimer.time();
     guavaCache.put(cacheKey, jsonString);
     context.stop();
-    log.trace("Document {} has been succesfully put into the Couchbase cache:\n {}", cacheKey, jsonString);
+    log.trace("Succesfully put document into Guava cache with id {}:\n{}", cacheKey, jsonString);
 
   }
 

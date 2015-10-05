@@ -17,8 +17,18 @@
  * limitations under the License.
  * #L%
  */
-/**
- * JSON Pipeline API for Cache Handling.
- */
-@org.osgi.annotation.versioning.Version("0.6.0")
-package io.wcm.caravan.pipeline.cache;
+package io.wcm.caravan.pipeline.extensions.hal.crawler;
+
+import static org.junit.Assert.assertFalse;
+
+import org.junit.Test;
+
+public class StopCriteriaTest {
+
+  @Test
+  public void testAlwaysEnabled() {
+	  StopCriterion stopCriteria = StopCriteria.alwaysEnabled();
+	  assertFalse(stopCriteria.isStopRequested());
+  }
+
+}

@@ -35,9 +35,10 @@ public final class CachePersistencyOptions {
   private final int refreshInterval;
   private final int storageTime;
   private final boolean extendStorageTimeOnGet;
+  private final boolean shouldUseTransientCaches;
 
   /**
-   * Default constructor for complete initialization of cache persistency options.
+   * Default constructor for complete initialization of cache persistency and transient options.
    * @param refreshInterval cached response refresh interval in seconds
    * @param storageTime time of response storing in seconds
    * @param extendStorageTimeOnGet true if storage time should be extended
@@ -46,6 +47,21 @@ public final class CachePersistencyOptions {
     this.refreshInterval = refreshInterval;
     this.storageTime = storageTime;
     this.extendStorageTimeOnGet = extendStorageTimeOnGet;
+    this.shouldUseTransientCaches = true;
+  }
+  
+  /**
+   * Default constructor for complete initialization of cache persistency and transient options.
+   * @param refreshInterval cached response refresh interval in seconds
+   * @param storageTime time of response storing in seconds
+   * @param extendStorageTimeOnGet true if storage time should be extended
+   * @param shouldUseTransientCaches true if transient cache adapters should be enabled, false if disabled
+   */
+  public CachePersistencyOptions(int refreshInterval, int storageTime, boolean extendStorageTimeOnGet, boolean shouldUseTransientCaches) {
+    this.refreshInterval = refreshInterval;
+    this.storageTime = storageTime;
+    this.extendStorageTimeOnGet = extendStorageTimeOnGet;
+    this.shouldUseTransientCaches = shouldUseTransientCaches;
   }
 
   /**
@@ -53,7 +69,7 @@ public final class CachePersistencyOptions {
    * storing time.
    * @param refreshInterval cached response refresh interval in seconds
    * @param storageTime time of response storing in seconds
-   * @return persistent caching options without storage time extension
+   * @return persistent and transient caching options without storage time extension
    */
   public static CachePersistencyOptions createPersistentAndTimeToLive(int refreshInterval, int storageTime) {
     return new CachePersistencyOptions(refreshInterval, storageTime, false);
@@ -64,7 +80,7 @@ public final class CachePersistencyOptions {
    * storing time.
    * @param refreshInterval cached response refresh interval in seconds
    * @param storageTime time of response storing in seconds
-   * @return persistent caching options with storage time extension
+   * @return persistent and transient caching options with storage time extension
    */
   public static CachePersistencyOptions createPersistentAndTimeToIdle(int refreshInterval, int storageTime) {
     return new CachePersistencyOptions(refreshInterval, storageTime, true);
@@ -115,19 +131,42 @@ public final class CachePersistencyOptions {
   public boolean isCacheable() {
     return refreshInterval > 0;
   }
+  
+  /**
+   * Use {@link #shouldUsePersistentCaches()} instead of deprecated {@link #isPersistent()}
+   * Check if the entry should be cached by persistent cache implementation.
+   * A configuration to enable or disable cache operations by persistent adapters.
+   * @return true if persistent adapters should be supported (storage time is specified, more than 0).
+   */
+  @Deprecated
+  public boolean isPersistent(){
+	  return storageTime > 0;
+  }
+  
 
   /**
    * Check if the entry should be cached by persistent cache implementation.
-   * @return true if storage time is specified (more than 0).
+   * A configuration to enable or disable cache operations by persistent adapters.
+   * @return true if persistent adapters should be supported (storage time is specified, more than 0).
    */
-  public boolean isPersistent() {
+  public boolean shouldUsePersistentCaches() {
     return storageTime > 0;
+  }
+  
+  /**
+   * Check if the entry should be cached by transient cache implementation.
+   * A configuration to enable or disable cache operations by transient adapters.
+   * @return true if transient adapter should be supported
+   */
+  public boolean shouldUseTransientCaches(){
+	return shouldUseTransientCaches;
+	  
   }
 
   @Override
   public String toString() {
     return "CachePersistencyOptions [refreshInterval=" + this.refreshInterval + ", storageTime=" + this.storageTime + ", extendStorageTimeOnGet="
-        + this.extendStorageTimeOnGet + "]";
+        + this.extendStorageTimeOnGet  + ", shouldUseTransientCaches=" + this.shouldUseTransientCaches + "]";
   }
 
 

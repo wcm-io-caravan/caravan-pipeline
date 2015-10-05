@@ -196,7 +196,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public void put(String cacheKey, String jsonString, CachePersistencyOptions options) {
-    if (!enabled || !writable || options == null || !options.isPersistent()) {
+    if (!enabled || !writable || options == null || !options.shouldUsePersistentCaches()) {
       return;
     }
 
@@ -224,7 +224,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
       @Override
       public void onNext(RawJsonDocument insertedDoc) {
-        log.trace("Document {} has been succesfully put into the Couchbase cache:\n {}", insertedDoc.id(), insertedDoc.content());
+        log.trace("Succesfully put into Couchbase cache document with id {}:\n{}", insertedDoc.id(), insertedDoc.content());
       }
 
       @Override

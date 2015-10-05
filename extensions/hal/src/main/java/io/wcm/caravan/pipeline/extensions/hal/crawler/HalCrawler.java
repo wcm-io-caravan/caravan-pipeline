@@ -63,6 +63,7 @@ public final class HalCrawler implements JsonPipelineAction {
   private final LinkExtractor linkExtractor;
   private final UriParametersProvider uriParametersProvider;
   private final OutputProcessor outputProcessor;
+  private final StopCriterion stopCriterion;
 
   private CacheStrategy cacheStrategy;
 
@@ -77,6 +78,24 @@ public final class HalCrawler implements JsonPipelineAction {
     this.linkExtractor = linkExtractor;
     this.uriParametersProvider = uriParametersProvider;
     this.outputProcessor = outputProcessor;
+    this.stopCriterion = StopCriteria.alwaysEnabled();
+
+  }
+
+  /**
+   * @param client HAL client
+   * @param linkExtractor Link extractor
+   * @param uriParametersProvider URI parameter provider
+   * @param outputProcessor Output processor
+   * @param stopCriterion Stop Criterion
+   */
+  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor, StopCriterion stopCriterion) {
+    this.client = client;
+    this.linkExtractor = linkExtractor;
+    this.uriParametersProvider = uriParametersProvider;
+    this.outputProcessor = outputProcessor;
+    this.stopCriterion = stopCriterion;
+
   }
 
   /**
@@ -103,6 +122,7 @@ public final class HalCrawler implements JsonPipelineAction {
     HalResource currentHalResource = getCurrentHalResource(previousStepOutput, currentUrl);
     ListMultimap<String, Link> links = linkExtractor.extract(currentHalResource);
 
+
     return Observable.from(links.entries())
         // create pipeline action
         .map(entry -> {
@@ -120,6 +140,8 @@ public final class HalCrawler implements JsonPipelineAction {
         .distinct(action -> action.getUrl())
         // filter already processed URLs
         .filter(action -> !startedUrls.contains(action.getUrl()) && !processedUrls.contains(action.getUrl()))
+        // filter actions for stopped crawler
+        .filter(action -> !stopCriterion.isStopRequested())
         // add URL to processed and create pipeline
         .map(action -> {
           startedUrls.add(action.getUrl());
@@ -157,6 +179,13 @@ public final class HalCrawler implements JsonPipelineAction {
     }
     return new HalResource((ObjectNode)json);
 
+  }
+
+  /**
+   * @return true if crawling has been stopped by the {@link StopCriterion}
+   */
+  public boolean isStopRequested() {
+    return stopCriterion.isStopRequested();
   }
 
 }
