@@ -23,6 +23,12 @@
     xsi:schemaLocation="http://maven.apache.org/changes/1.0.0 http://maven.apache.org/plugins/maven-changes-plugin/xsd/changes-1.0.0.xsd">
   <body>
 
+    <release version="1.1.0" date="2015-10-05">
+      <action type="add" dev="dlonshakov">
+        Introduced a StopCriterion interface that can be used to stop execution of the HalCrawler
+      </action>
+    </release>
+
     <release version="1.0.0" date="2015-07-24">
       <action type="update" dev="sseifert">
         Switch to io.wcm.caravan.hal.resource artifact.
