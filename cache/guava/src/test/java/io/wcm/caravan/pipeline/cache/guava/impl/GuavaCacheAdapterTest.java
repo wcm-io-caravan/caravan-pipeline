@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import rx.Observable;
 
-
 public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
 
   @Test
@@ -34,18 +33,18 @@ public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
     cacheAdapter.put("key", "value", options);
     assertGet("key", options, "value");
   }
-  
+
   @Test
   public void testPutWithDisabledShouldUseTransientCachesAndGet() {
-	CachePersistencyOptions optionsDisabledShouldUseTransientCaches = new CachePersistencyOptions(100, 10, true, false);
+    CachePersistencyOptions optionsDisabledShouldUseTransientCaches = new CachePersistencyOptions(100, 10, true, false);
     cacheAdapter.put("key", "value", optionsDisabledShouldUseTransientCaches);
     Observable<String> cachedValueObservable = cacheAdapter.get("key", options);
     assertTrue(cachedValueObservable.isEmpty().toBlocking().first());
   }
-  
+
   @Test
   public void testPutAndGetWithDisabledShouldUseTransientCaches() {
-	CachePersistencyOptions optionsDisabledShouldUseTransientCaches = new CachePersistencyOptions(100, 10, true, false);
+    CachePersistencyOptions optionsDisabledShouldUseTransientCaches = new CachePersistencyOptions(100, 10, true, false);
     cacheAdapter.put("key", "value", options);
     Observable<String> cachedValueObservable = cacheAdapter.get("key", optionsDisabledShouldUseTransientCaches);
     assertTrue(cachedValueObservable.isEmpty().toBlocking().first());
@@ -68,7 +67,6 @@ public class GuavaCacheAdapterTest extends AbstractGuavaTestCase {
     cacheAdapter.put("key", "value", options);
     assertGet("key", null, "value");
   }
-  
-  
+
 
 }
