@@ -27,6 +27,7 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.client.methods.HttpGet;
 import org.osgi.annotation.versioning.ProviderType;
 
 import rx.Observable;
@@ -43,6 +44,7 @@ public final class FollowLink extends AbstractHalClientAction {
   private final String relation;
   private final Map<String, Object> parameters;
   private final int index;
+  private String httpMethod = HttpGet.METHOD_NAME;
 
   /**
    * @param serviceId Service ID
@@ -59,7 +61,11 @@ public final class FollowLink extends AbstractHalClientAction {
 
   @Override
   public String getId() {
-    return "FOLLOW-LINK(" + relation + '-' + parameters.hashCode() + '-' + index + ")";
+    return "FOLLOW-LINK(" + httpMethod + "-" + relation + '-' + parameters.hashCode() + '-' + index + ")";
+  }
+  
+  public void setHttpMethod(String httpMethod) {
+    this.httpMethod = httpMethod;
   }
 
   @Override
@@ -67,6 +73,7 @@ public final class FollowLink extends AbstractHalClientAction {
 
     Link link = getLink(previousStepOutput);
     return new LoadLink(serviceId, link, parameters)
+    .setHttpMethod(httpMethod)
     .setCacheStrategy(getCacheStrategy())
     .setExceptionHandlers(getExceptionHandlers())
     .setLogger(getLogger())

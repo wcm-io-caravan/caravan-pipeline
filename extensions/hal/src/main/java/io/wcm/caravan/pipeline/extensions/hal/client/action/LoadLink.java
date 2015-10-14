@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import static io.wcm.caravan.io.http.request.CaravanHttpRequest.CORRELATION_ID_HEADER_NAME;
+
 import io.wcm.caravan.commons.stream.Streams;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
@@ -35,6 +36,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.HttpGet;
 import org.osgi.annotation.versioning.ProviderType;
 
 import rx.Observable;
@@ -50,6 +52,7 @@ public final class LoadLink extends AbstractHalClientAction {
   private final String serviceId;
   private final Link link;
   private final Map<String, Object> parameters;
+  private String httpMethod = HttpGet.METHOD_NAME;
 
   /**
    * @param serviceId Service ID
@@ -64,7 +67,7 @@ public final class LoadLink extends AbstractHalClientAction {
 
   @Override
   public String getId() {
-    return "LOAD-LINK(" + serviceId + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
+    return "LOAD-LINK(" + httpMethod + "-" + serviceId + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
   }
 
   @Override
@@ -81,12 +84,18 @@ public final class LoadLink extends AbstractHalClientAction {
 
   }
 
+  public LoadLink setHttpMethod(String httpMethod) {
+    this.httpMethod = httpMethod;
+    return this;
+  }
+
   private CaravanHttpRequest createRequest(JsonPipelineOutput previousStepOutput) {
 
     CaravanHttpRequestBuilder builder = getRequestBuilder();
     builder = setCacheControlHeaderIfExists(builder, previousStepOutput);
     builder = setCorrelationIdIfExists(builder, previousStepOutput);
     builder = setAdditionalHttpHeadersIfExists(builder);
+    builder = builder.method(httpMethod);
     return builder.build(parameters);
 
   }
