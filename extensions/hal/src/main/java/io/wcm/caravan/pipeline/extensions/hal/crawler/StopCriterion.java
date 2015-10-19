@@ -19,6 +19,9 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
+/**
+ * A criterion to stop the execution of {@link HalCrawler}.
+ */
 public interface StopCriterion {
 
   /**
