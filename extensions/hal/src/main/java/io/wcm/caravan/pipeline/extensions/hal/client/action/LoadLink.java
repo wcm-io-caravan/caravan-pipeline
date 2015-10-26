@@ -84,7 +84,7 @@ public final class LoadLink extends AbstractHalClientAction {
 
   }
 
-  public LoadLink setHttpMethod(String httpMethod) {
+  public HalClientAction withHttpMethod(String httpMethod) {
     this.httpMethod = httpMethod;
     return this;
   }

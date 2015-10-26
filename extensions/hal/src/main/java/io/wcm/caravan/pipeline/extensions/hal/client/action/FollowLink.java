@@ -64,8 +64,9 @@ public final class FollowLink extends AbstractHalClientAction {
     return "FOLLOW-LINK(" + httpMethod + "-" + relation + '-' + parameters.hashCode() + '-' + index + ")";
   }
   
-  public void setHttpMethod(String httpMethod) {
+  public HalClientAction withHttpMethod(String httpMethod) {
     this.httpMethod = httpMethod;
+    return this;
   }
 
   @Override
@@ -73,7 +74,7 @@ public final class FollowLink extends AbstractHalClientAction {
 
     Link link = getLink(previousStepOutput);
     return new LoadLink(serviceId, link, parameters)
-    .setHttpMethod(httpMethod)
+    .withHttpMethod(httpMethod)
     .setCacheStrategy(getCacheStrategy())
     .setExceptionHandlers(getExceptionHandlers())
     .setLogger(getLogger())
