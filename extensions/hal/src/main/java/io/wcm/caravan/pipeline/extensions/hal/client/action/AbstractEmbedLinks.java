@@ -27,6 +27,7 @@ import io.wcm.caravan.pipeline.JsonPipeline;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @ConsumerType
 public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
 
-  private final String serviceId;
+  private final ServiceIdExtractor serviceId;
   private final String relation;
   private final Map<String, Object> parameters;
 
@@ -53,6 +54,17 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
    * @param parameters URI parameters
    */
   public AbstractEmbedLinks(String serviceId, String relation, Map<String, Object> parameters) {
+    this.serviceId = (href) -> serviceId;
+    this.relation = relation;
+    this.parameters = parameters;
+  }
+
+  /**
+   * @param serviceId a function to extract Service ID from a given request URL
+   * @param relation Link relation to embed
+   * @param parameters URI parameters
+   */
+  public AbstractEmbedLinks(ServiceIdExtractor serviceId, String relation, Map<String, Object> parameters) {
     this.serviceId = serviceId;
     this.relation = relation;
     this.parameters = parameters;

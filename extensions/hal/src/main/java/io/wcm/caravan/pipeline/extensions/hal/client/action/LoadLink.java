@@ -30,6 +30,7 @@ import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
 import java.util.Collection;
 import java.util.Map;
@@ -47,7 +48,7 @@ import com.google.common.collect.Multimap;
 @ProviderType
 public final class LoadLink extends AbstractHalClientAction {
 
-  private final String serviceId;
+  private final ServiceIdExtractor serviceId;
   private final Link link;
   private final Map<String, Object> parameters;
 
@@ -57,6 +58,17 @@ public final class LoadLink extends AbstractHalClientAction {
    * @param parameters URI parameters
    */
   public LoadLink(String serviceId, Link link, Map<String, Object> parameters) {
+    this.serviceId = (path) -> serviceId;
+    this.link = link;
+    this.parameters = parameters;
+  }
+
+  /**
+   * @param serviceId a function to extract the serviceid from a path
+   * @param link Link to load
+   * @param parameters URI parameters
+   */
+  public LoadLink(ServiceIdExtractor serviceId, Link link, Map<String, Object> parameters) {
     this.serviceId = serviceId;
     this.link = link;
     this.parameters = parameters;
@@ -64,7 +76,7 @@ public final class LoadLink extends AbstractHalClientAction {
 
   @Override
   public String getId() {
-    return "LOAD-LINK(" + serviceId + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
+    return "LOAD-LINK(" + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
   }
 
   @Override
@@ -111,7 +123,7 @@ public final class LoadLink extends AbstractHalClientAction {
   }
 
   private CaravanHttpRequestBuilder getRequestBuilder() {
-    return new CaravanHttpRequestBuilder(serviceId).append(link.getHref());
+    return new CaravanHttpRequestBuilder(serviceId.getServiceId(link.getHref())).append(link.getHref());
   }
 
   /**

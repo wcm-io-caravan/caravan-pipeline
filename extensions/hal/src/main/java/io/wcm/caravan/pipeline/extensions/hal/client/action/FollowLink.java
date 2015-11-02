@@ -23,6 +23,7 @@ import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @ProviderType
 public final class FollowLink extends AbstractHalClientAction {
 
-  private final String serviceId;
+  private final ServiceIdExtractor serviceId;
   private final String relation;
   private final Map<String, Object> parameters;
   private final int index;
@@ -51,6 +52,19 @@ public final class FollowLink extends AbstractHalClientAction {
    * @param parameters URI parameters
    */
   public FollowLink(String serviceId, String relation, int index, Map<String, Object> parameters) {
+    this.serviceId = (href) -> serviceId;
+    this.relation = relation;
+    this.index = index;
+    this.parameters = parameters;
+  }
+
+  /**
+   * @param serviceId function to extract Service ID from a given request URL
+   * @param relation Link relation to embed
+   * @param index Index of the link to embed
+   * @param parameters URI parameters
+   */
+  public FollowLink(ServiceIdExtractor serviceId, String relation, int index, Map<String, Object> parameters) {
     this.serviceId = serviceId;
     this.relation = relation;
     this.index = index;

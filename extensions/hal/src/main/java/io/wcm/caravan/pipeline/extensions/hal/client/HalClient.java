@@ -56,7 +56,7 @@ import com.google.common.collect.Lists;
 @ProviderType
 public final class HalClient {
 
-  private final String serviceId;
+  private final ServiceIdExtractor serviceIdExtractor;
   private final CacheStrategy cacheStrategy;
   private final Map<String, String> contextProperties;
 
@@ -80,7 +80,7 @@ public final class HalClient {
    *          {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
    */
   public HalClient(String serviceId, CacheStrategy cacheStrategy, Map<String, String> contextProperties) {
-    this.serviceId = serviceId;
+    this.serviceIdExtractor = (path) -> serviceId;
     this.cacheStrategy = cacheStrategy;
     this.contextProperties = contextProperties;
     this.entryPointRequest = new CaravanHttpRequestBuilder(serviceId).append("/").build();
@@ -92,7 +92,21 @@ public final class HalClient {
    * @param contextProperties a Map of properties to pass on to {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
    */
   public HalClient(CaravanHttpRequest entryPointRequest, CacheStrategy cacheStrategy, Map<String, String> contextProperties) {
-    this.serviceId = entryPointRequest.getServiceId();
+    this.serviceIdExtractor = (path) -> entryPointRequest.getServiceId();
+    this.cacheStrategy = cacheStrategy;
+    this.contextProperties = contextProperties;
+    this.entryPointRequest = entryPointRequest;
+  }
+
+  /**
+   * @param entryPointRequest the request to be executed to fetch the HAL entry point
+   * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
+   * @param contextProperties a Map of properties to pass on to
+   *          {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
+   */
+  public HalClient(CaravanHttpRequest entryPointRequest, ServiceIdExtractor serviceIdExtractor, CacheStrategy cacheStrategy,
+      Map<String, String> contextProperties) {
+    this.serviceIdExtractor = (path) -> entryPointRequest.getServiceId();
     this.cacheStrategy = cacheStrategy;
     this.contextProperties = contextProperties;
     this.entryPointRequest = entryPointRequest;
@@ -147,7 +161,7 @@ public final class HalClient {
    */
   @Deprecated
   public JsonPipeline create(JsonPipelineFactory factory, String url) {
-    return create(factory, new CaravanHttpRequestBuilder(serviceId).append(url).build());
+    return create(factory, new CaravanHttpRequestBuilder(serviceIdExtractor.getServiceId(url)).append(url).build());
   }
 
   /**
@@ -203,7 +217,7 @@ public final class HalClient {
    * @return Follow link action
    */
   public FollowLink follow(String relation, Map<String, Object> parameters, int index) {
-    return (FollowLink)new FollowLink(serviceId, relation, index, parameters)
+    return (FollowLink)new FollowLink(serviceIdExtractor, relation, index, parameters)
     .setCacheStrategy(cacheStrategy)
     .setExceptionHandlers(exceptionHandlers)
     .setLogger(logger);
@@ -225,7 +239,7 @@ public final class HalClient {
    * @return Embed links action
    */
   public EmbedLinks embed(String relation, Map<String, Object> parameters) {
-    return (EmbedLinks)new EmbedLinks(serviceId, relation, parameters)
+    return (EmbedLinks)new EmbedLinks(serviceIdExtractor, relation, parameters)
     .setCacheStrategy(cacheStrategy)
     .setExceptionHandlers(exceptionHandlers)
     .setLogger(logger);
@@ -249,7 +263,7 @@ public final class HalClient {
    * @return Embed links action
    */
   public EmbedLink embed(String relation, Map<String, Object> parameters, int index) {
-    return (EmbedLink)new EmbedLink(serviceId, relation, index, parameters)
+    return (EmbedLink)new EmbedLink(serviceIdExtractor, relation, index, parameters)
     .setCacheStrategy(cacheStrategy)
     .setExceptionHandlers(exceptionHandlers)
     .setLogger(logger);
@@ -273,7 +287,7 @@ public final class HalClient {
    * @return Deep Embed links action
    */
   public DeepEmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
-    return (DeepEmbedLinks)new DeepEmbedLinks(serviceId, relation, parameters)
+    return (DeepEmbedLinks)new DeepEmbedLinks(serviceIdExtractor, relation, parameters)
     .setCacheStrategy(cacheStrategy)
     .setExceptionHandlers(exceptionHandlers)
     .setLogger(logger);
@@ -327,7 +341,7 @@ public final class HalClient {
    * @return Load link action
    */
   public LoadLink load(Link link, Map<String, Object> parameters) {
-    return (LoadLink)new LoadLink(serviceId, link, parameters)
+    return (LoadLink)new LoadLink(serviceIdExtractor, link, parameters)
     .setCacheStrategy(cacheStrategy)
     .setExceptionHandlers(exceptionHandlers)
     .setLogger(logger);
