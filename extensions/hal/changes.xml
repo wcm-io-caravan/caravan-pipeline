@@ -27,6 +27,9 @@
       <action type="add" dev="ssauder">
         HalClient: extended the FollowLink action to allow using the link name to identify the link to follow
       </action>
+      <action type="add" dev="gweng">
+        HalClient: extended the FollowLink action to allow specifying the HTTP method to use when following the link
+      </action>
       <action type="add" dev="ssauder">
         HalClient: introduced ServiceIdExtract that allows to follow links using a different serviceId than that it was originally created with.
       </action>
