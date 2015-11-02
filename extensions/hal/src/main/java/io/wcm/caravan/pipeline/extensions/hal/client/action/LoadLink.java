@@ -78,7 +78,8 @@ public final class LoadLink extends AbstractHalClientAction {
 
   @Override
   public String getId() {
-        return "LOAD-LINK(" + httpMethod + "-" + serviceId.getServiceId(link.getHref()) + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
+    return "LOAD-LINK(" + httpMethod + "-" + serviceId.getServiceId(link.getHref()) + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-'
+        + parameters.hashCode() + ")";
   }
 
   @Override
@@ -95,8 +96,12 @@ public final class LoadLink extends AbstractHalClientAction {
 
   }
 
-  public HalClientAction withHttpMethod(String httpMethod) {
-    this.httpMethod = httpMethod;
+  /**
+   * @param httpMethodToUse the HTTP method to use when loading the link
+   * @return this
+   */
+  public HalClientAction withHttpMethod(String httpMethodToUse) {
+    this.httpMethod = httpMethodToUse;
     return this;
   }
 
@@ -165,7 +170,8 @@ public final class LoadLink extends AbstractHalClientAction {
   }
 
   /**
-   * Sets the {@code correlation-id} HTTP header to the given request builder if provided by the previous JSON pipeline output.
+   * Sets the {@code correlation-id} HTTP header to the given request builder if provided by the previous JSON pipeline
+   * output.
    * @param builder HTTP request builder
    * @param previousStepOutput Previous JSON output
    * @return HTTP request builder with or without {@code correlation-id} HTTP header

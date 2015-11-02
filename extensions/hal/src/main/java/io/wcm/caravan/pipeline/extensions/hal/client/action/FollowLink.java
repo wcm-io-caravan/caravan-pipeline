@@ -89,8 +89,12 @@ public final class FollowLink extends AbstractHalClientAction {
     return "FOLLOW-LINK(" + httpMethod + " - " + linkSelector.getId() + '-' + parameters.hashCode() + ")";
   }
 
-  public HalClientAction withHttpMethod(String httpMethod) {
-    this.httpMethod = httpMethod;
+  /**
+   * @param httpMethodToUse the HTTP method to use when loading the link
+   * @return this
+   */
+  public HalClientAction withHttpMethod(String httpMethodToUse) {
+    this.httpMethod = httpMethodToUse;
     return this;
   }
 
@@ -100,11 +104,11 @@ public final class FollowLink extends AbstractHalClientAction {
     HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
     Link link = linkSelector.pickLink(halResource);
     return new LoadLink(serviceId, link, parameters)
-    .withHttpMethod(httpMethod)
-    .setCacheStrategy(getCacheStrategy())
-    .setExceptionHandlers(getExceptionHandlers())
-    .setLogger(getLogger())
-    .execute(previousStepOutput, context);
+        .withHttpMethod(httpMethod)
+        .setCacheStrategy(getCacheStrategy())
+        .setExceptionHandlers(getExceptionHandlers())
+        .setLogger(getLogger())
+        .execute(previousStepOutput, context);
   }
 
 }
