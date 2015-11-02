@@ -27,6 +27,7 @@ import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
 import java.util.Map;
 
+import org.apache.http.client.methods.HttpGet;
 import org.osgi.annotation.versioning.ProviderType;
 
 import rx.Observable;
@@ -44,6 +45,8 @@ public final class FollowLink extends AbstractHalClientAction {
   private final LinkSelectionStrategy linkSelector;
 
   private final Map<String, Object> parameters;
+
+  private String httpMethod = HttpGet.METHOD_NAME;
 
   /**
    * @param serviceId Service ID
@@ -83,7 +86,12 @@ public final class FollowLink extends AbstractHalClientAction {
 
   @Override
   public String getId() {
-    return "FOLLOW-LINK(" + linkSelector.getId() + '-' + parameters.hashCode() + ")";
+    return "FOLLOW-LINK(" + httpMethod + " - " + linkSelector.getId() + '-' + parameters.hashCode() + ")";
+  }
+
+  public HalClientAction withHttpMethod(String httpMethod) {
+    this.httpMethod = httpMethod;
+    return this;
   }
 
   @Override
@@ -92,10 +100,11 @@ public final class FollowLink extends AbstractHalClientAction {
     HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
     Link link = linkSelector.pickLink(halResource);
     return new LoadLink(serviceId, link, parameters)
-        .setCacheStrategy(getCacheStrategy())
-        .setExceptionHandlers(getExceptionHandlers())
-        .setLogger(getLogger())
-        .execute(previousStepOutput, context);
+    .withHttpMethod(httpMethod)
+    .setCacheStrategy(getCacheStrategy())
+    .setExceptionHandlers(getExceptionHandlers())
+    .setLogger(getLogger())
+    .execute(previousStepOutput, context);
   }
 
 }

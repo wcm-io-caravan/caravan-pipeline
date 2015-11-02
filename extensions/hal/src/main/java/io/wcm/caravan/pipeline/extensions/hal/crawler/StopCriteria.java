@@ -19,6 +19,9 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
+/**
+ * Default implementations of {@link StopCriterion}
+ */
 public final class StopCriteria {
 
   private StopCriteria() {
@@ -26,8 +29,8 @@ public final class StopCriteria {
   }
 
   /**
-   * Allows crawler to be enabled always
-   * @return stop criteria which is always enabled
+   * Allows crawler to be enabled always.
+   * @return stop criterion which is always enabled
    */
   public static StopCriterion alwaysEnabled() {
     return new StopCriterion() {
