@@ -25,7 +25,6 @@ import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
-import java.util.List;
 import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -41,9 +40,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public final class FollowLink extends AbstractHalClientAction {
 
   private final ServiceIdExtractor serviceId;
-  private final String relation;
+
+  private final LinkSelectionStrategy linkSelector;
+
   private final Map<String, Object> parameters;
-  private final int index;
 
   /**
    * @param serviceId Service ID
@@ -53,8 +53,7 @@ public final class FollowLink extends AbstractHalClientAction {
    */
   public FollowLink(String serviceId, String relation, int index, Map<String, Object> parameters) {
     this.serviceId = (href) -> serviceId;
-    this.relation = relation;
-    this.index = index;
+    this.linkSelector = LinkSelectionStrategies.byRelationAndIndex(relation, index);
     this.parameters = parameters;
   }
 
@@ -66,36 +65,37 @@ public final class FollowLink extends AbstractHalClientAction {
    */
   public FollowLink(ServiceIdExtractor serviceId, String relation, int index, Map<String, Object> parameters) {
     this.serviceId = serviceId;
-    this.relation = relation;
-    this.index = index;
+    this.linkSelector = LinkSelectionStrategies.byRelationAndIndex(relation, index);
+    this.parameters = parameters;
+  }
+
+  /**
+   * @param serviceId function to extract Service ID from a given request URL
+   * @param relation Link relation to embed
+   * @param name of the link to embed
+   * @param parameters URI parameters
+   */
+  public FollowLink(ServiceIdExtractor serviceId, String relation, String name, Map<String, Object> parameters) {
+    this.serviceId = serviceId;
+    this.linkSelector = LinkSelectionStrategies.byRelationAndName(relation, name);
     this.parameters = parameters;
   }
 
   @Override
   public String getId() {
-    return "FOLLOW-LINK(" + relation + '-' + parameters.hashCode() + '-' + index + ")";
+    return "FOLLOW-LINK(" + linkSelector.getId() + '-' + parameters.hashCode() + ")";
   }
 
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
 
-    Link link = getLink(previousStepOutput);
-    return new LoadLink(serviceId, link, parameters)
-    .setCacheStrategy(getCacheStrategy())
-    .setExceptionHandlers(getExceptionHandlers())
-    .setLogger(getLogger())
-    .execute(previousStepOutput, context);
-  }
-
-  private Link getLink(JsonPipelineOutput previousStepOutput) {
-
     HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
-    List<Link> links = halResource.getLinks(relation);
-    if (links.size() <= index) {
-      throw new IllegalStateException("HAL resource has no link with relation " + relation + " and index " + index);
-    }
-    return links.get(index);
-
+    Link link = linkSelector.pickLink(halResource);
+    return new LoadLink(serviceId, link, parameters)
+        .setCacheStrategy(getCacheStrategy())
+        .setExceptionHandlers(getExceptionHandlers())
+        .setLogger(getLogger())
+        .execute(previousStepOutput, context);
   }
 
 }

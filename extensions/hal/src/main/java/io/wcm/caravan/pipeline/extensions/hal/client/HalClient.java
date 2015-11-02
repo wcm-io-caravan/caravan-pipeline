@@ -89,7 +89,8 @@ public final class HalClient {
   /**
    * @param entryPointRequest the request to be executed to fetch the HAL entry point
    * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
-   * @param contextProperties a Map of properties to pass on to {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
+   * @param contextProperties a Map of properties to pass on to
+   *          {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
    */
   public HalClient(CaravanHttpRequest entryPointRequest, CacheStrategy cacheStrategy, Map<String, String> contextProperties) {
     this.serviceIdExtractor = (path) -> entryPointRequest.getServiceId();
@@ -218,9 +219,23 @@ public final class HalClient {
    */
   public FollowLink follow(String relation, Map<String, Object> parameters, int index) {
     return (FollowLink)new FollowLink(serviceIdExtractor, relation, index, parameters)
-    .setCacheStrategy(cacheStrategy)
-    .setExceptionHandlers(exceptionHandlers)
-    .setLogger(logger);
+        .setCacheStrategy(cacheStrategy)
+        .setExceptionHandlers(exceptionHandlers)
+        .setLogger(logger);
+  }
+
+  /**
+   * Creates a follow link action for the forst link with the given relation and name
+   * @param relation Link relation
+   * @param parameters URL parameters
+   * @param name of the link to follow
+   * @return Follow link action
+   */
+  public FollowLink follow(String relation, Map<String, Object> parameters, String name) {
+    return (FollowLink)new FollowLink(serviceIdExtractor, relation, name, parameters)
+        .setCacheStrategy(cacheStrategy)
+        .setExceptionHandlers(exceptionHandlers)
+        .setLogger(logger);
   }
 
   /**
@@ -240,9 +255,9 @@ public final class HalClient {
    */
   public EmbedLinks embed(String relation, Map<String, Object> parameters) {
     return (EmbedLinks)new EmbedLinks(serviceIdExtractor, relation, parameters)
-    .setCacheStrategy(cacheStrategy)
-    .setExceptionHandlers(exceptionHandlers)
-    .setLogger(logger);
+        .setCacheStrategy(cacheStrategy)
+        .setExceptionHandlers(exceptionHandlers)
+        .setLogger(logger);
   }
 
   /**
@@ -264,13 +279,14 @@ public final class HalClient {
    */
   public EmbedLink embed(String relation, Map<String, Object> parameters, int index) {
     return (EmbedLink)new EmbedLink(serviceIdExtractor, relation, index, parameters)
-    .setCacheStrategy(cacheStrategy)
-    .setExceptionHandlers(exceptionHandlers)
-    .setLogger(logger);
+        .setCacheStrategy(cacheStrategy)
+        .setExceptionHandlers(exceptionHandlers)
+        .setLogger(logger);
   }
 
   /**
-   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>, and replaces the links with the
+   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded
+   * resources</strong>, and replaces the links with the
    * corresponding embedded resources.
    * @param relation Link relation
    * @return Deep Embed links action
@@ -280,7 +296,8 @@ public final class HalClient {
   }
 
   /**
-   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded resources</strong>, and replaces the links with the
+   * Fetches the content of all links with the given relation in a HAL resource <strong>and all embedded
+   * resources</strong>, and replaces the links with the
    * corresponding embedded resources.
    * @param relation Link relation
    * @param parameters URL parameters
@@ -288,15 +305,16 @@ public final class HalClient {
    */
   public DeepEmbedLinks deepEmbed(String relation, Map<String, Object> parameters) {
     return (DeepEmbedLinks)new DeepEmbedLinks(serviceIdExtractor, relation, parameters)
-    .setCacheStrategy(cacheStrategy)
-    .setExceptionHandlers(exceptionHandlers)
-    .setLogger(logger);
+        .setCacheStrategy(cacheStrategy)
+        .setExceptionHandlers(exceptionHandlers)
+        .setLogger(logger);
   }
 
   /**
    * Allows to create a {@link BuildResource} action by specifying the output href and a lambda
    * @param selfHref the path of the output resource to be used for the self helf
-   * @param buildFunc the lambda that gets the previous step's output and a {@link HalBuilder} with the specified self-link
+   * @param buildFunc the lambda that gets the previous step's output and a {@link HalBuilder} with the specified
+   *          self-link
    * @return the action that executes the lambda build function
    **/
   public BuildResource buildResource(String selfHref, Func2<HalResource, HalBuilder, HalResource> buildFunc) {
@@ -342,9 +360,9 @@ public final class HalClient {
    */
   public LoadLink load(Link link, Map<String, Object> parameters) {
     return (LoadLink)new LoadLink(serviceIdExtractor, link, parameters)
-    .setCacheStrategy(cacheStrategy)
-    .setExceptionHandlers(exceptionHandlers)
-    .setLogger(logger);
+        .setCacheStrategy(cacheStrategy)
+        .setExceptionHandlers(exceptionHandlers)
+        .setLogger(logger);
   }
 
 }
