@@ -23,6 +23,15 @@
     xsi:schemaLocation="http://maven.apache.org/changes/1.0.0 http://maven.apache.org/plugins/maven-changes-plugin/xsd/changes-1.0.0.xsd">
   <body>
 
+    <release version="1.2.0" date="2015-11-02">
+      <action type="add" dev="ssauder">
+        HalClient: extended the FollowLink action to allow using the link name to identify the link to follow
+      </action>
+      <action type="add" dev="ssauder">
+        HalClient: introduced ServiceIdExtract that allows to follow links using a different serviceId than that it was originally created with.
+      </action>
+    </release>
+
     <release version="1.1.0" date="2015-10-05">
       <action type="add" dev="dlonshakov">
         HalCrawler: Introduced a StopCriterion interface that can be used to stop execution of the HalCrawler.
