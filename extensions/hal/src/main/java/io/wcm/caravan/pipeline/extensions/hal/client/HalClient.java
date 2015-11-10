@@ -56,7 +56,7 @@ import com.google.common.collect.Lists;
 @ProviderType
 public final class HalClient {
 
-  private final ServiceIdExtractor serviceIdExtractor;
+  private ServiceIdExtractor serviceIdExtractor;
   private final CacheStrategy cacheStrategy;
   private final Map<String, String> contextProperties;
 
@@ -130,6 +130,16 @@ public final class HalClient {
    */
   public HalClient setLogger(Logger value) {
     this.logger = value;
+    return this;
+  }
+
+  /**
+   * Replaces the default service id extractor (that uses the same serviceId for all requests) with a custom logic
+   * @param extractor the ServiceIdExtractor to use
+   * @return this hal client
+   */
+  public HalClient setServiceIdExtractor(ServiceIdExtractor extractor) {
+    this.serviceIdExtractor = extractor;
     return this;
   }
 
