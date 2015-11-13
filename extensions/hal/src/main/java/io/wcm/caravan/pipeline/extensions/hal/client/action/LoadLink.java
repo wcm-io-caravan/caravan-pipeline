@@ -140,13 +140,18 @@ public final class LoadLink extends AbstractHalClientAction {
   }
 
   /**
-   * Adds a cache point to the given JSON pipeline if provided.
+   * Adds a cache point to the given JSON pipeline if provided and the http request method is GET.
    * @param pipeline JSON pipeline
    * @return JSON pipeline with or without cache point
    */
   private JsonPipeline setCacheStrategyIfExists(JsonPipeline pipeline) {
-    CacheStrategy cacheStrategy = getCacheStrategy();
-    return cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy);
+    if (!HttpGet.METHOD_NAME.equals(httpMethod)) {
+      return pipeline;
+    }
+    else {
+      CacheStrategy cacheStrategy = getCacheStrategy();
+      return cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy);
+    }
   }
 
   /**
