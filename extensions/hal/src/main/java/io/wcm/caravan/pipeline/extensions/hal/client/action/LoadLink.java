@@ -30,11 +30,13 @@ import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
 import java.util.Collection;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.HttpGet;
 import org.osgi.annotation.versioning.ProviderType;
 
 import rx.Observable;
@@ -47,9 +49,10 @@ import com.google.common.collect.Multimap;
 @ProviderType
 public final class LoadLink extends AbstractHalClientAction {
 
-  private final String serviceId;
+  private final ServiceIdExtractor serviceId;
   private final Link link;
   private final Map<String, Object> parameters;
+  private String httpMethod = HttpGet.METHOD_NAME;
 
   /**
    * @param serviceId Service ID
@@ -57,6 +60,17 @@ public final class LoadLink extends AbstractHalClientAction {
    * @param parameters URI parameters
    */
   public LoadLink(String serviceId, Link link, Map<String, Object> parameters) {
+    this.serviceId = (path) -> serviceId;
+    this.link = link;
+    this.parameters = parameters;
+  }
+
+  /**
+   * @param serviceId a function to extract the serviceid from a path
+   * @param link Link to load
+   * @param parameters URI parameters
+   */
+  public LoadLink(ServiceIdExtractor serviceId, Link link, Map<String, Object> parameters) {
     this.serviceId = serviceId;
     this.link = link;
     this.parameters = parameters;
@@ -64,7 +78,8 @@ public final class LoadLink extends AbstractHalClientAction {
 
   @Override
   public String getId() {
-    return "LOAD-LINK(" + serviceId + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-' + parameters.hashCode() + ")";
+    return "LOAD-LINK(" + httpMethod + "-" + serviceId.getServiceId(link.getHref()) + '-' + StringUtils.defaultIfBlank(link.getName(), "") + '-'
+        + parameters.hashCode() + ")";
   }
 
   @Override
@@ -81,12 +96,22 @@ public final class LoadLink extends AbstractHalClientAction {
 
   }
 
+  /**
+   * @param httpMethodToUse the HTTP method to use when loading the link
+   * @return this
+   */
+  public HalClientAction withHttpMethod(String httpMethodToUse) {
+    this.httpMethod = httpMethodToUse;
+    return this;
+  }
+
   private CaravanHttpRequest createRequest(JsonPipelineOutput previousStepOutput) {
 
     CaravanHttpRequestBuilder builder = getRequestBuilder();
     builder = setCacheControlHeaderIfExists(builder, previousStepOutput);
     builder = setCorrelationIdIfExists(builder, previousStepOutput);
     builder = setAdditionalHttpHeadersIfExists(builder);
+    builder = builder.method(httpMethod);
     return builder.build(parameters);
 
   }
@@ -111,17 +136,22 @@ public final class LoadLink extends AbstractHalClientAction {
   }
 
   private CaravanHttpRequestBuilder getRequestBuilder() {
-    return new CaravanHttpRequestBuilder(serviceId).append(link.getHref());
+    return new CaravanHttpRequestBuilder(serviceId.getServiceId(link.getHref())).append(link.getHref());
   }
 
   /**
-   * Adds a cache point to the given JSON pipeline if provided.
+   * Adds a cache point to the given JSON pipeline if provided and the http request method is GET.
    * @param pipeline JSON pipeline
    * @return JSON pipeline with or without cache point
    */
   private JsonPipeline setCacheStrategyIfExists(JsonPipeline pipeline) {
-    CacheStrategy cacheStrategy = getCacheStrategy();
-    return cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy);
+    if (!HttpGet.METHOD_NAME.equals(httpMethod)) {
+      return pipeline;
+    }
+    else {
+      CacheStrategy cacheStrategy = getCacheStrategy();
+      return cacheStrategy == null ? pipeline : pipeline.addCachePoint(cacheStrategy);
+    }
   }
 
   /**
@@ -145,7 +175,8 @@ public final class LoadLink extends AbstractHalClientAction {
   }
 
   /**
-   * Sets the {@code correlation-id} HTTP header to the given request builder if provided by the previous JSON pipeline output.
+   * Sets the {@code correlation-id} HTTP header to the given request builder if provided by the previous JSON pipeline
+   * output.
    * @param builder HTTP request builder
    * @param previousStepOutput Previous JSON output
    * @return HTTP request builder with or without {@code correlation-id} HTTP header

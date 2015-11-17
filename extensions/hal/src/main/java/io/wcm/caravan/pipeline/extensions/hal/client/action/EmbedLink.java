@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 
 import java.util.Collections;
 import java.util.List;
@@ -45,6 +46,17 @@ public final class EmbedLink extends AbstractEmbedLinks {
    * @param parameters URI parameters
    */
   public EmbedLink(String serviceId, String relation, int index, Map<String, Object> parameters) {
+    super(serviceId, relation, parameters);
+    this.index = index;
+  }
+
+  /**
+   * @param serviceId function to extract Service ID from a given request URL
+   * @param relation Link relation to embed
+   * @param index Index of the link to embed
+   * @param parameters URI parameters
+   */
+  public EmbedLink(ServiceIdExtractor serviceId, String relation, int index, Map<String, Object> parameters) {
     super(serviceId, relation, parameters);
     this.index = index;
   }
