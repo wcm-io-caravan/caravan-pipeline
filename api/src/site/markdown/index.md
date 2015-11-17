@@ -9,7 +9,7 @@ JSON data pipeline with aggregation, slicing and caching.
 <dependency>
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.api</artifactId>
-  <version>0.5.2</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 

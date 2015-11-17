@@ -9,7 +9,7 @@ Pipeline caching adapter implementation for Guava Cache.
 <dependency>
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.cache.guava</artifactId>
-  <version>0.5.2</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 

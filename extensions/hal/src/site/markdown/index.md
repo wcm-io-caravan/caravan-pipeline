@@ -9,7 +9,7 @@ Client and actions to navigate inside HAL JSON resources.
 <dependency>
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.extensions.hal</artifactId>
-  <version>1.0.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 

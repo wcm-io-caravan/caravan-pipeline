@@ -9,7 +9,7 @@ Pipeline caching adapter implementation for Couchbase using Couchbase SDK 2.
 <dependency>
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.cache.couchbase</artifactId>
-  <version>0.5.4</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 
