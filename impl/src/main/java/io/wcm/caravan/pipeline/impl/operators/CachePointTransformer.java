@@ -401,6 +401,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     /**
      * Create a new CacheEnvelope to store in the couchbase cache
      * @param reason
+     * @param maxAge how many seconds 404 responses in cache should stay valid
      * @param cacheKey
      * @param pipelineDescriptor
      * @param contextProperties
@@ -508,6 +509,13 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      */
     public void setGeneratedDate(String newDate) {
       metadataNode.put("generated", newDate);
+    }
+
+    /**
+     * @param newDate
+     */
+    public void setExpiresDate(String newDate) {
+      metadataNode.put("expires", newDate);
     }
   }
 }
