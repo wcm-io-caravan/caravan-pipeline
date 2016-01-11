@@ -27,6 +27,9 @@
       <action type="update" dev="sseifert">
         Switch to Java 8.
       </action>
+      <action type="fix" dev="ssauder">
+        Ensure that 404 errors from cache are only considered for up to 60 seconds after the original 404 response was received
+      </action>
     </release>
 
     <release version="0.5.4" date="2015-08-26">

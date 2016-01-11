@@ -326,11 +326,12 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           if (e instanceof JsonPipelineInputException) {
             if (((JsonPipelineInputException)e).getStatusCode() == HttpStatus.SC_NOT_FOUND) {
 
-              CachePersistencyOptions options = CachePersistencyOptions.createTransient(60);
+              int maxAgeFor404 = 60;
+              CachePersistencyOptions options = CachePersistencyOptions.createTransient(maxAgeFor404);
               log.debug("CACHE PUT - 404 response for {} will be stored in the cache, max-age={} sec,\n{}",
                   descriptor, options.getRefreshInterval(), correlationId);
 
-              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), requests, cacheKey, descriptor, context.getProperties());
+              CacheEnvelope cacheEntry = CacheEnvelope.from404Response(e.getMessage(), maxAgeFor404, requests, cacheKey, descriptor, context.getProperties());
               context.getCacheAdapter().put(cacheKey, cacheEntry.getEnvelopeString(), options);
             }
           }
@@ -405,13 +406,13 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
      * @param contextProperties
      * @return the new CacheEnvelope instance
      */
-    public static CacheEnvelope from404Response(String reason, List<CaravanHttpRequest> requests, String cacheKey,
+    public static CacheEnvelope from404Response(String reason, int maxAge, List<CaravanHttpRequest> requests, String cacheKey,
         String pipelineDescriptor, Map<String, String> contextProperties) {
 
       JsonNode contentNode = JacksonFunctions.emptyObject();
       int statusCode = HttpStatus.SC_NOT_FOUND;
 
-      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, 0, requests, cacheKey, pipelineDescriptor, reason, contextProperties);
+      ObjectNode envelope = createEnvelopeNode(contentNode, statusCode, maxAge, requests, cacheKey, pipelineDescriptor, reason, contextProperties);
       return new CacheEnvelope(envelope);
     }
 
