@@ -2,16 +2,8 @@
 
 Pipeline caching adapter implementation for Couchbase using Couchbase SDK 2.
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.cache.couchbase/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.cache.couchbase)
 
-### Maven Dependency
-
-```xml
-<dependency>
-  <groupId>io.wcm.caravan</groupId>
-  <artifactId>io.wcm.caravan.pipeline.cache.couchbase</artifactId>
-  <version>0.6.0</version>
-</dependency>
-```
 
 ### Documentation
 

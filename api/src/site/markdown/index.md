@@ -2,16 +2,8 @@
 
 JSON data pipeline with aggregation, slicing and caching.
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.api/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.api)
 
-### Maven Dependency
-
-```xml
-<dependency>
-  <groupId>io.wcm.caravan</groupId>
-  <artifactId>io.wcm.caravan.pipeline.api</artifactId>
-  <version>0.6.0</version>
-</dependency>
-```
 
 ### Documentation
 

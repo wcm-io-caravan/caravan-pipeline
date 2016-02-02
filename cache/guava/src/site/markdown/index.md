@@ -2,16 +2,8 @@
 
 Pipeline caching adapter implementation for Guava Cache.
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.cache.guava/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.cache.guava)
 
-### Maven Dependency
-
-```xml
-<dependency>
-  <groupId>io.wcm.caravan</groupId>
-  <artifactId>io.wcm.caravan.pipeline.cache.guava</artifactId>
-  <version>0.6.0</version>
-</dependency>
-```
 
 ### Documentation
 
