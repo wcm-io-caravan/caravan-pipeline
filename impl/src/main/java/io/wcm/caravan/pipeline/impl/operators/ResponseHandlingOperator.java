@@ -80,7 +80,9 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
           statusCode = ((IllegalResponseRuntimeException)e).getResponseStatusCode();
         }
 
-        subscriber.onError(new JsonPipelineInputException(statusCode, "Failed to GET " + request.getUrl(), e));
+        JsonPipelineInputException jsonPipelineInputException = new JsonPipelineInputException(statusCode, "Failed to GET " + request.getUrl(), e)
+          .setReason(e.getMessage());
+        subscriber.onError(jsonPipelineInputException);
       }
 
       @Override
@@ -107,11 +109,14 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
               log.warn(msg);
             }
 
-            subscriber.onError(new JsonPipelineInputException(statusCode, msg));
+            JsonPipelineInputException pipelineInputException = new JsonPipelineInputException(statusCode, msg).setReason(response.reason());
+            subscriber.onError(pipelineInputException);
           }
         }
         catch (IOException ex) {
-          subscriber.onError(new JsonPipelineInputException(500, "Failed to read JSON response from " + request.getUrl(), ex));
+          JsonPipelineInputException pipelineInputException = new JsonPipelineInputException(500, "Failed to read JSON response from " + request.getUrl(), ex)
+            .setReason(response.reason());
+          subscriber.onError(pipelineInputException);
         }
       }
     };

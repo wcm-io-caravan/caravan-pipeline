@@ -25,13 +25,13 @@
   <parent>
     <groupId>io.wcm.caravan</groupId>
     <artifactId>io.wcm.caravan.pipeline.parent</artifactId>
-    <version>1.0.4</version>
+    <version>1.1.0-SNAPSHOT</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.cache.guava</artifactId>
-  <version>0.6.1-SNAPSHOT</version>
+  <version>0.7.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <name>JSON Pipeline Cache Adapter for Guava</name>
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.pipeline.api</artifactId>
-      <version>0.6.0</version>
+      <version>0.7.0-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

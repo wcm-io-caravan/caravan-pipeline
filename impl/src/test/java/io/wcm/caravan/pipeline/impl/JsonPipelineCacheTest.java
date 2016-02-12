@@ -270,11 +270,14 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
   public void useCached404Response() {
 
     int timeToLiveSeconds = 30;
+    int maxAgeFor404 = 60;
+    int timeSince404Response = 15;
 
     String originalReason = "original reason";
 
-    CacheEnvelope cached404 = CacheEnvelope.from404Response(originalReason, new LinkedList<CaravanHttpRequest>(), null, null, getContextProperties());
-    cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-15));
+    CacheEnvelope cached404 = CacheEnvelope.from404Response(originalReason, maxAgeFor404, new LinkedList<CaravanHttpRequest>(), null, null,
+        getContextProperties());
+    cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-timeSince404Response));
 
     Mockito.when(cacheAdapter.get(anyString(), anyObject()))
     .thenReturn(Observable.just(cached404.getEnvelopeString()));
@@ -292,6 +295,32 @@ public class JsonPipelineCacheTest extends AbstractJsonPipelineTest {
       assertTrue("the message should contain reason phrase from the original response", e.getMessage().startsWith(originalReason));
       assertTrue("but something should have been appended to indicate it's coming from cache", e.getMessage().length() > originalReason.length());
     }
+  }
+
+  @Test
+  public void ignoreStale404Response() {
+
+    // make sure that 404 errors are ignored even if the cache strategy has a long time to live
+    int timeToLiveSeconds = 300;
+    int maxAgeFor404 = 60;
+    int timeSince404Response = 75;
+
+    String originalReason = "original reason";
+
+    CacheEnvelope cached404 = CacheEnvelope.from404Response(originalReason, maxAgeFor404, new LinkedList<CaravanHttpRequest>(), null, null,
+        getContextProperties());
+    cached404.setGeneratedDate(CacheDateUtils.formatRelativeTime(-timeSince404Response));
+    cached404.setExpiresDate(CacheDateUtils.formatRelativeTime(maxAgeFor404 - timeSince404Response));
+
+    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
+    .thenReturn(Observable.just(cached404.getEnvelopeString()));
+
+    JsonPipeline pipeline = newPipelineWithResponseCode(200)
+        .addCachePoint(CacheStrategies.timeToLive(timeToLiveSeconds, TimeUnit.SECONDS));
+
+    JsonPipelineOutput output = pipeline.getOutput().toBlocking().single();
+    assertEquals("expect status code from response", 200, output.getStatusCode());
+
   }
 
   @Test

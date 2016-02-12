@@ -131,7 +131,9 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
   }
   @Test
   public void testCacheEnvelopeAvailabilityAt404() {
-    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", new LinkedList<CaravanHttpRequest>(), null, null, getContextProperties());
+
+    CacheEnvelope cached404 = CacheEnvelope.from404Response("original reason", 60, new LinkedList<CaravanHttpRequest>(), null, null,
+        getContextProperties());
     JsonNode node404 = JacksonFunctions.stringToNode(cached404.getEnvelopeString());
     JsonNode properties = node404.path("metadata").path("contextProperties");
     assertNotNull(properties);

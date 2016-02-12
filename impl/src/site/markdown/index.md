@@ -2,15 +2,8 @@
 
 JSON data pipeline implementation.
 
-### Maven Dependency
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.impl/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.impl)
 
-```xml
-<dependency>
-  <groupId>io.wcm.caravan</groupId>
-  <artifactId>io.wcm.caravan.pipeline.impl</artifactId>
-  <version>0.5.4</version>
-</dependency>
-```
 
 ### Documentation
 

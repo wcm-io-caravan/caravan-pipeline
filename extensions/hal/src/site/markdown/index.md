@@ -2,16 +2,8 @@
 
 Client and actions to navigate inside HAL JSON resources.
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.extensions.hal/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.extensions.hal)
 
-### Maven Dependency
-
-```xml
-<dependency>
-  <groupId>io.wcm.caravan</groupId>
-  <artifactId>io.wcm.caravan.pipeline.extensions.hal</artifactId>
-  <version>1.0.0</version>
-</dependency>
-```
 
 ### Documentation
 
