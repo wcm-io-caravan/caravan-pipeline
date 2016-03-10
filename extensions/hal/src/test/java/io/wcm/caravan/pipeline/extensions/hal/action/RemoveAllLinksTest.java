@@ -33,7 +33,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
@@ -45,12 +44,12 @@ public class RemoveAllLinksTest {
   @Mock
   private JsonPipelineContext context;
 
-  private ObjectNode embedded = HalResourceFactory.createResource("/embeddedResource1")
+  private ObjectNode embedded = new HalResource("/embeddedResource1")
       .addLinks("links4", new Link("/resource5"), new Link("/resource6"))
       .addLinks("links5", new Link("/resource7"), new Link("/resource8"))
       .getModel();
 
-  private ObjectNode payload = HalResourceFactory.createResource("/resource")
+  private ObjectNode payload = new HalResource("/resource")
       .addLinks("links1", new Link("/resource1"), new Link("/resource2"))
       .setLink("links2", new Link("/resource3"))
       .addLinks("links3", new Link("/resource4"))

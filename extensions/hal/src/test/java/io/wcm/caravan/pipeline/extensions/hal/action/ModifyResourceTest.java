@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
@@ -47,7 +46,7 @@ public class ModifyResourceTest {
   @Mock
   private JsonPipelineContext context;
 
-  private final ObjectNode payload = HalResourceFactory.createResource("/old").getModel().put("oldAttribute", "value");
+  private final ObjectNode payload = new HalResource("/old").getModel().put("oldAttribute", "value");
 
   private final ModifyResource action = new ModifyResource("/new") {
 

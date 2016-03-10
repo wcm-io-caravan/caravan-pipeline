@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
@@ -54,10 +53,10 @@ public class InlineEmbeddedTest {
   .outerRule(osgiCtx)
   .around(pipelineCtx);
 
-  private ObjectNode resource1 = HalResourceFactory.createResource("/resource1").getModel().put("key", "val1");
-  private ObjectNode resource2 = HalResourceFactory.createResource("/resource2").getModel().put("key", "val2");
-  private ObjectNode resource3 = HalResourceFactory.createResource("/resource3").getModel().put("key", "val3");
-  private ObjectNode payload = HalResourceFactory.createResource("/resource")
+  private ObjectNode resource1 = new HalResource("/resource1").getModel().put("key", "val1");
+  private ObjectNode resource2 = new HalResource("/resource2").getModel().put("key", "val2");
+  private ObjectNode resource3 = new HalResource("/resource3").getModel().put("key", "val3");
+  private ObjectNode payload = new HalResource("/resource")
       .setEmbedded("singular", new HalResource(resource1))
       .addEmbedded("multiple", new HalResource(resource2), new HalResource(resource3))
       .getModel();

@@ -37,7 +37,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
@@ -54,13 +53,13 @@ public class FilterEmbeddedHalResourceTest {
 
   private FilterEmbeddedHalResource action;
 
-  private ObjectNode payload = HalResourceFactory.createResource("/resource")
+  private ObjectNode payload = new HalResource("/resource")
       .addEmbedded("layer1-1",
-          HalResourceFactory.createResource("/resource1-1-1")
+          new HalResource("/resource1-1-1")
           .addEmbedded("layer2-1",
-              HalResourceFactory.createResource("/resource2-1-1"),
-              HalResourceFactory.createResource("/resource2-1-2"),
-              HalResourceFactory.createResource("/resource2-1-3")))
+              new HalResource("/resource2-1-1"),
+              new HalResource("/resource2-1-2"),
+              new HalResource("/resource2-1-3")))
       .getModel();
 
   @Before

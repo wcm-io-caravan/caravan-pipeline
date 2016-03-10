@@ -41,7 +41,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
@@ -81,14 +80,14 @@ public class HalCrawlerTest {
   @Before
   public void setUp() {
 
-    entryPoint = HalResourceFactory.createResource("/resource")
+    entryPoint = new HalResource("/resource")
         .addLinks("section", new Link("/resource/link-1"), new Link("/resource/link-2"))
-        .addEmbedded("item", HalResourceFactory.createResource("/resource/embedded-1"));
-    resourceLink1 = HalResourceFactory.createResource("/resource/link-1")
+        .addEmbedded("item", new HalResource("/resource/embedded-1"));
+    resourceLink1 = new HalResource("/resource/link-1")
         .setLink("item", new Link("/resource/link-1/section-1"));
-    resourceLink1Section1 = HalResourceFactory.createResource("/resource/link-1/section-1");
-    resourceLink2 = HalResourceFactory.createResource("/resource/link-2");
-    resourceEmbedded1 = HalResourceFactory.createResource("/resource/embedded-1");
+    resourceLink1Section1 = new HalResource("/resource/link-1/section-1");
+    resourceLink2 = new HalResource("/resource/link-2");
+    resourceEmbedded1 = new HalResource("/resource/embedded-1");
 
     pipelineCtx.getCaravanHttpClient().mockRequest().url(entryPoint.getLink().getHref()).response(entryPoint.getModel().toString());
     pipelineCtx.getCaravanHttpClient().mockRequest().url(resourceLink1.getLink().getHref()).response(resourceLink1.getModel().toString());

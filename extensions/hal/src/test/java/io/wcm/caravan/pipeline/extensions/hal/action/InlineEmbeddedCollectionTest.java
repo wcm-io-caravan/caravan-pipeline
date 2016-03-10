@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
@@ -54,10 +53,10 @@ public class InlineEmbeddedCollectionTest {
       .outerRule(osgiCtx)
       .around(pipelineCtx);
 
-  private ObjectNode resource1 = HalResourceFactory.createResource("/resource1").getModel().put("key", "val1");
-  private ObjectNode resource2 = HalResourceFactory.createResource("/resource2").getModel().put("key", "val2");
+  private ObjectNode resource1 = new HalResource("/resource1").getModel().put("key", "val1");
+  private ObjectNode resource2 = new HalResource("/resource2").getModel().put("key", "val2");
   private HalResource embedded = new HalResource(resource1).addEmbedded("item", new HalResource(resource1), new HalResource(resource2));
-  private ObjectNode payload = HalResourceFactory.createResource("/resource")
+  private ObjectNode payload = new HalResource("/resource")
       .setEmbedded("embedded", embedded)
       .getModel();
 

@@ -22,9 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.hal.resource.Link;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +31,9 @@ import org.mockito.Mockito;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+
 
 public class LinkExtractorsTest {
 
@@ -42,10 +42,10 @@ public class LinkExtractorsTest {
   @Before
   public void setUp() {
 
-    payload = HalResourceFactory.createResource("/resource")
+    payload = new HalResource("/resource")
         .addLinks("item", new Link("/link-1"), new Link("/link-2"))
         .addLinks("templated", new Link("/template{?param}"))
-        .addEmbedded("item", HalResourceFactory.createResource("/embedded-1")
+        .addEmbedded("item", new HalResource("/embedded-1")
             .addLinks("item", new Link("/embedded-1-link1"), new Link("/embedded-1-link2")));
   }
 

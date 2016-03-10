@@ -20,12 +20,12 @@
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.hal.resource.Link;
 
 import java.util.Map;
 
 import org.junit.Test;
+
+import io.wcm.caravan.hal.resource.Link;
 
 public class UriParametersProvidersTest {
 

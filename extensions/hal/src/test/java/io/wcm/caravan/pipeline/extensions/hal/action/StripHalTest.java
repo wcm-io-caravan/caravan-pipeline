@@ -22,10 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 
@@ -38,14 +34,19 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+
 @RunWith(MockitoJUnitRunner.class)
 public class StripHalTest {
 
   @Mock
   private JsonPipelineContext context;
 
-  private final ObjectNode payload = HalResourceFactory.createResource("/resource")
-      .addEmbedded("item", HalResourceFactory.createResource("/embedded1"))
+  private final ObjectNode payload = new HalResource("/resource")
+      .addEmbedded("item", new HalResource("/embedded1"))
       .getModel().put("attribute", "value");
 
   private final StripHal action = new StripHal();

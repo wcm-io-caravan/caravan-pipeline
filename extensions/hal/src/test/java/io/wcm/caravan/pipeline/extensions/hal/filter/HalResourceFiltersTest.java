@@ -25,9 +25,6 @@ import static io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceFilters.h
 import static io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceFilters.hasPathNonNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.testing.json.JsonTestEnvironment;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -36,13 +33,16 @@ import org.mockito.Mockito;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.testing.json.JsonTestEnvironment;
+
 public class HalResourceFiltersTest {
 
-  private ObjectNode item1 = HalResourceFactory.createResource("/item1")
+  private ObjectNode item1 = new HalResource("/item1")
       .getModel().put("key", "val1").putNull("particularNull");
-  private ObjectNode item2 = HalResourceFactory.createResource("/item1")
+  private ObjectNode item2 = new HalResource("/item1")
       .getModel().put("key", "val2").put("particularNull", "value");
-  private HalResource payload = HalResourceFactory.createResource("/")
+  private HalResource payload = new HalResource("/")
       .addEmbedded("item", new HalResource(item1), new HalResource(item2));
 
   @Before
