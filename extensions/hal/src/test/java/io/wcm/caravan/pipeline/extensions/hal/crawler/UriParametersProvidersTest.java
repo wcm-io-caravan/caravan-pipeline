@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertTrue;
 import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.resource.Link;
 
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class UriParametersProvidersTest {
 
   @Test
   public void empty_shouldReturnEmptyMap() {
-    Map<String, Object> parameters = UriParametersProviders.empty().getParameters(null, "item", HalResourceFactory.createLink("/item{?param}"));
+    Map<String, Object> parameters = UriParametersProviders.empty().getParameters(null, "item", new Link("/item{?param}"));
     assertTrue(parameters.isEmpty());
   }
 

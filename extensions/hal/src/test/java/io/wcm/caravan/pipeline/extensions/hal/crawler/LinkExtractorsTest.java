@@ -43,10 +43,10 @@ public class LinkExtractorsTest {
   public void setUp() {
 
     payload = HalResourceFactory.createResource("/resource")
-        .addLinks("item", HalResourceFactory.createLink("/link-1"), HalResourceFactory.createLink("/link-2"))
-        .addLinks("templated", HalResourceFactory.createLink("/template{?param}"))
+        .addLinks("item", new Link("/link-1"), new Link("/link-2"))
+        .addLinks("templated", new Link("/template{?param}"))
         .addEmbedded("item", HalResourceFactory.createResource("/embedded-1")
-            .addLinks("item", HalResourceFactory.createLink("/embedded-1-link1"), HalResourceFactory.createLink("/embedded-1-link2")));
+            .addLinks("item", new Link("/embedded-1-link1"), new Link("/embedded-1-link2")));
   }
 
   @Test
@@ -68,8 +68,8 @@ public class LinkExtractorsTest {
   public void onlyUrisStartingWith_shouldFilterLinksWithOtherPrefixes() {
 
     LinkExtractor delegate = Mockito.mock(LinkExtractor.class);
-    ListMultimap<String, Link> inputList = ImmutableListMultimap.of("item", HalResourceFactory.createLink("/correct/item/1"), "item",
-        HalResourceFactory.createLink("/other/item/2"));
+    ListMultimap<String, Link> inputList = ImmutableListMultimap.of("item", new Link("/correct/item/1"), "item",
+        new Link("/other/item/2"));
     Mockito.when(delegate.extract(Matchers.any())).thenReturn(inputList);
     ListMultimap<String, Link> result = LinkExtractors.filterByPrefix("/correct", delegate).extract(null);
     assertEquals(1, result.size());

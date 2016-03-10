@@ -77,12 +77,12 @@ public final class RemoveAllProperties implements JsonPipelineAction {
 
     // remove properties
     hal.getStateFieldNames().stream()
-    .filter(property -> !propertiesToKeep.contains(property))
-    .forEach(property -> hal.getModel().remove(property));
+        .filter(property -> !propertiesToKeep.contains(property))
+        .forEach(property -> hal.getModel().remove(property));
 
     // check embedded resources
     hal.getEmbedded().values().stream()
-    .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
+        .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
 
   }
 

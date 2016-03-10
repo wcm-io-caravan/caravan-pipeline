@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
@@ -45,14 +46,14 @@ public class RemoveAllLinksTest {
   private JsonPipelineContext context;
 
   private ObjectNode embedded = HalResourceFactory.createResource("/embeddedResource1")
-      .addLinks("links4", HalResourceFactory.createLink("/resource5"), HalResourceFactory.createLink("/resource6"))
-      .addLinks("links5", HalResourceFactory.createLink("/resource7"), HalResourceFactory.createLink("/resource8"))
+      .addLinks("links4", new Link("/resource5"), new Link("/resource6"))
+      .addLinks("links5", new Link("/resource7"), new Link("/resource8"))
       .getModel();
 
   private ObjectNode payload = HalResourceFactory.createResource("/resource")
-      .addLinks("links1", HalResourceFactory.createLink("/resource1"), HalResourceFactory.createLink("/resource2"))
-      .setLink("links2", HalResourceFactory.createLink("/resource3"))
-      .addLinks("links3", HalResourceFactory.createLink("/resource4"))
+      .addLinks("links1", new Link("/resource1"), new Link("/resource2"))
+      .setLink("links2", new Link("/resource3"))
+      .addLinks("links3", new Link("/resource4"))
       .addEmbedded("embedded1", new HalResource(embedded))
       .getModel();
 

@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -81,10 +82,10 @@ public class HalCrawlerTest {
   public void setUp() {
 
     entryPoint = HalResourceFactory.createResource("/resource")
-        .addLinks("section", HalResourceFactory.createLink("/resource/link-1"), HalResourceFactory.createLink("/resource/link-2"))
+        .addLinks("section", new Link("/resource/link-1"), new Link("/resource/link-2"))
         .addEmbedded("item", HalResourceFactory.createResource("/resource/embedded-1"));
     resourceLink1 = HalResourceFactory.createResource("/resource/link-1")
-        .setLink("item", HalResourceFactory.createLink("/resource/link-1/section-1"));
+        .setLink("item", new Link("/resource/link-1/section-1"));
     resourceLink1Section1 = HalResourceFactory.createResource("/resource/link-1/section-1");
     resourceLink2 = HalResourceFactory.createResource("/resource/link-2");
     resourceEmbedded1 = HalResourceFactory.createResource("/resource/embedded-1");
@@ -122,7 +123,7 @@ public class HalCrawlerTest {
   public void shouldCrashWithoutExceptionHandler() {
 
     // add Not Found Link to HAL Entry Point
-    resourceLink1.addLinks("item", HalResourceFactory.createLink("/not-found"));
+    resourceLink1.addLinks("item", new Link("/not-found"));
     pipelineCtx.getCaravanHttpClient().getRequestMatchers().get(1).response(resourceLink1.getModel().toString());
     // mock Not Found request
     pipelineCtx.getCaravanHttpClient().mockRequest().url("/not-found").response(new CaravanHttpResponseBuilder().status(404).reason("Not Found").build());
@@ -137,7 +138,7 @@ public class HalCrawlerTest {
     crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(), StopCriteria.alwaysEnabled());
 
     // add Not Found Link to HAL Entry Point
-    resourceLink1.addLinks("item", HalResourceFactory.createLink("/not-found"));
+    resourceLink1.addLinks("item", new Link("/not-found"));
     pipelineCtx.getCaravanHttpClient().getRequestMatchers().get(1).response(resourceLink1.getModel().toString());
     // mock Not Found request
     pipelineCtx.getCaravanHttpClient().mockRequest().url("/not-found").response(new CaravanHttpResponseBuilder().status(404).reason("Not Found").build());

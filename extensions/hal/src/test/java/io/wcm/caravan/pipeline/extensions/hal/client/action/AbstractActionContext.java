@@ -20,6 +20,7 @@
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
@@ -73,8 +74,8 @@ public abstract class AbstractActionContext {
 
   protected ObjectNode getPayload() {
     return HalResourceFactory.createResource("/resource")
-        .addLinks("primary", HalResourceFactory.createLink("/resource1"), HalResourceFactory.createLink("/resource2"))
-        .addLinks("secondary", HalResourceFactory.createLink("/resource3"))
+        .addLinks("primary", new Link("/resource1"), new Link("/resource2"))
+        .addLinks("secondary", new Link("/resource3"))
         .getModel();
   }
 
