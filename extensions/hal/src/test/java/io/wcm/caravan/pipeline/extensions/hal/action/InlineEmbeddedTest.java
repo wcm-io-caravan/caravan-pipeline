@@ -22,12 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
-import io.wcm.caravan.testing.pipeline.JsonPipelineContext;
 
 import java.util.Collections;
 
@@ -42,6 +36,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+import io.wcm.caravan.testing.pipeline.JsonPipelineContext;
+
 @RunWith(MockitoJUnitRunner.class)
 public class InlineEmbeddedTest {
 
@@ -50,8 +51,8 @@ public class InlineEmbeddedTest {
 
   @Rule
   public RuleChain chain = RuleChain
-      .outerRule(osgiCtx)
-      .around(pipelineCtx);
+  .outerRule(osgiCtx)
+  .around(pipelineCtx);
 
   private ObjectNode resource1 = HalResourceFactory.createResource("/resource1").getModel().put("key", "val1");
   private ObjectNode resource2 = HalResourceFactory.createResource("/resource2").getModel().put("key", "val2");
@@ -77,7 +78,7 @@ public class InlineEmbeddedTest {
     InlineEmbedded action = new InlineEmbedded(relations);
     JsonPipelineOutputImpl input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    return new HalResource((ObjectNode)output.getPayload());
+    return new HalResource(output.getPayload());
   }
 
   @Test

@@ -19,20 +19,17 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
-import io.wcm.caravan.commons.stream.Streams;
+import org.osgi.annotation.versioning.ProviderType;
+
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
-import org.osgi.annotation.versioning.ProviderType;
-
 import rx.Observable;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 /**
- * Walks recursive through the HAL resource and its embedded resources. Given {@code matcher} determines which embedded HAL resource should get filtered by the
+ * Walks recursive through the HAL resource and its embedded resources. Given {@code matcher} determines which embedded
+ * HAL resource should get filtered by the
  * given {@code predicate}.
  */
 @ProviderType
@@ -58,7 +55,7 @@ public final class FilterEmbeddedHalResource implements JsonPipelineAction {
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
-    HalResource hal = new HalResource((ObjectNode)previousStepOutput.getPayload());
+    HalResource hal = new HalResource(previousStepOutput.getPayload());
     process(new HalPath(), hal);
     return Observable.just(previousStepOutput);
 
@@ -91,9 +88,8 @@ public final class FilterEmbeddedHalResource implements JsonPipelineAction {
 
   private void processEmbeddedResources(HalPath halPath, HalResource hal) {
 
-    Streams.of(hal.getEmbedded(halPath.current()))
-    .forEach(resource -> process(halPath, resource));
-
+    hal.getEmbedded(halPath.current()).stream()
+        .forEach(resource -> process(halPath, resource));
   }
 
 }

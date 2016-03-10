@@ -19,16 +19,13 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
-import org.osgi.annotation.versioning.ProviderType;
-
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Action which only emits the HAL state and removes meta data like links and embedded resources.
@@ -43,7 +40,7 @@ public final class StripHal implements JsonPipelineAction {
 
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
-    HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
+    HalResource halResource = new HalResource(previousStepOutput.getPayload());
     halResource.removeEmbedded().removeLinks();
     return Observable.just(previousStepOutput);
   }

@@ -19,11 +19,6 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.Link;
-import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
-
 import java.util.List;
 import java.util.Map;
 
@@ -34,8 +29,13 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
+
 /**
- * Action to load all links for a given relation in a HAL document and store them as embedded resources. In opposite to {@link EmbedLinks} this action takes the
+ * Action to load all links for a given relation in a HAL document and store them as embedded resources. In opposite to
+ * {@link EmbedLinks} this action takes the
  * links of the main and all embedded resources.
  */
 @ProviderType
@@ -70,11 +70,12 @@ public final class DeepEmbedLinks extends AbstractEmbedLinks {
   List<Link> getLinksForRequestedRelation(HalResource halResource) {
 
     List<Link> links = Lists.newArrayList(halResource.getLinks(getRelation()));
-    Streams.of(halResource.getEmbedded().values())
+
+    halResource.getEmbedded().values().stream()
     .map(embedded -> getLinksForRequestedRelation(embedded))
     .forEach(embeddedLinks -> links.addAll(embeddedLinks));
-    return links;
 
+    return links;
   }
 
   @Override

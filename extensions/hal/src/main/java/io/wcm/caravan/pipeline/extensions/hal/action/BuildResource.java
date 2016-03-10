@@ -19,23 +19,22 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
+import org.osgi.annotation.versioning.ConsumerType;
+
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.util.HalBuilder;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
-
-import org.osgi.annotation.versioning.ConsumerType;
-
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * A pipeline action you can use if you want to build a new {@link HalResource} based on another {@link HalResource}
  * from the previous step's output.
+ * @deprecated use {@link CreateResource} instead
  */
+@Deprecated
 //CHECKSTYLE:OFF
 @ConsumerType
 public abstract class BuildResource implements JsonPipelineAction {
@@ -64,7 +63,7 @@ public abstract class BuildResource implements JsonPipelineAction {
           + previousStepOutput.getPayload().toString());
     }
 
-    HalResource input = new HalResource(((ObjectNode)previousStepOutput.getPayload()));
+    HalResource input = new HalResource((previousStepOutput.getPayload()));
 
     HalBuilder outputBuilder = new HalBuilder(selfHref);
 

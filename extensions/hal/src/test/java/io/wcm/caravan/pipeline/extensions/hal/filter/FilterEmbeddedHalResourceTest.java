@@ -20,11 +20,6 @@
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
 import static org.junit.Assert.assertEquals;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +36,12 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+
 @RunWith(MockitoJUnitRunner.class)
 public class FilterEmbeddedHalResourceTest {
 
@@ -56,10 +57,10 @@ public class FilterEmbeddedHalResourceTest {
   private ObjectNode payload = HalResourceFactory.createResource("/resource")
       .addEmbedded("layer1-1",
           HalResourceFactory.createResource("/resource1-1-1")
-              .addEmbedded("layer2-1",
-                  HalResourceFactory.createResource("/resource2-1-1"),
-                  HalResourceFactory.createResource("/resource2-1-2"),
-                  HalResourceFactory.createResource("/resource2-1-3")))
+          .addEmbedded("layer2-1",
+              HalResourceFactory.createResource("/resource2-1-1"),
+              HalResourceFactory.createResource("/resource2-1-2"),
+              HalResourceFactory.createResource("/resource2-1-3")))
       .getModel();
 
   @Before
@@ -110,7 +111,7 @@ public class FilterEmbeddedHalResourceTest {
 
     JsonPipelineOutputImpl input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    return new HalResource((ObjectNode)output.getPayload());
+    return new HalResource(output.getPayload());
 
   }
 

@@ -20,12 +20,6 @@
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
 import static org.junit.Assert.assertEquals;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.JsonPipelineOutputException;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 
@@ -37,6 +31,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.JsonPipelineOutputException;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ModifyResourceTest {
@@ -64,7 +65,7 @@ public class ModifyResourceTest {
 
     JsonPipelineOutput input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    hal = new HalResource((ObjectNode)output.getPayload());
+    hal = new HalResource(output.getPayload());
 
   }
 

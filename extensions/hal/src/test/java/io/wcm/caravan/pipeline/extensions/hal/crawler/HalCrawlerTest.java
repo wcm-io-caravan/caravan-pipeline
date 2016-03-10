@@ -23,20 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.never;
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
-import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
-import io.wcm.caravan.pipeline.JsonPipelineInputException;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.cache.CacheStrategies;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.extensions.hal.client.HalClient;
-import io.wcm.caravan.testing.http.RequestMatcher;
-import io.wcm.caravan.testing.pipeline.JsonPipelineContext;
 
 import java.util.Collections;
 import java.util.Map;
@@ -52,10 +38,22 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import rx.Observable;
-
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
+import io.wcm.caravan.pipeline.JsonPipelineInputException;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CacheStrategies;
+import io.wcm.caravan.pipeline.cache.CacheStrategy;
+import io.wcm.caravan.pipeline.extensions.hal.client.HalClient;
+import io.wcm.caravan.testing.http.RequestMatcher;
+import io.wcm.caravan.testing.pipeline.JsonPipelineContext;
+import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HalCrawlerTest {
@@ -65,8 +63,8 @@ public class HalCrawlerTest {
 
   @Rule
   public RuleChain chain = RuleChain
-  .outerRule(osgiCtx)
-  .around(pipelineCtx);
+      .outerRule(osgiCtx)
+      .around(pipelineCtx);
 
   private HalClient client;
   private HalCrawler crawler;
@@ -77,7 +75,6 @@ public class HalCrawlerTest {
   private HalResource resourceLink1Section1;
   private HalResource resourceLink2;
   private HalResource resourceEmbedded1;
-  
 
 
   @Before
@@ -108,16 +105,16 @@ public class HalCrawlerTest {
   public void shouldCrawlAllLinks() {
 
     JsonPipelineOutput output = pipeline.applyAction(crawler).getOutput().toBlocking().single();
-    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    HalResource hal = new HalResource(output.getPayload());
     assertEquals(5, hal.getLinks().size());
 
     Map<RequestMatcher, AtomicInteger> counter = pipelineCtx.getCaravanHttpClient().getMatchingCounter();
     assertEquals(5, counter.size());
-    Streams.of(counter.entrySet())
-    .filter(entry -> entry.getValue().get() != 1)
-    .forEach(entry -> {
-      fail(entry.getKey() + " was invoked " + entry.getValue() + " times");
-    });
+    counter.entrySet().stream()
+        .filter(entry -> entry.getValue().get() != 1)
+        .forEach(entry -> {
+          fail(entry.getKey() + " was invoked " + entry.getValue() + " times");
+        });
 
   }
 
@@ -137,7 +134,7 @@ public class HalCrawlerTest {
   @Test
   public void shouldNotCrashWithExceptionHandler() {
 
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriteria.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(), StopCriteria.alwaysEnabled());
 
     // add Not Found Link to HAL Entry Point
     resourceLink1.addLinks("item", HalResourceFactory.createLink("/not-found"));
@@ -155,7 +152,7 @@ public class HalCrawlerTest {
     });
 
     JsonPipelineOutput output = pipeline.applyAction(crawler).getOutput().toBlocking().single();
-    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    HalResource hal = new HalResource(output.getPayload());
     assertEquals(6, hal.getLinks().size());
 
   }
@@ -165,7 +162,7 @@ public class HalCrawlerTest {
 
     CacheStrategy cacheStrategy = createCacheStrategyMock();
     client = new HalClient("test-service", cacheStrategy);
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriteria.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(), StopCriteria.alwaysEnabled());
 
     pipeline.applyAction(crawler).getOutput().toBlocking().single();
 
@@ -187,7 +184,7 @@ public class HalCrawlerTest {
 
     CacheStrategy clientCacheStrategy = createCacheStrategyMock();
     client = new HalClient("test-service", clientCacheStrategy);
-    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(),  StopCriteria.alwaysEnabled());
+    crawler = new HalCrawler(client, LinkExtractors.all(), UriParametersProviders.empty(), OutputProcessors.report(), StopCriteria.alwaysEnabled());
 
     CacheStrategy extraCacheStrategy = createCacheStrategyMock();
     crawler.setCacheStrategy(extraCacheStrategy);

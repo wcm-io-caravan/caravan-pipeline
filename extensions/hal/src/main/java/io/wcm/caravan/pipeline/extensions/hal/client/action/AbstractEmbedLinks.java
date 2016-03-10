@@ -19,8 +19,11 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
-import io.wcm.caravan.commons.stream.Collectors;
-import io.wcm.caravan.commons.stream.Streams;
+import java.util.List;
+import java.util.Map;
+
+import org.osgi.annotation.versioning.ConsumerType;
+
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -28,15 +31,7 @@ import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
-
-import java.util.List;
-import java.util.Map;
-
-import org.osgi.annotation.versioning.ConsumerType;
-
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Base link embedding action to load links for a given relation and store them as embedded resources.
@@ -78,7 +73,8 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
   @Override
   public final Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
 
-    HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
+
+    HalResource halResource = new HalResource(previousStepOutput.getPayload());
     List<Link> links = getLinksForRequestedRelation(halResource);
     if (links.isEmpty()) {
       return Observable.just(previousStepOutput);
@@ -87,10 +83,11 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
     Observable<JsonPipeline> linkPipelines = getPipelinesForLinks(previousStepOutput, context, links);
     return CacheControlUtils.zipWithLowestMaxAge(linkPipelines, (outputsToEmbed) -> {
 
-      List<HalResource> resourcesToEmbed = Streams.of(outputsToEmbed)
+      List<HalResource> resourcesToEmbed = outputsToEmbed.stream()
           .map(output -> output.getPayload())
-          .map(json -> new HalResource((ObjectNode)json))
-          .collect(Collectors.toList());
+          .map(json -> new HalResource(json))
+          .collect(java.util.stream.Collectors.toList());
+
       setEmbeddedResourcesAndRemoveLink(halResource, links, resourcesToEmbed);
       return previousStepOutput.withPayload(halResource.getModel());
 
@@ -108,9 +105,9 @@ public abstract class AbstractEmbedLinks extends AbstractHalClientAction {
     return Observable.from(links)
         .map(link -> {
           return new LoadLink(serviceId, link, parameters)
-          .setCacheStrategy(getCacheStrategy())
-          .setExceptionHandlers(getExceptionHandlers())
-          .setLogger(getLogger());
+              .setCacheStrategy(getCacheStrategy())
+              .setExceptionHandlers(getExceptionHandlers())
+              .setLogger(getLogger());
         })
         .map(action -> pipeline.applyAction(action));
 

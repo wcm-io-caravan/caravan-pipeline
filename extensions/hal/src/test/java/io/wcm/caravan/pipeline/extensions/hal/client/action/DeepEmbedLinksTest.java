@@ -22,9 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +29,10 @@ import java.util.List;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 
 public class DeepEmbedLinksTest extends AbstractActionContext {
@@ -72,7 +73,7 @@ public class DeepEmbedLinksTest extends AbstractActionContext {
     new HalResource(payload).addEmbedded("stillEmbedded", new HalResource(getPayload()));
     JsonPipelineOutput input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    HalResource hal = new HalResource(output.getPayload());
     return hal;
 
   }

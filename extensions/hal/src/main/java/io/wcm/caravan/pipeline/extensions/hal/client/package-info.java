@@ -20,5 +20,5 @@
 /**
  * HAL Client.
  */
-@org.osgi.annotation.versioning.Version("1.1.0")
+@org.osgi.annotation.versioning.Version("1.2.0")
 package io.wcm.caravan.pipeline.extensions.hal.client;

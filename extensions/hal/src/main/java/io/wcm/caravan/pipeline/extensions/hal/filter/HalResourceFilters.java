@@ -19,24 +19,23 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
-import io.wcm.caravan.commons.stream.Collectors;
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.annotation.versioning.ProviderType;
 
-import rx.functions.Func1;
-
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import rx.functions.Func1;
 
 /**
  * Default filtering predicates for HAL resources.
@@ -45,6 +44,10 @@ import com.jayway.jsonpath.Option;
 public final class HalResourceFilters {
 
   private static final Configuration JSON_PATH_CONF = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS);
+
+  /** JSON object mapper */
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
   private HalResourceFilters() {
     // nothing to do
@@ -73,7 +76,7 @@ public final class HalResourceFilters {
 
       @Override
       public String getId() {
-        List<String> ids = Streams.of(predicates).map(matcher -> matcher.getId()).collect(Collectors.toList());
+        List<String> ids = Stream.of(predicates).map(matcher -> matcher.getId()).collect(java.util.stream.Collectors.toList());
         return "ALL(" + StringUtils.join(ids, '+') + ")";
       }
     };
@@ -169,7 +172,7 @@ public final class HalResourceFilters {
 
       @Override
       public boolean apply(HalPath halPath, HalResource hal) {
-        S object = HalResourceFactory.getStateAsObject(hal, clazz);
+        S object = OBJECT_MAPPER.convertValue(hal.getModel(), clazz);
         return function.call(object);
       }
 

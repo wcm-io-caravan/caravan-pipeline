@@ -22,16 +22,15 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.Link;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 
 public class EmbedLinkTest extends AbstractActionContext {
@@ -64,7 +63,7 @@ public class EmbedLinkTest extends AbstractActionContext {
 
     EmbedLink action = createAction(relation, index);
     JsonPipelineOutput output = action.execute(getInput(), context).toBlocking().single();
-    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    HalResource hal = new HalResource(output.getPayload());
     return hal;
 
   }

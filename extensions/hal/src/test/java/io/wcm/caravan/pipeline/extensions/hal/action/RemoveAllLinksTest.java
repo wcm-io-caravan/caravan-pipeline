@@ -22,11 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.action;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 
@@ -36,6 +31,12 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.HalResourceFactory;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RemoveAllLinksTest {
@@ -86,7 +87,7 @@ public class RemoveAllLinksTest {
     JsonPipelineOutput input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     RemoveAllLinks action = new RemoveAllLinks().except(relations);
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    return new HalResource((ObjectNode)output.getPayload());
+    return new HalResource(output.getPayload());
 
   }
 
