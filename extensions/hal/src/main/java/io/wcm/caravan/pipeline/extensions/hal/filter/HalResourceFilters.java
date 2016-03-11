@@ -76,7 +76,10 @@ public final class HalResourceFilters {
 
       @Override
       public String getId() {
-        List<String> ids = Stream.of(predicates).map(matcher -> matcher.getId()).collect(java.util.stream.Collectors.toList());
+        List<String> ids = Stream.of(predicates)
+            .map(matcher -> matcher.getId())
+            .collect(java.util.stream.Collectors.toList());
+
         return "ALL(" + StringUtils.join(ids, '+') + ")";
       }
     };
