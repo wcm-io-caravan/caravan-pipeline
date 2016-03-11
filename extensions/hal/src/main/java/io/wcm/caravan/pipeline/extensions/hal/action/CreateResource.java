@@ -19,6 +19,8 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
+import org.apache.commons.lang3.StringUtils;
+
 import io.wcm.caravan.hal.resource.HalResource;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
@@ -61,7 +63,12 @@ public abstract class CreateResource implements JsonPipelineAction {
 
     HalResource output = createOutput(input);
 
-    output.setLink(new Link(selfHref));
+    if (output.getLink() == null) {
+      output.setLink(new Link(selfHref));
+    }
+    else if (StringUtils.isBlank(output.getLink().getHref())) {
+      output.getLink().setHref(selfHref);
+    }
 
     return Observable.just(previousStepOutput.withPayload(output.getModel()));
   }
