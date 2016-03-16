@@ -25,10 +25,10 @@
 
     <release version="1.4.0" date="2016-03-16">
       <action type="add" dev="ssauder">
-        Added CreateResource action (as replacement for BuildResource which uses the deprecated HalBuilder)
+        Added CreateResource action (as replacement for BuildResource which uses the deprecated HalBuilder).
       </action>
       <action type="update" dev="ssauder">
-        Deprecated BuildResource action (because it uses the deprecated HalBuilder from caravan.hal.resource)
+        Deprecated BuildResource action (because it uses the deprecated HalBuilder from caravan.hal.resource).
       </action>
     </release>
 
