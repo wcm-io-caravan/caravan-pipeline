@@ -21,11 +21,6 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,8 +29,13 @@ import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 public class FollowLinkTest extends AbstractActionContext {
 
@@ -64,7 +64,7 @@ public class FollowLinkTest extends AbstractActionContext {
 
     FollowLink action = createAction(relation, index);
     JsonPipelineOutput output = action.execute(getInput(), context).toBlocking().single();
-    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    HalResource hal = new HalResource(output.getPayload());
     return hal;
 
   }

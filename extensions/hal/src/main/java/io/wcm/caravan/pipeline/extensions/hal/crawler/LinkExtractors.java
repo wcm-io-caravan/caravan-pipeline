@@ -19,11 +19,6 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.Link;
-import io.wcm.caravan.hal.resource.util.HalUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.osgi.annotation.versioning.ProviderType;
@@ -33,6 +28,10 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableListMultimap.Builder;
 import com.google.common.collect.ListMultimap;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.hal.resource.util.HalUtil;
 
 /**
  * Common link extractors.
@@ -111,7 +110,7 @@ public final class LinkExtractors {
 
         ListMultimap<String, Link> fromDelegate = delegate.extract(hal);
         Builder<String, Link> builder = ImmutableListMultimap.builder();
-        Streams.of(fromDelegate.entries())
+        fromDelegate.entries().stream()
             .filter(entry -> StringUtils.startsWith(entry.getValue().getHref(), prefix))
             .forEach(entry -> builder.put(entry));
         return builder.build();

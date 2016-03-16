@@ -20,12 +20,6 @@
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertEquals;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,9 +27,15 @@ import java.util.List;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 
 public class OutputProcessorsTest {
@@ -45,18 +45,18 @@ public class OutputProcessorsTest {
 
     OutputProcessor processor = OutputProcessors.report();
 
-    HalResource resource = HalResourceFactory.createResource("/resource")
-        .addLinks("section", HalResourceFactory.createLink("/resource-1"), HalResourceFactory.createLink("/resource-2"));
-    HalResource resource1 = HalResourceFactory.createResource("/resource-1")
-        .addLinks("item", HalResourceFactory.createLink("/resource-1-1"));
-    HalResource resource1_1 = HalResourceFactory.createResource("/resource-1-1");
-    HalResource resource2 = HalResourceFactory.createResource("/resource-2");
+    HalResource resource = new HalResource("/resource")
+        .addLinks("section", new Link("/resource-1"), new Link("/resource-2"));
+    HalResource resource1 = new HalResource("/resource-1")
+        .addLinks("item", new Link("/resource-1-1"));
+    HalResource resource1_1 = new HalResource("/resource-1-1");
+    HalResource resource2 = new HalResource("/resource-2");
 
     JsonPipelineOutput result2 = processor.process(createJsonPipelineOutput("section", resource2), Collections.emptyList());
     JsonPipelineOutput result1_1 = processor.process(createJsonPipelineOutput("item", resource1_1), Collections.emptyList());
     JsonPipelineOutput result1 = processor.process(createJsonPipelineOutput("section", resource1), ImmutableList.of(result1_1));
     JsonPipelineOutput output = processor.process(createJsonPipelineOutput(null, resource), ImmutableList.of(result1, result2));
-    HalResource hal = new HalResource((ObjectNode)output.getPayload());
+    HalResource hal = new HalResource(output.getPayload());
 
     assertEquals("/resource", hal.getLink().getHref());
     assertEquals(2, hal.getLinks("section").size());

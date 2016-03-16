@@ -19,21 +19,19 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.annotation.versioning.ProviderType;
 
-import rx.Observable;
-
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import rx.Observable;
 
 /**
  * Moves the state of embedded resources into the state of the current resource.
@@ -58,7 +56,7 @@ public final class InlineEmbedded implements JsonPipelineAction {
 
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
-    HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
+    HalResource halResource = new HalResource(previousStepOutput.getPayload());
     for (String relation : relations) {
       moveEmbeddedResourceState(halResource, relation);
       // delete embedded resource
@@ -78,7 +76,7 @@ public final class InlineEmbedded implements JsonPipelineAction {
     }
     else {
       ArrayNode container = model.putArray(relation);
-      Streams.of(embeddedResources).forEach(e -> container.add(e.removeEmbedded().removeLinks().getModel()));
+      embeddedResources.forEach(e -> container.add(e.removeEmbedded().removeLinks().getModel()));
     }
   }
 

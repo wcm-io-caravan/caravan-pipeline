@@ -19,21 +19,19 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.annotation.versioning.ProviderType;
 
-import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Sets;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import rx.Observable;
 
 /**
  * Removes all links for a HAL resource and it's embedded resources which don't fit the given relation names.
@@ -51,7 +49,7 @@ public final class RemoveAllLinks implements JsonPipelineAction {
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
-    HalResource hal = new HalResource((ObjectNode)previousStepOutput.getPayload());
+    HalResource hal = new HalResource(previousStepOutput.getPayload());
     removeLinksRecursive(hal);
     return Observable.just(previousStepOutput);
 
@@ -63,7 +61,7 @@ public final class RemoveAllLinks implements JsonPipelineAction {
    */
   public RemoveAllLinks except(String... relations) {
 
-    Streams.of(relations).forEach(relation -> relationsToIgnore.add(relation));
+    Stream.of(relations).forEach(relation -> relationsToIgnore.add(relation));
     return this;
 
   }
@@ -71,12 +69,13 @@ public final class RemoveAllLinks implements JsonPipelineAction {
   private void removeLinksRecursive(HalResource hal) {
 
     // remove links
-    Streams.of(hal.getLinks().keySet())
-    .filter(relation -> !relationsToIgnore.contains(relation))
-    .forEach(relation -> hal.removeLinks(relation));
+    hal.getLinks().keySet().stream()
+        .filter(relation -> !relationsToIgnore.contains(relation))
+        .forEach(relation -> hal.removeLinks(relation));
+
     // check embedded resources
-    Streams.of(hal.getEmbedded().values())
-    .forEach(embedded -> removeLinksRecursive(embedded));
+    hal.getEmbedded().values().stream()
+        .forEach(embedded -> removeLinksRecursive(embedded));
 
   }
 

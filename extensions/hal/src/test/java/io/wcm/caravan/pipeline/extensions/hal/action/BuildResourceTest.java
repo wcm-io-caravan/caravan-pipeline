@@ -21,13 +21,6 @@ package io.wcm.caravan.pipeline.extensions.hal.action;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.hal.resource.util.HalBuilder;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.JsonPipelineOutputException;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 
@@ -40,6 +33,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.util.HalBuilder;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.JsonPipelineOutputException;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+
+@SuppressWarnings("deprecation")
 @RunWith(MockitoJUnitRunner.class)
 public class BuildResourceTest {
 
@@ -48,7 +49,7 @@ public class BuildResourceTest {
   @Mock
   private JsonPipelineContext context;
 
-  private final ObjectNode payload = HalResourceFactory.createResource("/old").getModel().put("oldAttribute", "value");
+  private final ObjectNode payload = new HalResource("/old").getModel().put("oldAttribute", "value");
 
   private final BuildResource action = new BuildResource("/new") {
 
@@ -68,7 +69,7 @@ public class BuildResourceTest {
 
     JsonPipelineOutput input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    hal = new HalResource((ObjectNode)output.getPayload());
+    hal = new HalResource(output.getPayload());
 
   }
 
@@ -93,7 +94,7 @@ public class BuildResourceTest {
     JsonPipelineOutput input = new JsonPipelineOutputImpl(OBJECT_MAPPER.createObjectNode(), Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
 
-    assertEquals("/new", new HalResource((ObjectNode)output.getPayload()).getLink().getHref());
+    assertEquals("/new", new HalResource(output.getPayload()).getLink().getHref());
 
   }
 
@@ -105,7 +106,7 @@ public class BuildResourceTest {
     JsonPipelineOutput input = new JsonPipelineOutputImpl(errorInput, Collections.emptyList());
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
 
-    assertEquals("/new", new HalResource((ObjectNode)output.getPayload()).getLink().getHref());
+    assertEquals("/new", new HalResource(output.getPayload()).getLink().getHref());
   }
 
   @Test

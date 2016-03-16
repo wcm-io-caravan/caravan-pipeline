@@ -69,8 +69,12 @@ public final class JsonPipelineInputException extends RuntimeException {
     return reason;
   }
 
-  public JsonPipelineInputException setReason(String reason) {
-    this.reason = reason;
+  /**
+   * @param reasonPhrase the reason line from the HTTP response headers
+   * @return this
+   */
+  public JsonPipelineInputException setReason(String reasonPhrase) {
+    this.reason = reasonPhrase;
     return this;
   }
 }

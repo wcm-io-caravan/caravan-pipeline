@@ -19,17 +19,15 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.filter;
 
-import io.wcm.caravan.commons.stream.Collectors;
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Lists;
+
+import io.wcm.caravan.hal.resource.HalResource;
 
 /**
  * Collection of common reporting {@link HalResourcePredicate}s which write negative predicate results into a HAL
@@ -51,17 +49,18 @@ public final class ReportHalResourceFilters {
 
       @Override
       public String getId() {
-        List<String> ids = Streams.of(delegates).map(matcher -> matcher.getId()).collect(Collectors.toList());
+        List<String> ids = Stream.of(delegates).map(matcher -> matcher.getId()).collect(java.util.stream.Collectors.toList());
         return "ALL(" + StringUtils.join(ids, '+') + ")";
       }
 
       @Override
       public boolean apply(HalPath halPath, HalResource hal) {
 
-        List<String> errors = Streams.of(delegates)
+        List<String> errors = Stream.of(delegates)
             .filter(delegate -> !delegate.apply(halPath, hal))
             .map(delegate -> delegate.getId())
-            .collect(Collectors.toList());
+            .collect(java.util.stream.Collectors.toList());
+
         if (!errors.isEmpty()) {
           report.addEmbedded("item", createReport(halPath, hal, errors));
         }
@@ -103,7 +102,7 @@ public final class ReportHalResourceFilters {
 
   private static HalResource createReport(HalPath halPath, HalResource hal, List<String> errors) {
 
-    HalResource filterReport = HalResourceFactory.createResource(hal.getLink().getHref());
+    HalResource filterReport = new HalResource(hal.getLink().getHref());
     filterReport.getModel().put("halPath", halPath.toString());
     ArrayNode errorContainer = filterReport.getModel().putArray("errors");
     for (String error : errors) {

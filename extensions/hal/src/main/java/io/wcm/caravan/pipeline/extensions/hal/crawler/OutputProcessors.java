@@ -19,18 +19,16 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
 import java.util.List;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterables;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 /**
  * Default output processors
@@ -51,24 +49,27 @@ public final class OutputProcessors {
 
       @Override
       public JsonPipelineOutput process(JsonPipelineOutput previousStepOutput, List<JsonPipelineOutput> loadedLinkOutputs) {
+
         // create output HAL
         String url = getUrl(previousStepOutput);
-        HalResource hal = HalResourceFactory.createResource(url);
+        HalResource hal = new HalResource(url);
+
         // add URL with relation to links
         CaravanHttpRequest request = getRequest(previousStepOutput);
         if (request != null && request.getHeaders().containsKey(HalCrawler.HEADER_CRAWLER_RELATION)) {
           String relation = Iterables.getFirst(request.getHeaders().get(HalCrawler.HEADER_CRAWLER_RELATION), null);
-          hal.addLinks(relation, HalResourceFactory.createLink(url));
+          hal.addLinks(relation, new Link(url));
         }
+
         // add child links
-        Streams.of(loadedLinkOutputs)
-        .map(loadedLinkOutput -> new HalResource((ObjectNode)loadedLinkOutput.getPayload()))
-        .flatMap(loadedLinkHal -> Streams.of(loadedLinkHal.getLinks().entries()))
-        .filter(entry -> !"self".equals(entry.getKey()))
-        .forEach(entry -> hal.addLinks(entry.getKey(), entry.getValue()));
+        loadedLinkOutputs.stream()
+            .map(loadedLinkOutput -> new HalResource(loadedLinkOutput.getPayload()))
+            .flatMap(loadedLinkHal -> loadedLinkHal.getLinks().entries().stream())
+            .filter(entry -> !"self".equals(entry.getKey()))
+            .forEach(entry -> hal.addLinks(entry.getKey(), entry.getValue()));
+
         // output
         return previousStepOutput.withPayload(hal.getModel());
-
       }
 
       @Override

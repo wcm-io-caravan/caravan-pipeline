@@ -19,20 +19,17 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.Link;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
-
 import java.util.Map;
 
 import org.apache.http.client.methods.HttpGet;
 import org.osgi.annotation.versioning.ProviderType;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Action to load a HAL link and replace the current resource by the loaded one.
@@ -101,7 +98,7 @@ public final class FollowLink extends AbstractHalClientAction {
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
 
-    HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
+    HalResource halResource = new HalResource(previousStepOutput.getPayload());
     Link link = linkSelector.pickLink(halResource);
     return new LoadLink(serviceId, link, parameters)
         .withHttpMethod(httpMethod)

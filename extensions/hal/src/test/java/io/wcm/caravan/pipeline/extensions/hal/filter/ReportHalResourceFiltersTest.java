@@ -22,8 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.filter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +31,8 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ReportHalResourceFiltersTest {
@@ -49,10 +49,10 @@ public class ReportHalResourceFiltersTest {
 
   @Before
   public void setUp() {
-    report = HalResourceFactory.createResource("/report");
+    report = new HalResource("/report");
     Mockito.when(delegate1.getId()).thenReturn("HAS-EMBEDDED(x)");
     Mockito.when(delegate2.getId()).thenReturn("HAS-EMBEDDED(y)");
-    input = HalResourceFactory.createResource("/resource");
+    input = new HalResource("/resource");
   }
 
   @Test

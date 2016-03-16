@@ -19,21 +19,19 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.annotation.versioning.ProviderType;
 
-import rx.Observable;
-
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import rx.Observable;
 
 /**
  * Embeds the items of an embedded HAL collection resource.
@@ -57,7 +55,7 @@ public final class InlineEmbeddedCollection implements JsonPipelineAction {
 
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext context) {
-    HalResource halResource = new HalResource((ObjectNode)previousStepOutput.getPayload());
+    HalResource halResource = new HalResource(previousStepOutput.getPayload());
     for (String relation : relations) {
       moveEmbeddedCollection(halResource, relation);
       // delete embedded resource
@@ -74,13 +72,13 @@ public final class InlineEmbeddedCollection implements JsonPipelineAction {
     ObjectNode model = halResource.getModel();
     ArrayNode container = model.putArray(relation);
     // iterate on relation specific embedded resources
-    Streams.of(embeddedResources)
-    // get items
-    .flatMap(e -> Streams.of(e.getEmbedded("item")))
-    // get state
-    .map(item -> item.removeEmbedded().removeLinks().getModel())
-    // add to array
-    .forEach(itemState -> container.add(itemState));
+    embeddedResources.stream()
+        // get items
+        .flatMap(e -> e.getEmbedded("item").stream())
+        // get state
+        .map(item -> item.removeEmbedded().removeLinks().getModel())
+        // add to array
+        .forEach(itemState -> container.add(itemState));
   }
 
 }

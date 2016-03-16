@@ -22,11 +22,6 @@ package io.wcm.caravan.pipeline.extensions.hal.action;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 
 import java.util.Collections;
 
@@ -37,21 +32,27 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.hal.resource.Link;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+
 @RunWith(MockitoJUnitRunner.class)
 public class RemoveAllLinksTest {
 
   @Mock
   private JsonPipelineContext context;
 
-  private ObjectNode embedded = HalResourceFactory.createResource("/embeddedResource1")
-      .addLinks("links4", HalResourceFactory.createLink("/resource5"), HalResourceFactory.createLink("/resource6"))
-      .addLinks("links5", HalResourceFactory.createLink("/resource7"), HalResourceFactory.createLink("/resource8"))
+  private ObjectNode embedded = new HalResource("/embeddedResource1")
+      .addLinks("links4", new Link("/resource5"), new Link("/resource6"))
+      .addLinks("links5", new Link("/resource7"), new Link("/resource8"))
       .getModel();
 
-  private ObjectNode payload = HalResourceFactory.createResource("/resource")
-      .addLinks("links1", HalResourceFactory.createLink("/resource1"), HalResourceFactory.createLink("/resource2"))
-      .setLink("links2", HalResourceFactory.createLink("/resource3"))
-      .addLinks("links3", HalResourceFactory.createLink("/resource4"))
+  private ObjectNode payload = new HalResource("/resource")
+      .addLinks("links1", new Link("/resource1"), new Link("/resource2"))
+      .setLink("links2", new Link("/resource3"))
+      .addLinks("links3", new Link("/resource4"))
       .addEmbedded("embedded1", new HalResource(embedded))
       .getModel();
 
@@ -86,7 +87,7 @@ public class RemoveAllLinksTest {
     JsonPipelineOutput input = new JsonPipelineOutputImpl(payload, Collections.emptyList());
     RemoveAllLinks action = new RemoveAllLinks().except(relations);
     JsonPipelineOutput output = action.execute(input, context).toBlocking().single();
-    return new HalResource((ObjectNode)output.getPayload());
+    return new HalResource(output.getPayload());
 
   }
 

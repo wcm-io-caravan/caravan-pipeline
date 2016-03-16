@@ -2,7 +2,7 @@
  * #%L
  * wcm.io
  * %%
- * Copyright (C) 2014 wcm.io
+ * Copyright (C) 2016 wcm.io
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
-import org.osgi.annotation.versioning.ConsumerType;
+import org.apache.commons.lang3.StringUtils;
 
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.util.HalBuilder;
+import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
@@ -30,53 +30,53 @@ import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 import rx.Observable;
 
 /**
- * A pipeline action you can use if you want to build a new {@link HalResource} based on another {@link HalResource}
- * from the previous step's output.
- * @deprecated use {@link CreateResource} instead
+ * an abstract base class for actions that create a new {@link HalResource} based on the Hal output of the previous
+ * pipeline step
  */
-@Deprecated
-//CHECKSTYLE:OFF
-@ConsumerType
-public abstract class BuildResource implements JsonPipelineAction {
-  //CHECKSTYLE:ON
+public abstract class CreateResource implements JsonPipelineAction {
 
   private final String selfHref;
 
   /**
-   * @param selfHref the path and query parameters to use in the output's self link
+   * @param selfHref the path and query parameters to use in the output's self link (also used for the cache-key
+   *          generation)
    */
-  public BuildResource(String selfHref) {
+  public CreateResource(String selfHref) {
     this.selfHref = selfHref;
   }
 
   @Override
   public String getId() {
-    return "BUILD-RESOURCE(" + selfHref + ")";
+    return "CREATE-RESOURCE(" + selfHref + ")";
   }
 
   @Override
   public final Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
     if (!previousStepOutput.getPayload().isObject()) {
-      throw new JsonPipelineOutputException(BuildResource.class.getName()
+      throw new JsonPipelineOutputException(CreateResource.class.getName()
           + " expects the output of the previous step to be a JSON *object* output, but got "
           + previousStepOutput.getPayload().toString());
     }
 
-    HalResource input = new HalResource((previousStepOutput.getPayload()));
+    HalResource input = new HalResource(previousStepOutput.getPayload());
 
-    HalBuilder outputBuilder = new HalBuilder(selfHref);
+    HalResource output = createOutput(input);
 
-    HalResource output = build(input, outputBuilder);
+    if (output.getLink() == null) {
+      output.setLink(new Link(selfHref));
+    }
+    else if (StringUtils.isBlank(output.getLink().getHref())) {
+      output.getLink().setHref(selfHref);
+    }
 
     return Observable.just(previousStepOutput.withPayload(output.getModel()));
   }
 
   /**
    * @param input the original {@link HalResource} from the previous step's output
-   * @param outputBuilder a builder that already contains a self-link, but no state
-   * @return the new HalResource that will be returned as the result of the pipeline action
+   * @return the output hal resource (a self link will be automatically set)
    */
-  public abstract HalResource build(HalResource input, HalBuilder outputBuilder);
+  public abstract HalResource createOutput(HalResource input);
 
 }

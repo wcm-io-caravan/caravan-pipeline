@@ -21,15 +21,15 @@ package io.wcm.caravan.pipeline.extensions.hal.filter;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 
 import org.junit.Test;
+
+import io.wcm.caravan.hal.resource.HalResource;
 
 
 public class HalResourceMatchersTest {
 
-  private static final HalResource DEFAULT_HAL_RESOURCE = HalResourceFactory.createResource("/resource");
+  private static final HalResource DEFAULT_HAL_RESOURCE = new HalResource("/resource");
 
   @Test
   public void relation_shouldReturnTrueForMatchingRelationName() {

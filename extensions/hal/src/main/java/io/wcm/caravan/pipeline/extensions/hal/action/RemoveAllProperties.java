@@ -19,24 +19,23 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
-import io.wcm.caravan.commons.stream.Streams;
-import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.JsonPipelineContext;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.annotation.versioning.ProviderType;
 
-import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Sets;
 
+import io.wcm.caravan.hal.resource.HalResource;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.JsonPipelineContext;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import rx.Observable;
+
 /**
- * Removes all properties for a HAL resource and its embedded resources. (use {@link #except(String...)} to specify properties you want to keep.
+ * Removes all properties for a HAL resource and its embedded resources. (use {@link #except(String...)} to specify
+ * properties you want to keep.
  */
 @ProviderType
 public final class RemoveAllProperties implements JsonPipelineAction {
@@ -51,10 +50,11 @@ public final class RemoveAllProperties implements JsonPipelineAction {
   @Override
   public Observable<JsonPipelineOutput> execute(JsonPipelineOutput previousStepOutput, JsonPipelineContext pipelineContext) {
 
-    HalResource hal = new HalResource((ObjectNode)previousStepOutput.getPayload());
-    removePropertiesRecursive(hal, propertiesToKeep);
-    return Observable.just(previousStepOutput);
+    HalResource hal = new HalResource(previousStepOutput.getPayload());
 
+    removePropertiesRecursive(hal, propertiesToKeep);
+
+    return Observable.just(previousStepOutput);
   }
 
   /**
@@ -63,9 +63,9 @@ public final class RemoveAllProperties implements JsonPipelineAction {
    */
   public RemoveAllProperties except(String... properties) {
 
-    Streams.of(properties).forEach(relation -> propertiesToKeep.add(relation));
-    return this;
+    Stream.of(properties).forEach(property -> propertiesToKeep.add(property));
 
+    return this;
   }
 
   /**
@@ -76,13 +76,13 @@ public final class RemoveAllProperties implements JsonPipelineAction {
   public static void removePropertiesRecursive(HalResource hal, Set<String> propertiesToKeep) {
 
     // remove properties
-    Streams.of(hal.getStateFieldNames())
-    .filter(property -> !propertiesToKeep.contains(property))
-    .forEach(property -> hal.getModel().remove(property));
+    hal.getStateFieldNames().stream()
+        .filter(property -> !propertiesToKeep.contains(property))
+        .forEach(property -> hal.getModel().remove(property));
 
     // check embedded resources
-    Streams.of(hal.getEmbedded().values())
-    .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
+    hal.getEmbedded().values().stream()
+        .forEach(embedded -> removePropertiesRecursive(embedded, propertiesToKeep));
 
   }
 

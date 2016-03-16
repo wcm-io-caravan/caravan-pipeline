@@ -20,7 +20,16 @@
 package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import static io.wcm.caravan.io.http.request.CaravanHttpRequest.CORRELATION_ID_HEADER_NAME;
-import io.wcm.caravan.commons.stream.Streams;
+
+import java.util.Collection;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.methods.HttpGet;
+import org.osgi.annotation.versioning.ProviderType;
+
+import com.google.common.collect.Multimap;
+
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
@@ -31,17 +40,7 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheControlUtils;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.extensions.hal.client.ServiceIdExtractor;
-
-import java.util.Collection;
-import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.methods.HttpGet;
-import org.osgi.annotation.versioning.ProviderType;
-
 import rx.Observable;
-
-import com.google.common.collect.Multimap;
 
 /**
  * Action to load a HAL link.
@@ -206,8 +205,7 @@ public final class LoadLink extends AbstractHalClientAction {
    * @return HTTP request builder with or without headers
    */
   private CaravanHttpRequestBuilder setAdditionalHttpHeadersIfExists(CaravanHttpRequestBuilder builder) {
-    Multimap<String, String> headers = getHttpHeaders();
-    Streams.of(headers.keySet()).forEach(name -> builder.header(name, headers.get(name)));
+    getHttpHeaders().keySet().forEach(name -> builder.header(name, getHttpHeaders().get(name)));
     return builder;
   }
 

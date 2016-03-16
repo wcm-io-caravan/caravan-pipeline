@@ -19,18 +19,16 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.action;
 
+import org.osgi.annotation.versioning.ConsumerType;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.util.HalBuilder;
 import io.wcm.caravan.pipeline.JsonPipelineAction;
 import io.wcm.caravan.pipeline.JsonPipelineContext;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.JsonPipelineOutputException;
-
-import org.osgi.annotation.versioning.ConsumerType;
-
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * An action that can take any JSON object as input (already HAL or not), sets the specified self-link and allows
@@ -65,7 +63,7 @@ public abstract class ModifyResource implements JsonPipelineAction {
 
     ObjectNode state = previousStepOutput.getPayload().deepCopy();
 
-    HalResource resource = new HalBuilder(state, selfHref).build();
+    HalResource resource = new HalResource(state, selfHref);
 
     modify(resource);
 

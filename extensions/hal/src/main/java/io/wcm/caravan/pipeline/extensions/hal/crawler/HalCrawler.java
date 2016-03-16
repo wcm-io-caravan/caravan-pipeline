@@ -19,8 +19,19 @@
  */
 package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.osgi.annotation.versioning.ProviderType;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Sets;
+
 import io.wcm.caravan.hal.resource.HalResource;
-import io.wcm.caravan.hal.resource.HalResourceFactory;
 import io.wcm.caravan.hal.resource.Link;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipeline;
@@ -30,20 +41,7 @@ import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.extensions.hal.client.HalClient;
 import io.wcm.caravan.pipeline.extensions.hal.client.action.LoadLink;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.osgi.annotation.versioning.ProviderType;
-
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Sets;
 
 /**
  * Crawler walking on a HAL resource graph.
@@ -89,7 +87,8 @@ public final class HalCrawler implements JsonPipelineAction {
    * @param outputProcessor Output processor
    * @param stopCriterion Stop Criterion
    */
-  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor, StopCriterion stopCriterion) {
+  public HalCrawler(HalClient client, LinkExtractor linkExtractor, UriParametersProvider uriParametersProvider, OutputProcessor outputProcessor,
+      StopCriterion stopCriterion) {
     this.client = client;
     this.linkExtractor = linkExtractor;
     this.uriParametersProvider = uriParametersProvider;
@@ -173,11 +172,11 @@ public final class HalCrawler implements JsonPipelineAction {
 
     JsonNode json = previousStepOutput.getPayload();
     if (!(json instanceof ObjectNode)) {
-      HalResource hal = HalResourceFactory.createResource(currentUrl);
+      HalResource hal = new HalResource(currentUrl);
       hal.getModel().set("content", json);
       return hal;
     }
-    return new HalResource((ObjectNode)json);
+    return new HalResource(json);
 
   }
 
