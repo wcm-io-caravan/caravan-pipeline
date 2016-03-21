@@ -124,6 +124,8 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
   private boolean isolated;
   private boolean enabled;
 
+  private long time = System.currentTimeMillis();
+
   @Activate
   private void activate(ComponentContext componentContext, Map<String, Object> config) {
     keyPrefix = PropertiesUtil.toString(config.get(CACHE_KEY_PREFIX_PROPERTY), CACHE_KEY_PREFIX_DEFAULT);
@@ -138,12 +140,18 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), "misses"));
 
     healthCheckRegistry.register(MetricRegistry.name(getClass()), new HealthCheck() {
+
       @Override
       protected Result check() throws Exception {
         return couchbaseClient != null && couchbaseClient.isEnabled() ? Result.healthy() : Result.unhealthy("No cache bucket");
       }
     });
 
+    if (isolated) {
+      log.info("================================================================================================================");
+      log.info("= Add suffix '" + time + "' to cache, so that all cached responses will not be used again.");
+      log.info("================================================================================================================");
+    }
   }
 
   @Deactivate
@@ -247,7 +255,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
     if (isolated) {
       try {
         String hostName = InetAddress.getLocalHost().getHostName();
-        fullCacheKey += "_" + hostName;
+        fullCacheKey += "_" + hostName+ "__" + time;
       }
       catch (UnknownHostException ex) {
         log.error("Failed to obtain this system's own host name to append it to the cache key", ex);
