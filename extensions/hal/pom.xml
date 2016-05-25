@@ -31,7 +31,7 @@
 
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.extensions.hal</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.1-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <name>JSON Pipeline Extension for HAL</name>
@@ -74,12 +74,6 @@
       <artifactId>io.wcm.caravan.pipeline.api</artifactId>
       <version>0.7.0</version>
       <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.wcm.caravan</groupId>
-      <artifactId>io.wcm.caravan.commons.stream</artifactId>
-      <version>1.1.0</version>
-      <scope>provided</scope>
     </dependency>
 
     <!-- Commons -->

@@ -221,6 +221,13 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
           public void onError(Throwable e) {
             Exceptions.throwIfFatal(e);
 
+            // if the cached response was a an error as well (e.g. 404), then do not use it as a fallback.
+            // instead  just forward the actual exception that occurred
+            if (cacheEntry.getStatusCode() >= 400) {
+              subscriber.onError(e);
+              return;
+            }
+
             if (e instanceof JsonPipelineInputException && ((JsonPipelineInputException)e).getStatusCode() == 404) {
               log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
                   + correlationId + "\n" + e.getMessage());
