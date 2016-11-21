@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.impl;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.Validate.isTrue;
+
 import io.wcm.caravan.common.performance.PerformanceMetrics;
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
@@ -50,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import rx.Observable;
+import rx.schedulers.Schedulers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -81,8 +83,20 @@ public final class JsonPipelineImpl implements JsonPipeline {
     }
     this.requests.add(request);
     this.descriptor = isNotBlank(request.getUrl()) ? "GET(//" + request.getServiceId() + request.getUrl() + ")" : "EMPTY()";
-    this.observable = responseObservable.lift(new ResponseHandlingOperator(request)).cache();
     this.context = context;
+
+    if (useIoThreadForResponseObservable()) {
+      // perform the responseObservable on io thread.
+      this.observable = responseObservable
+          .observeOn(Schedulers.io())
+          .lift(new ResponseHandlingOperator(request)).cache();
+    }
+    else {
+      // perform the responseObservable on current thread.
+      this.observable = responseObservable
+        .lift(new ResponseHandlingOperator(request)).cache();
+    }
+
     if (request.getPerformanceMetrics() != null) {
       this.performanceMetrics = request.getPerformanceMetrics().createNext(isNotBlank(request.getUrl()) ? "GET" : "EMPTY", descriptor);
     } else {
@@ -281,6 +295,10 @@ public final class JsonPipelineImpl implements JsonPipeline {
 
   JsonPipelineContext getJsonPipelineContext() {
     return this.context;
+  }
+
+  boolean useIoThreadForResponseObservable(){
+    return context.getServiceConfiguration().useIoThreadForResponseObservable();
   }
 
 }

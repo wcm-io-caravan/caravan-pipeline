@@ -64,6 +64,9 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
   @Reference
   private MetricRegistry metricRegistry;
 
+  @Reference
+  private ServiceConfiguration serviceConfiguration;
+
   /** constructor used in a OSGi context */
   public JsonPipelineFactoryImpl() {
     // empty constructor
@@ -92,7 +95,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     Observable<CaravanHttpResponse> response = transport.execute(request);
 
     return new JsonPipelineImpl(request, response,
-        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));
+        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties, serviceConfiguration));
   }
 
   @Override
@@ -117,7 +120,7 @@ public final class JsonPipelineFactoryImpl implements JsonPipelineFactory {
     .build();
 
     return new JsonPipelineImpl(dummyRequest, Observable.just(emptyJsonResponse),
-        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties));
+        new JsonPipelineContextImpl(this, createMultiLayerCacheAdapter(), metricRegistry, contextProperties, serviceConfiguration));
   }
 
   MultiLayerCacheAdapter createMultiLayerCacheAdapter() {

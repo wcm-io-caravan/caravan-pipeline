@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline;
 
 import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
+import io.wcm.caravan.pipeline.impl.ServiceConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +43,9 @@ public abstract class AbstractCaravanTestCase {
   @Mock(answer = Answers.RETURNS_MOCKS)
   protected MetricRegistry metricRegistry;
 
+  @Mock
+  protected ServiceConfiguration serviceConfiguration;
+
   public AbstractCaravanTestCase() {
     super();
   }
@@ -53,7 +57,7 @@ public abstract class AbstractCaravanTestCase {
   }
 
   protected JsonPipelineContextImpl getJsonPipelineContext() {
-    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties());
+    return new JsonPipelineContextImpl(jsonPipelineFactory, cacheAdapter, metricRegistry, getContextProperties(), serviceConfiguration);
   }
 
 }

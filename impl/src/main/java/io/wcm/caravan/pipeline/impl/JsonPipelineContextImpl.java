@@ -43,16 +43,19 @@ public class JsonPipelineContextImpl implements JsonPipelineContext {
 
   private final Map<String, String> cacheMetadataProperties;
 
+  private final ServiceConfiguration serviceConfiguration;
   /**
    * @param cacheAdapter a caching layer / cache adapter to use
    * @param metricRegistry metrics registry
    * @param contextProperties additional metadata in string property form
    */
-  public JsonPipelineContextImpl(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry, Map<String, String> contextProperties) {
+  public JsonPipelineContextImpl(JsonPipelineFactory factory, CacheAdapter cacheAdapter, MetricRegistry metricRegistry,
+    Map<String, String> contextProperties, ServiceConfiguration serviceConfiguration) {
     this.factory = factory;
     this.cacheAdapter = cacheAdapter;
     this.metricRegistry = metricRegistry;
     this.cacheMetadataProperties = contextProperties;
+    this.serviceConfiguration = serviceConfiguration;
   }
 
   @Override
@@ -73,5 +76,10 @@ public class JsonPipelineContextImpl implements JsonPipelineContext {
   public Map<String, String> getProperties() {
     return this.cacheMetadataProperties;
   }
+
+  public ServiceConfiguration getServiceConfiguration() {
+    return serviceConfiguration;
+  }
+
 
 }

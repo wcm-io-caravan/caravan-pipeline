@@ -66,6 +66,9 @@ public class JsonPipelineFactoryImplTest {
   private CacheAdapter firstLevelCacheAdapter;
 
   @Mock
+  private ServiceConfiguration serviceConfiguration;
+
+  @Mock
   private CaravanHttpClient caravanHttpClient;
 
   private JsonPipelineFactoryImpl factory;
@@ -76,6 +79,7 @@ public class JsonPipelineFactoryImplTest {
   public void setup() {
     context.registerService(MetricRegistry.class, new MetricRegistry());
     context.registerService(CaravanHttpClient.class, caravanHttpClient);
+    context.registerService(ServiceConfiguration.class, serviceConfiguration);
 
     secondLevelCacheAdapter = context.registerService(CacheAdapter.class, secondLevelCacheAdapter,
         ImmutableMap.of(Constants.SERVICE_RANKING, 5000));

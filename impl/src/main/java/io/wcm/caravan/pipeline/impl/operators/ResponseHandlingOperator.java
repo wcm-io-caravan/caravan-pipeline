@@ -96,6 +96,7 @@ public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, Ca
             int maxAge = NumberUtils.toInt(response.getCacheControl().get("max-age"), -1);
             JsonPipelineOutput model = new JsonPipelineOutputImpl(payload, ImmutableList.of(request)).withMaxAge(maxAge);
 
+
             subscriber.onNext(model);
           }
           else {
