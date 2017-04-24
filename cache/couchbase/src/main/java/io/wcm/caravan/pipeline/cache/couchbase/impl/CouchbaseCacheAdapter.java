@@ -157,7 +157,7 @@ public class CouchbaseCacheAdapter implements CacheAdapter {
 
   @Override
   public Observable<String> get(String cacheKey, CachePersistencyOptions options) {
-    if (!enabled || options == null) {
+    if (!enabled || options == null || !options.shouldUsePersistentCaches()) {
       return Observable.empty();
     }
 
