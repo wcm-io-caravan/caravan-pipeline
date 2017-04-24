@@ -25,13 +25,13 @@
   <parent>
     <groupId>io.wcm.caravan</groupId>
     <artifactId>io.wcm.caravan.pipeline.parent</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.2</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.cache.couchbase</artifactId>
-  <version>0.7.1-SNAPSHOT</version>
+  <version>0.7.2</version>
   <packaging>bundle</packaging>
 
   <name>JSON Pipeline Cache Adapter for Couchbase</name>
