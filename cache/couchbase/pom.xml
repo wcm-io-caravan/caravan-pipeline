@@ -31,7 +31,7 @@
 
   <groupId>io.wcm.caravan</groupId>
   <artifactId>io.wcm.caravan.pipeline.cache.couchbase</artifactId>
-  <version>0.7.1-SNAPSHOT</version>
+  <version>0.7.3-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <name>JSON Pipeline Cache Adapter for Couchbase</name>
