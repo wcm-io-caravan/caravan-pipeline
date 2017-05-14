@@ -19,19 +19,6 @@
  */
 package io.wcm.caravan.pipeline.impl.operators;
 
-import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
-import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.pipeline.JsonPipelineInputException;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.cache.CacheDateUtils;
-import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-import io.wcm.caravan.pipeline.impl.JacksonFunctions;
-import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
-import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,12 +32,6 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.Observable;
-import rx.Observable.Transformer;
-import rx.Observer;
-import rx.Subscriber;
-import rx.exceptions.Exceptions;
-
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -58,6 +39,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
+import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.pipeline.JsonPipelineInputException;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.CacheDateUtils;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
+import io.wcm.caravan.pipeline.cache.CacheStrategy;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.JacksonFunctions;
+import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
+import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
+import rx.Observable;
+import rx.Observable.Transformer;
+import rx.Observer;
+import rx.Subscriber;
+import rx.exceptions.Exceptions;
 
 /**
  * a rather complicated transformer that implements the pipelines caching capabilities
@@ -88,7 +87,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     for (CaravanHttpRequest request : requests) {
       if (sb.length() == 0) {
         sb.append(request.getCorrelationId());
-      } else {
+      }
+      else {
         sb.append(",").append(request.getCorrelationId());
       }
     }
@@ -158,7 +158,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     private boolean cacheHit;
 
-    private CacheResponseObserver(String cacheKey, Observable<JsonPipelineOutput> originalSource, Subscriber<? super JsonPipelineOutput> subscriberToForwardTo) {
+    private CacheResponseObserver(String cacheKey, Observable<JsonPipelineOutput> originalSource,
+        Subscriber<? super JsonPipelineOutput> subscriberToForwardTo) {
       this.cacheKey = cacheKey;
       this.originalSource = originalSource;
       this.subscriber = subscriberToForwardTo;
