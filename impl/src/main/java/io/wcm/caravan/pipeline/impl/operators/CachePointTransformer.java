@@ -40,7 +40,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
 import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.pipeline.JsonPipelineInputException;
@@ -127,17 +126,33 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       // create service specific metrics
       MetricRegistry metricRegistry = context.getMetricRegistry();
       Timer timer = metricRegistry.timer(MetricRegistry.name(getClass(), sourceServicePrefix, "latency", "get"));
-      Counter hitsCounter = metricRegistry.counter(MetricRegistry.name(getClass(), sourceServicePrefix, "hits"));
-      Counter missesCounter = metricRegistry.counter(MetricRegistry.name(getClass(), sourceServicePrefix, "misses"));
+
+      CacheMetrics cacheMetrics = new CacheMetrics(metricRegistry, sourceServicePrefix);
 
       // CacheResponseObserver will decide what to do when the response is ready (or could not be retrieved from cache)
       cachedJsonString
       .lift(new TimerMetricsOperator<String>(timer))
-      .lift(new HitsAndMissesCountingMetricsOperator<String>(hitsCounter, missesCounter))
-      .subscribe(new CacheResponseObserver(cacheKey, output, subscriber));
+      .subscribe(new CacheResponseObserver(cacheKey, output, subscriber, cacheMetrics));
     });
 
     return cachedSource;
+  }
+
+  private final class CacheMetrics {
+
+    private final Counter hitsCounter;
+    private final Counter missesCounter;
+    private final Counter stalesCounter;
+    private final Counter fallbacksCounter;
+    private final Counter errorsCounter;
+
+    private CacheMetrics(MetricRegistry metricRegistry, String metricServicePrefix) {
+      hitsCounter = metricRegistry.counter(MetricRegistry.name(CachePointTransformer.class, metricServicePrefix, "hits"));
+      missesCounter = metricRegistry.counter(MetricRegistry.name(CachePointTransformer.class, metricServicePrefix, "misses"));
+      stalesCounter = metricRegistry.counter(MetricRegistry.name(CachePointTransformer.class, metricServicePrefix, "stales"));
+      fallbacksCounter = metricRegistry.counter(MetricRegistry.name(CachePointTransformer.class, metricServicePrefix, "fallbacks"));
+      errorsCounter = metricRegistry.counter(MetricRegistry.name(CachePointTransformer.class, metricServicePrefix, "errors"));
+    }
   }
 
   /**
@@ -156,13 +171,17 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     private final Observable<JsonPipelineOutput> originalSource;
     private final Subscriber<? super JsonPipelineOutput> subscriber;
 
+    private final CacheMetrics cacheMetrics;
+
     private boolean cacheHit;
 
-    private CacheResponseObserver(String cacheKey, Observable<JsonPipelineOutput> originalSource,
-        Subscriber<? super JsonPipelineOutput> subscriberToForwardTo) {
+    private CacheResponseObserver(String cacheKey, Observable<JsonPipelineOutput> originalSource, Subscriber<? super JsonPipelineOutput> subscriberToForwardTo,
+        CacheMetrics cacheMetrics) {
       this.cacheKey = cacheKey;
       this.originalSource = originalSource;
       this.subscriber = subscriberToForwardTo;
+
+      this.cacheMetrics = cacheMetrics;
     }
 
     @Override
@@ -170,8 +189,11 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       CacheEnvelope cacheEntry = CacheEnvelope.fromEnvelopeString(cachedContent, cacheKey);
       if (cacheEntry == null) {
-
         log.warn("CACHE ERROR for {} - the cached response could not be parsed,\n{}", this.cacheKey, correlationId);
+
+        // increase the error counter for the source serviceID
+        cacheMetrics.errorsCounter.inc();
+
         // ignore cache envelopes that can not be parsed
         return;
       }
@@ -186,7 +208,11 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
       // check if the content from cache is fresh enough to serve it
       if (responseAge < refreshInterval && responseAge < maxAgeFromClient && expirySeconds > 0) {
+
         log.debug("CACHE HIT for {},\n{}", this.cacheKey, correlationId);
+
+        // increase the hits counter for the source serviceID
+        cacheMetrics.hitsCounter.inc();
 
         // the document could be retrieved, so forward it (parsed as a JsonNode) to the actual subscriber to the cachedSource
         serveCachedContent(cacheEntry, refreshInterval);
@@ -210,6 +236,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
           @Override
           public void onNext(JsonPipelineOutput fetchedOutput) {
+
+            // increase the stales counter for the source serviceID
+            cacheMetrics.stalesCounter.inc();
+
             subscriber.onNext(fetchedOutput);
           }
 
@@ -229,6 +259,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
               return;
             }
 
+
             if (e instanceof JsonPipelineInputException && ((JsonPipelineInputException)e).getStatusCode() == 404) {
               log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
                   + correlationId + "\n" + e.getMessage());
@@ -237,6 +268,9 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
               log.warn("CACHE FALLBACK - Using stale content from cache as a fallback after failing to fresh content for " + cacheKey + ",\n"
                   + correlationId, e);
             }
+
+            // increase the fallbacks counter for the source serviceID
+            cacheMetrics.fallbacksCounter.inc();
 
             JsonPipelineOutputImpl pipelineOutput = new JsonPipelineOutputImpl(cacheEntry.getContentNode(), requests);
 
@@ -283,6 +317,10 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
       if (!cacheHit) {
         // there was no emission, so the response has to be fetched from the service
         log.debug("CACHE MISS for {} fetching response from {} through pipeline,\n{}", cacheKey, getSourceServicePrefix(), correlationId);
+
+        // increase the misses counter for the source serviceID
+        cacheMetrics.missesCounter.inc();
+
         fetchAndStore(subscriber);
       }
     }
