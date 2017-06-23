@@ -23,12 +23,12 @@
     xsi:schemaLocation="http://maven.apache.org/changes/1.0.0 http://maven.apache.org/plugins/maven-changes-plugin/xsd/changes-1.0.0.xsd">
   <body>
 
-    <release version="0.6.4" date="not yet released">
+    <release version="0.6.4" date="2017-06-23">
       <action type="add" dev="ssauder">
-        added additional pipeline-cache metrics ("stales", "fallbacks" and "errors")
+        Added additional pipeline-cache metrics ("stales", "fallbacks" and "errors").
       </action>
       <action type="update" dev="ssauder">
-        avoid using HitAndMissesCountingMetricsOperator (since it it will be depracated to remove rxjava dependency in metrics bundle)
+        Avoid using HitAndMissesCountingMetricsOperator (since it it will be depracated to remove rxjava dependency in metrics bundle).
       </action>
     </release>
 
