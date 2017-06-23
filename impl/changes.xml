@@ -23,6 +23,15 @@
     xsi:schemaLocation="http://maven.apache.org/changes/1.0.0 http://maven.apache.org/plugins/maven-changes-plugin/xsd/changes-1.0.0.xsd">
   <body>
 
+    <release version="0.6.4" date="2017-06-23">
+      <action type="add" dev="ssauder">
+        Added additional pipeline-cache metrics ("stales", "fallbacks" and "errors").
+      </action>
+      <action type="update" dev="ssauder">
+        Avoid using HitAndMissesCountingMetricsOperator (since it it will be depracated to remove rxjava dependency in metrics bundle).
+      </action>
+    </release>
+
     <release version="0.6.2" date="2016-05-25">
       <action type="fix" dev="ssauder">
         Never return a staled cached response with status code &gt;= 400 as a fallback, but throw the original exception from the current request instead.
