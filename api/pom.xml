@@ -36,6 +36,7 @@
 
   <name>JSON Pipeline API</name>
   <description>JSON data pipeline with aggregation, slicing and caching.</description>
+  <url>${site.url}/${site.url.module.prefix}/</url>
 
   <scm>
     <connection>scm:git:https://github.com/wcm-io-caravan/caravan-pipeline.git</connection>

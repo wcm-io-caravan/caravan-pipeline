@@ -36,6 +36,7 @@
 
   <name>JSON Pipeline Cache Adapter for Guava</name>
   <description>Pipeline caching adapter implementation for Guava Cache.</description>
+  <url>${site.url}/${site.url.module.prefix}/</url>
 
   <scm>
     <connection>scm:git:https://github.com/wcm-io-caravan/caravan-pipeline.git</connection>

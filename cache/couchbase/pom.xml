@@ -36,6 +36,7 @@
 
   <name>JSON Pipeline Cache Adapter for Couchbase</name>
   <description>Pipeline caching adapter implementation for Couchbase using Couchbase SDK 2.</description>
+  <url>${site.url}/${site.url.module.prefix}/</url>
 
   <scm>
     <connection>scm:git:https://github.com/wcm-io-caravan/caravan-pipeline.git</connection>
