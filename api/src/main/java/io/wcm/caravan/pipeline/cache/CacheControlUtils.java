@@ -19,15 +19,14 @@
  */
 package io.wcm.caravan.pipeline.cache;
 
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.osgi.annotation.versioning.ProviderType;
 
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.observers.SafeSubscriber;

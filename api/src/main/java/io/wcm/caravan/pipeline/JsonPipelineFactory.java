@@ -19,12 +19,12 @@
  */
 package io.wcm.caravan.pipeline;
 
-import io.wcm.caravan.io.http.CaravanHttpClient;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-
 import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 
 /**
  * JSON Pipeline factory service interface.
@@ -38,7 +38,7 @@ public interface JsonPipelineFactory {
    * @param request the REST request to execute
    * @return the new pipeline
    */
-  JsonPipeline create(final CaravanHttpRequest request);
+  JsonPipeline create(CaravanHttpRequest request);
 
   /**
    * Creates a new {@link JsonPipeline} to process the response from a {@link CaravanHttpClient} request for the given
@@ -47,7 +47,7 @@ public interface JsonPipelineFactory {
    * @param contextProperties a map with cache meta data
    * @return the new pipeline
    */
-  JsonPipeline create(final CaravanHttpRequest request, Map<String, String> contextProperties);
+  JsonPipeline create(CaravanHttpRequest request, Map<String, String> contextProperties);
 
   /**
    * Creates an empty pipeline. It could be used as a root to merge other pipeline's responses

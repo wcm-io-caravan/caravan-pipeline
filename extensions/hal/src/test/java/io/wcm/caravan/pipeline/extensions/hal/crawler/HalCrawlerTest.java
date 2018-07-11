@@ -21,6 +21,7 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.never;
 
@@ -34,9 +35,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
@@ -166,14 +166,14 @@ public class HalCrawlerTest {
 
     pipeline.applyAction(crawler).getOutput().toBlocking().single();
 
-    Mockito.verify(cacheStrategy, atLeast(1)).getCachePersistencyOptions(Matchers.any());
+    Mockito.verify(cacheStrategy, atLeast(1)).getCachePersistencyOptions(any());
 
   }
 
   private CacheStrategy createCacheStrategyMock() {
 
     CacheStrategy cacheStrategy = Mockito.mock(CacheStrategy.class);
-    Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.any())).thenReturn(
+    Mockito.when(cacheStrategy.getCachePersistencyOptions(any())).thenReturn(
         CacheStrategies.noCache().getCachePersistencyOptions(Collections.emptyList()));
     return cacheStrategy;
 
@@ -191,8 +191,8 @@ public class HalCrawlerTest {
 
     pipeline.applyAction(crawler).getOutput().toBlocking().single();
 
-    Mockito.verify(clientCacheStrategy, never()).getCachePersistencyOptions(Matchers.any());
-    Mockito.verify(extraCacheStrategy, atLeast(1)).getCachePersistencyOptions(Matchers.any());
+    Mockito.verify(clientCacheStrategy, never()).getCachePersistencyOptions(any());
+    Mockito.verify(extraCacheStrategy, atLeast(1)).getCachePersistencyOptions(any());
 
   }
 

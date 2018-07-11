@@ -22,10 +22,10 @@ package io.wcm.caravan.pipeline.extensions.hal.crawler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import com.google.common.collect.ImmutableListMultimap;
@@ -70,7 +70,7 @@ public class LinkExtractorsTest {
     LinkExtractor delegate = Mockito.mock(LinkExtractor.class);
     ListMultimap<String, Link> inputList = ImmutableListMultimap.of("item", new Link("/correct/item/1"), "item",
         new Link("/other/item/2"));
-    Mockito.when(delegate.extract(Matchers.any())).thenReturn(inputList);
+    Mockito.when(delegate.extract(any())).thenReturn(inputList);
     ListMultimap<String, Link> result = LinkExtractors.filterByPrefix("/correct", delegate).extract(null);
     assertEquals(1, result.size());
     assertEquals("/correct/item/1", result.get("item").get(0).getHref());

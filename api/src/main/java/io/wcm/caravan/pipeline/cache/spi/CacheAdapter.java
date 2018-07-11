@@ -19,10 +19,9 @@
  */
 package io.wcm.caravan.pipeline.cache.spi;
 
-import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
-
 import org.osgi.annotation.versioning.ConsumerType;
 
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 import rx.Observable;
 
 /**

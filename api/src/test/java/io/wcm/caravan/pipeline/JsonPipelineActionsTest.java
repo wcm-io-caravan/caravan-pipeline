@@ -26,12 +26,12 @@ import static org.mockito.Mockito.when;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import rx.Observable;
 import rx.functions.Func1;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineActionsTest {

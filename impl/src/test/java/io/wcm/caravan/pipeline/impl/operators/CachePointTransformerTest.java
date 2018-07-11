@@ -23,6 +23,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+
+import java.util.LinkedList;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
 import io.wcm.caravan.pipeline.AbstractCaravanTestCase;
@@ -32,23 +50,7 @@ import io.wcm.caravan.pipeline.cache.CacheStrategy;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 import io.wcm.caravan.pipeline.impl.operators.CachePointTransformer.CacheEnvelope;
-
-import java.util.LinkedList;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
 import rx.Observable;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CachePointTransformerTest extends AbstractCaravanTestCase {
@@ -62,16 +64,15 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
   private int mockEntryAge = 60;
 
-  @SuppressWarnings("unchecked")
   @Before
   public void setUp() {
     cachePersistencyOptions = CachePersistencyOptions.createTransient(100);
-    Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.anyCollection())).thenReturn(cachePersistencyOptions);
+    Mockito.when(cacheStrategy.getCachePersistencyOptions(anyCollection())).thenReturn(cachePersistencyOptions);
 
     uncachedNode = JacksonFunctions.stringToObjectNode("{cached: false}");
 
     CacheEnvelope cacheEnvelope = CacheEnvelope.fromContentString("{cached: true}", mockEntryAge);
-    Mockito.when(cacheAdapter.get(Matchers.anyString(), Matchers.anyObject())).thenReturn(Observable.just(cacheEnvelope.getEnvelopeString()));
+    Mockito.when(cacheAdapter.get(anyString(), any())).thenReturn(Observable.just(cacheEnvelope.getEnvelopeString()));
   }
 
   @Test
@@ -82,7 +83,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
     JsonPipelineOutput actualOutput = transformer.call(Observable.just(uncachedOutput)).toBlocking().first();
 
-    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyObject());
+    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(anyString(), any());
     assertTrue(actualOutput.getPayload().get("cached").asBoolean());
   }
 
@@ -96,7 +97,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
     JsonPipelineOutput actualOutput = transformer.call(Observable.just(uncachedOutput)).toBlocking().first();
 
-    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyObject());
+    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(anyString(), any());
     assertTrue(actualOutput.getPayload().get("cached").asBoolean());
   }
 
@@ -111,7 +112,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
     JsonPipelineOutput actualOutput = transformer.call(Observable.just(uncachedOutput)).toBlocking().first();
 
-    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyObject());
+    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(anyString(), any());
     assertTrue(actualOutput.getPayload().get("cached").asBoolean());
   }
 
@@ -126,7 +127,7 @@ public class CachePointTransformerTest extends AbstractCaravanTestCase {
 
     JsonPipelineOutput actualOutput = transformer.call(Observable.just(uncachedOutput)).toBlocking().first();
 
-    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(Matchers.anyString(), Matchers.anyObject());
+    Mockito.verify(cacheAdapter, Mockito.atLeastOnce()).get(anyString(), any());
     assertFalse(actualOutput.getPayload().get("cached").asBoolean());
   }
   @Test

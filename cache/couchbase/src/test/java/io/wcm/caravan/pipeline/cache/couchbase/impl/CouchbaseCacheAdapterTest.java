@@ -26,7 +26,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,12 +36,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import rx.Observable;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
@@ -52,6 +49,9 @@ import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.google.common.collect.ImmutableMap;
+
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
+import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CouchbaseCacheAdapterTest {
@@ -82,7 +82,8 @@ public class CouchbaseCacheAdapterTest {
   public void setUp() {
     when(couchbaseClientProvider.getAsyncBucket()).thenReturn(bucket);
     when(couchbaseClientProvider.isEnabled()).thenReturn(true);
-    context.registerService(CouchbaseClient.class, couchbaseClientProvider);
+    context.registerService(CouchbaseClient.class, couchbaseClientProvider,
+        CouchbaseClient.CLIENT_ID_PROPERTY, CouchbaseCacheAdapter.COUCHBASE_CLIENT_ID);
     metricRegistry = new MetricRegistry();
     context.registerService(MetricRegistry.class, metricRegistry);
     healthCheckRegistry = new HealthCheckRegistry();
@@ -158,7 +159,7 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void testPut() throws Exception {
-    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    when(bucket.upsert(ArgumentMatchers.any(RawJsonDocument.class)))
     .thenReturn(just(RawJsonDocument.create("test-id", JSON_DOC)).delay(50, TimeUnit.MILLISECONDS));
     adapter.put(CACHE_KEY, JSON_DOC, cachePersistencyOptions);
 
@@ -193,7 +194,7 @@ public class CouchbaseCacheAdapterTest {
 
   @Test
   public void testPut_timeout() throws InterruptedException {
-    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    when(bucket.upsert(ArgumentMatchers.any(RawJsonDocument.class)))
     .thenReturn(Observable.just(RawJsonDocument.create("test-id", JSON_DOC)).delay(500, TimeUnit.MILLISECONDS));
     adapter.put(CACHE_KEY, JSON_DOC, cachePersistencyOptions);
 
@@ -213,7 +214,7 @@ public class CouchbaseCacheAdapterTest {
   @Test
   public void testPutTimeToLive() throws Exception {
 
-    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    when(bucket.upsert(ArgumentMatchers.any(RawJsonDocument.class)))
     .thenReturn(Observable.just(RawJsonDocument.create("test-id", JSON_DOC)));
 
     CachePersistencyOptions options = CachePersistencyOptions.createPersistentAndTimeToLive(500, 1000);
@@ -228,7 +229,7 @@ public class CouchbaseCacheAdapterTest {
   @Test
   public void testPutTimeToIdle() throws Exception {
 
-    when(bucket.upsert(Matchers.any(RawJsonDocument.class)))
+    when(bucket.upsert(ArgumentMatchers.any(RawJsonDocument.class)))
     .thenReturn(Observable.just(RawJsonDocument.create("test-id", JSON_DOC)));
 
     CachePersistencyOptions options = CachePersistencyOptions.createPersistentAndTimeToIdle(500, 1000);

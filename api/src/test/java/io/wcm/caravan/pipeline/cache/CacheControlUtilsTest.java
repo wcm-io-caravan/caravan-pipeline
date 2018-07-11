@@ -21,13 +21,11 @@ package io.wcm.caravan.pipeline.cache;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -38,12 +36,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import rx.Observable;
-import rx.functions.Func1;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.google.common.collect.ImmutableList;
+
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import rx.Observable;
+import rx.functions.Func1;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CacheControlUtilsTest {

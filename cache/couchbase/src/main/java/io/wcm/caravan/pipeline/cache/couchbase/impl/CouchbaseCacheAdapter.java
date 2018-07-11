@@ -19,11 +19,6 @@
  */
 package io.wcm.caravan.pipeline.cache.couchbase.impl;
 
-import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
-import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
-import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -43,9 +38,6 @@ import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.Observable;
-import rx.Observer;
-
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -53,6 +45,13 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.document.RawJsonDocument;
+
+import io.wcm.caravan.commons.metrics.rx.HitsAndMissesCountingMetricsOperator;
+import io.wcm.caravan.commons.metrics.rx.TimerMetricsOperator;
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import rx.Observable;
+import rx.Observer;
 
 /**
  * {@link CacheAdapter} implementation for Couchbase.
@@ -63,7 +62,7 @@ description = "Configure pipeline caching in couchbase.")
 @Service(CacheAdapter.class)
 public class CouchbaseCacheAdapter implements CacheAdapter {
 
-  private static final String COUCHBASE_CLIENT_ID = "caravan-pipeline-cacheadapter-couchbase";
+  static final String COUCHBASE_CLIENT_ID = "caravan-pipeline-cacheadapter-couchbase";
 
   @Property(label = "Service Ranking",
       description = "Used to determine the of caching layers if you are using multiple Cache Adapters. "

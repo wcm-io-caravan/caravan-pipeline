@@ -29,10 +29,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -67,8 +67,8 @@ public class FilterEmbeddedHalResourceTest {
 
     action = new FilterEmbeddedHalResource(matcher, predicate);
 
-    Mockito.when(matcher.apply(Matchers.any(), Matchers.any())).thenReturn(true);
-    Mockito.when(predicate.apply(Matchers.any(), Matchers.any())).thenReturn(true);
+    Mockito.when(matcher.apply(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(true);
+    Mockito.when(predicate.apply(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(true);
 
   }
 
@@ -76,7 +76,7 @@ public class FilterEmbeddedHalResourceTest {
   public void shouldBuildValidHalPath() {
 
     ArgumentCaptor<HalPath> captor = ArgumentCaptor.forClass(HalPath.class);
-    Mockito.when(matcher.apply(captor.capture(), Matchers.any())).thenReturn(true);
+    Mockito.when(matcher.apply(captor.capture(), ArgumentMatchers.any())).thenReturn(true);
 
     getHalOutput();
 
@@ -89,11 +89,10 @@ public class FilterEmbeddedHalResourceTest {
   @Test
   public void shouldRemoveFilteredResource() {
 
-    Mockito.when(predicate.apply(Matchers.any(), Matchers.argThat(new ArgumentMatcher<HalResource>() {
-
+    Mockito.when(predicate.apply(ArgumentMatchers.any(), ArgumentMatchers.argThat(new ArgumentMatcher<HalResource>() {
       @Override
-      public boolean matches(Object argument) {
-        return "/resource2-1-2".equals(((HalResource)argument).getLink().getHref());
+      public boolean matches(HalResource argument) {
+        return "/resource2-1-2".equals(argument.getLink().getHref());
       }
     }))).thenReturn(false);
 

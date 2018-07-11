@@ -24,8 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,8 +33,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
+import io.wcm.caravan.pipeline.cache.CachePersistencyOptions;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 import rx.Observable;
 import rx.Observer;
 

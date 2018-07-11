@@ -27,16 +27,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)

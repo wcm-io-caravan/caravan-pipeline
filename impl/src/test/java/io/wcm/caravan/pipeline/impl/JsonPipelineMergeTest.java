@@ -22,20 +22,20 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 
 import java.io.FileNotFoundException;
 
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineExceptionHandler;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.JsonPipelineOutputException;
 import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)

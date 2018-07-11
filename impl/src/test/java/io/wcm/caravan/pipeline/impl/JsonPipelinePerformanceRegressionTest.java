@@ -22,23 +22,22 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import io.wcm.caravan.common.performance.PerformanceMetrics;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineAction;
-import io.wcm.caravan.pipeline.cache.CacheStrategies;
 
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
+import io.wcm.caravan.common.performance.PerformanceMetrics;
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineAction;
+import io.wcm.caravan.pipeline.cache.CacheStrategies;
 import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -196,7 +195,7 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
     int timeToLiveSeconds = 60;
     int cacheContentAge = 20;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
+    Mockito.when(cacheAdapter.get(anyString(), any()))
     .thenReturn(cachedContent("{b: 'cached'}}", cacheContentAge));
 
     JsonPipelineImpl firstPipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a:123}");
@@ -216,7 +215,7 @@ public class JsonPipelinePerformanceRegressionTest extends AbstractJsonPipelineT
     int timeToLiveSeconds = 60;
     int cacheContentAge = 20;
 
-    Mockito.when(cacheAdapter.get(anyString(), anyObject()))
+    Mockito.when(cacheAdapter.get(anyString(), any()))
     .thenReturn(cachedContent("{b: 'cached'}", cacheContentAge));
 
     JsonPipelineImpl pipeline = (JsonPipelineImpl)newPipelineWithResponseBody("{a:123}").addCachePoint(

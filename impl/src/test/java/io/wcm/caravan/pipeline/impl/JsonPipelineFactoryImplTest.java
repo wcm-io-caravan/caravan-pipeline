@@ -22,14 +22,6 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
-import io.wcm.caravan.io.http.CaravanHttpClient;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
-import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,14 +33,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.framework.Constants;
-
-import rx.Observable;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.io.http.request.CaravanHttpRequestBuilder;
+import io.wcm.caravan.io.http.response.CaravanHttpResponseBuilder;
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
+import io.wcm.caravan.pipeline.impl.cache.MultiLayerCacheAdapter;
+import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineFactoryImplTest {

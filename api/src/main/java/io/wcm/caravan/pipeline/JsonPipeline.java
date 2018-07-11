@@ -19,21 +19,20 @@
  */
 package io.wcm.caravan.pipeline;
 
-import io.wcm.caravan.common.performance.PerformanceMetrics;
-import io.wcm.caravan.io.http.CaravanHttpClient;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.pipeline.cache.CacheStrategy;
-
 import java.util.List;
 import java.util.SortedSet;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import rx.Observable;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import io.wcm.caravan.common.performance.PerformanceMetrics;
+import io.wcm.caravan.io.http.CaravanHttpClient;
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.pipeline.cache.CacheStrategy;
+import rx.Observable;
 
 /**
  * A pipeline aids consuming/orchestrating services to transform, merge and cache JSON responses from a

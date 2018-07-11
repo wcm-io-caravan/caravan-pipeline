@@ -21,18 +21,19 @@ package io.wcm.caravan.pipeline.impl;
 
 import static io.wcm.caravan.pipeline.impl.AbstractJsonPipelineTest.getBooksString;
 import static org.junit.Assert.assertEquals;
-import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.InvalidPathException;
+
+import io.wcm.caravan.commons.jsonpath.impl.JsonPathDefaultConfig;
 
 /** Tests for the {@link JsonPathSelector} functions */
 @RunWith(MockitoJUnitRunner.class)

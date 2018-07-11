@@ -25,10 +25,10 @@ import static io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceFilters.h
 import static io.wcm.caravan.pipeline.extensions.hal.filter.HalResourceFilters.hasPathNonNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -80,7 +80,7 @@ public class HalResourceFiltersTest {
     HalResourcePredicate[] predicates = new HalResourcePredicate[10];
     for (int i = 0; i < predicates.length; i++) {
       predicates[i] = Mockito.mock(HalResourcePredicate.class);
-      Mockito.when(predicates[i].apply(Matchers.any(), Matchers.any())).thenReturn(true);
+      Mockito.when(predicates[i].apply(any(), any())).thenReturn(true);
     }
     HalResourcePredicate predicate = all(predicates);
     assertTrue(predicate.apply(new HalPath(), payload));
@@ -93,7 +93,7 @@ public class HalResourceFiltersTest {
     HalResourcePredicate[] predicates = new HalResourcePredicate[10];
     for (int i = 0; i < predicates.length; i++) {
       predicates[i] = Mockito.mock(HalResourcePredicate.class);
-      Mockito.when(predicates[i].apply(Matchers.any(), Matchers.any())).thenReturn(i != 5);
+      Mockito.when(predicates[i].apply(any(), any())).thenReturn(i != 5);
     }
     HalResourcePredicate predicate = all(predicates);
     assertFalse(predicate.apply(new HalPath(), payload));

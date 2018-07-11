@@ -19,11 +19,11 @@
  */
 package io.wcm.caravan.pipeline;
 
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
-
 import java.util.Map;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 /**
  * The context from which a given pipeline instance was created.

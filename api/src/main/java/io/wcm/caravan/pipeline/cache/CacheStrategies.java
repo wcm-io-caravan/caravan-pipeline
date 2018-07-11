@@ -20,15 +20,16 @@
 package io.wcm.caravan.pipeline.cache;
 
 import static java.util.concurrent.TimeUnit.DAYS;
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.pipeline.JsonPipeline;
-import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.pipeline.JsonPipeline;
+import io.wcm.caravan.pipeline.cache.spi.CacheAdapter;
 
 /**
  * Default implementations of different cache strategies.

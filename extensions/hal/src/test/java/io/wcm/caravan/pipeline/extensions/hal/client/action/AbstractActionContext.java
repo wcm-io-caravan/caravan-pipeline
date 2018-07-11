@@ -26,10 +26,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -42,7 +42,7 @@ import io.wcm.caravan.pipeline.impl.JsonPipelineContextImpl;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
 import io.wcm.caravan.testing.pipeline.JsonPipelineContext;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public abstract class AbstractActionContext {
 
   public OsgiContext osgiCtx = new OsgiContext();
@@ -68,7 +68,7 @@ public abstract class AbstractActionContext {
     pipelineCtx.getCaravanHttpClient().mockRequest().urlStartsWith("/resource2")
     .response(new HalResource("/resource2").getModel().toString());
 
-    Mockito.when(cacheStrategy.getCachePersistencyOptions(Matchers.any())).thenReturn(CachePersistencyOptions.createTransient(0));
+    Mockito.when(cacheStrategy.getCachePersistencyOptions(ArgumentMatchers.any())).thenReturn(CachePersistencyOptions.createTransient(0));
 
   }
 

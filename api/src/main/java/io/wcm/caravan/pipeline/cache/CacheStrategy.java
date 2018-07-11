@@ -19,12 +19,12 @@
  */
 package io.wcm.caravan.pipeline.cache;
 
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-import io.wcm.caravan.pipeline.JsonPipeline;
-
 import java.util.Collection;
 
 import org.osgi.annotation.versioning.ConsumerType;
+
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
+import io.wcm.caravan.pipeline.JsonPipeline;
 
 /**
  * A cache-strategy implements the core decisions about storage time and lifetime of responses that are temporarily or

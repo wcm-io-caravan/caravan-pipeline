@@ -19,13 +19,13 @@
  */
 package io.wcm.caravan.pipeline;
 
-import io.wcm.caravan.io.http.request.CaravanHttpRequest;
-
 import java.util.List;
 
 import org.osgi.annotation.versioning.ProviderType;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import io.wcm.caravan.io.http.request.CaravanHttpRequest;
 
 /**
  * The immutable output of a {@link JsonPipeline}'s processing step: the

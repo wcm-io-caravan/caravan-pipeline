@@ -21,12 +21,12 @@ package io.wcm.caravan.pipeline.extensions.hal.client.action;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 
 import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import com.google.common.collect.ImmutableList;
@@ -85,7 +85,7 @@ public class FollowLinkTest extends AbstractActionContext {
 
     FollowLink action = (FollowLink)createAction("primary", 1).setCacheStrategy(cacheStrategy);
     action.execute(getInput(), context).toBlocking().single();
-    Mockito.verify(cacheStrategy).getCachePersistencyOptions(Matchers.any());
+    Mockito.verify(cacheStrategy).getCachePersistencyOptions(any());
 
   }
 

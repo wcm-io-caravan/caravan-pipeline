@@ -20,13 +20,13 @@
 package io.wcm.caravan.pipeline.impl;
 
 import static org.junit.Assert.assertTrue;
-import io.wcm.caravan.pipeline.JsonPipelineOutput;
 
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
+import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import rx.functions.Action0;
 import rx.functions.Action1;
 

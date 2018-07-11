@@ -21,10 +21,10 @@ package io.wcm.caravan.pipeline;
 
 import org.osgi.annotation.versioning.ProviderType;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import rx.Observable;
 import rx.functions.Func1;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Default implementations of {@link JsonPipelineAction}

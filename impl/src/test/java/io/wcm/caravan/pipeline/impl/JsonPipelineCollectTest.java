@@ -22,18 +22,19 @@ package io.wcm.caravan.pipeline.impl;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import io.wcm.caravan.pipeline.JsonPipeline;
 
 import java.io.FileNotFoundException;
 
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import com.jayway.jsonpath.InvalidPathException;
+
+import io.wcm.caravan.pipeline.JsonPipeline;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsonPipelineCollectTest extends AbstractJsonPipelineTest {
