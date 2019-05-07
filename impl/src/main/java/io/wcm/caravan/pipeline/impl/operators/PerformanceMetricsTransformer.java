@@ -24,14 +24,14 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
+
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Observable.Operator;
 import rx.Observable.Transformer;
 import rx.Observer;
-
-import com.google.common.base.Stopwatch;
-import com.google.common.base.Ticker;
 
 /**
  * A class that measures the time spent by a specific {@link Transformer}, {@link Operator} or {@link Observable}.
@@ -105,6 +105,7 @@ public final class PerformanceMetricsTransformer<T> implements Transformer<T, T>
 
   /**
    * @param toMeasure the transformer that should be measured
+   * @param <T> type
    * @return a PerformanceMetricsTransformer that uses the {@link Ticker#systemTicker()}
    */
   public static <T> PerformanceMetricsTransformer<T> withSystemTicker(Transformer<T, T> toMeasure) {
@@ -113,6 +114,7 @@ public final class PerformanceMetricsTransformer<T> implements Transformer<T, T>
 
   /**
    * @param toMeasure the operator that should be measured
+   * @param <T> type
    * @return a PerformanceMetricsTransformer that uses the {@link Ticker#systemTicker()}
    */
   public static <T> PerformanceMetricsTransformer<T> withSystemTicker(Operator<T, T> toMeasure) {
@@ -121,6 +123,7 @@ public final class PerformanceMetricsTransformer<T> implements Transformer<T, T>
 
   /**
    * @param toMeasure the observable that should be measured
+   * @param <T> type
    * @return a PerformanceMetricsTransformer that uses the {@link Ticker#systemTicker()}
    */
   public static <T> PerformanceMetricsTransformer<T> withSystemTicker(Observable<T> toMeasure) {

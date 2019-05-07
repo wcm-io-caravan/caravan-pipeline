@@ -408,8 +408,8 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     /**
      * Parse a JSON string that was obtained from the couchbase cache
-     * @param jsonString
-     * @param cacheKey
+     * @param jsonString JSON string
+     * @param cacheKey Cache key
      * @return the CacheEntry - or null if the json String was not in the expected format
      */
     public static CacheEnvelope fromEnvelopeString(String jsonString, String cacheKey) {
@@ -430,11 +430,12 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     /**
      * Create a new CacheEnvelope to store in the couchbase cache
-     * @param contentNode
-     * @param requests
-     * @param cacheKey
-     * @param pipelineDescriptor
-     * @param contextProperties
+     * @param contentNode Content node
+     * @param maxAge how many seconds 404 responses in cache should stay valid
+     * @param requests Requests
+     * @param cacheKey Cache key
+     * @param pipelineDescriptor Pipeline descriptor
+     * @param contextProperties Context properties
      * @return the new CacheEnvelope instance
      */
     public static CacheEnvelope from200Response(JsonNode contentNode, int maxAge, List<CaravanHttpRequest> requests, String cacheKey,
@@ -446,11 +447,12 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
 
     /**
      * Create a new CacheEnvelope to store in the couchbase cache
-     * @param reason
+     * @param reason Reason
      * @param maxAge how many seconds 404 responses in cache should stay valid
-     * @param cacheKey
-     * @param pipelineDescriptor
-     * @param contextProperties
+     * @param requests Requests
+     * @param cacheKey Cache key
+     * @param pipelineDescriptor Pipeline descriptor
+     * @param contextProperties Context properties
      * @return the new CacheEnvelope instance
      */
     public static CacheEnvelope from404Response(String reason, int maxAge, List<CaravanHttpRequest> requests, String cacheKey,
@@ -551,14 +553,14 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
     }
 
     /**
-     * @param newDate
+     * @param newDate Generated date
      */
     public void setGeneratedDate(String newDate) {
       metadataNode.put("generated", newDate);
     }
 
     /**
-     * @param newDate
+     * @param newDate Expires date
      */
     public void setExpiresDate(String newDate) {
       metadataNode.put("expires", newDate);

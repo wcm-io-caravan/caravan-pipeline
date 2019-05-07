@@ -42,6 +42,9 @@ public final class ReportHalResourceFilters {
   /**
    * Executes all delegated filters and creates a report with error messages for each failed filter. If there are
    * negative predicate results, all further predicates still get executed.
+   * @param report report
+   * @param delegates Delegates
+   * @return Predicate
    */
   public static HalResourcePredicate all(HalResource report, HalResourcePredicate... delegates) {
 
@@ -75,6 +78,7 @@ public final class ReportHalResourceFilters {
   /**
    * @param report Report to write to
    * @param delegate Delegated filter
+   * @return Predicate
    */
   public static HalResourcePredicate report(HalResource report, HalResourcePredicate delegate) {
 

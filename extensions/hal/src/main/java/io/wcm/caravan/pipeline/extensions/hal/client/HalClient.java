@@ -102,6 +102,7 @@ public final class HalClient {
 
   /**
    * @param entryPointRequest the request to be executed to fetch the HAL entry point
+   * @param serviceIdExtractor Service ID extractor
    * @param cacheStrategy default cache strategy to use for all actions that fetch additional resources
    * @param contextProperties a Map of properties to pass on to
    *          {@link JsonPipelineFactory#create(CaravanHttpRequest, Map)}
