@@ -19,6 +19,17 @@
  */
 package io.wcm.caravan.pipeline.impl.operators;
 
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.math.NumberUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableList;
+
 import io.wcm.caravan.io.http.CaravanHttpClient;
 import io.wcm.caravan.io.http.IllegalResponseRuntimeException;
 import io.wcm.caravan.io.http.request.CaravanHttpRequest;
@@ -28,26 +39,15 @@ import io.wcm.caravan.pipeline.JsonPipelineInputException;
 import io.wcm.caravan.pipeline.JsonPipelineOutput;
 import io.wcm.caravan.pipeline.impl.JacksonFunctions;
 import io.wcm.caravan.pipeline.impl.JsonPipelineOutputImpl;
-
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.ws.Response;
-
-import org.apache.commons.lang3.math.NumberUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import rx.Observable.Operator;
 import rx.Subscriber;
 import rx.exceptions.Exceptions;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
-
 /**
- * Operator that converts {@link Response} emissions from the {@link CaravanHttpClient} layer into {@link JsonPipelineOutput} objects. All recoverable
- * exceptions are wrapped in a {@link JsonPipelineInputException} before they are forwarded to the subscriber's onNext method
+ * Operator that converts {@link CaravanHttpResponse} emissions from the {@link CaravanHttpClient} layer into
+ * {@link JsonPipelineOutput} objects. All recoverable
+ * exceptions are wrapped in a {@link JsonPipelineInputException} before they are forwarded to the subscriber's onNext
+ * method
  */
 public class ResponseHandlingOperator implements Operator<JsonPipelineOutput, CaravanHttpResponse> {
 

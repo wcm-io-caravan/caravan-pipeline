@@ -162,7 +162,7 @@ public class CachePointTransformer implements Transformer<JsonPipelineOutput, Js
    * <li>unwrapping the JSON content from the caching envelope if it was successfully retrieved from cache</li>
    * <li>forwarding the unwrapped response to the subscriber given in the constructor</li>
    * <li>fetch the response from the Pipeline's dataSource if it couldn't be retrieved from cache</li>
-   * <li>store the fetched responses to couchbase (wrapped in an envelope with metadata</li> *
+   * <li>store the fetched responses to couchbase (wrapped in an envelope with metadata</li>
    * </ul>
    */
   public final class CacheResponseObserver implements Observer<String> {
