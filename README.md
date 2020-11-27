@@ -1,6 +1,6 @@
 <img src="https://wcm.io/images/favicon-16@2x.png"/> wcm.io Caravan Pipeline
 ======
-[![Build Status](https://travis-ci.org/wcm-io-caravan/caravan-pipeline.png?branch=develop)](https://travis-ci.org/wcm-io-caravan/caravan-pipeline)
+[![Build Status](https://travis-ci.com/wcm-io-caravan/caravan-pipeline.png?branch=develop)](https://travis-ci.com/wcm-io-caravan/caravan-pipeline)
 [![Code Coverage](https://codecov.io/gh/wcm-io-caravan/caravan-pipeline/branch/develop/graph/badge.svg)](https://codecov.io/gh/wcm-io-caravan/caravan-pipeline)
 
 wcm.io Caravan - JSON Data Pipelining Infrastructure
@@ -12,7 +12,7 @@ JSON Data Pipelining and Caching.
 Documentation: https://caravan.wcm.io/pipeline/<br/>
 Issues: https://wcm-io.atlassian.net/<br/>
 Wiki: https://wcm-io.atlassian.net/wiki/<br/>
-Continuous Integration: https://travis-ci.org/wcm-io-caravan/caravan-pipeline/<br/>
+Continuous Integration: https://travis-ci.com/wcm-io-caravan/caravan-pipeline/<br/>
 Commercial support: https://wcm.io/commercial-support.html
 
 
