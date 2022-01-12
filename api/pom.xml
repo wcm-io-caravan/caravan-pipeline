@@ -54,7 +54,7 @@
     <dependency>
       <groupId>io.wcm.caravan</groupId>
       <artifactId>io.wcm.caravan.io.http</artifactId>
-      <version>0.7.4</version>
+      <version>0.10.0</version>
       <scope>compile</scope>
     </dependency>
 
