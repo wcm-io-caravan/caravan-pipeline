@@ -103,7 +103,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
 
     String output = merged.getStringOutput().toBlocking().single();
 
-    JSONAssert.assertEquals("{a: 123, next node: 456}", output, JSONCompareMode.STRICT);
+    JSONAssert.assertEquals("{'a': 123, 'next node': 456}", output, JSONCompareMode.STRICT);
   }
 
   @Test(expected = JsonPipelineOutputException.class)
@@ -132,7 +132,7 @@ public class JsonPipelineMergeTest extends AbstractJsonPipelineTest {
     assertNotEquals("desriptor not just taken from the other pipeline?", b.getDescriptor(), merged.getDescriptor());
 
     String output = merged.getStringOutput().toBlocking().single();
-    JSONAssert.assertEquals("{a: 123, next node: null}", output, JSONCompareMode.STRICT);
+    JSONAssert.assertEquals("{'a': 123, 'next node': null}", output, JSONCompareMode.STRICT);
   }
 
   @Test(expected = JsonPipelineOutputException.class)
