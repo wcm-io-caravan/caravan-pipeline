@@ -2,7 +2,7 @@
 
 Client and actions to navigate inside HAL JSON resources.
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.extensions.hal/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.wcm.caravan/io.wcm.caravan.pipeline.extensions.hal)
+[![Maven Central](https://img.shields.io/maven-central/v/io.wcm.caravan/io.wcm.caravan.pipeline.extensions.hal)](https://repo1.maven.org/maven2/io/wcm/caravan/io.wcm.caravan.pipeline.extensions.hal/)
 
 
 ### Documentation
