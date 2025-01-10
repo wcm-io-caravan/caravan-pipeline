@@ -12,4 +12,4 @@ Client and actions to navigate inside HAL JSON resources.
 
 
 [apidocs]: apidocs/
-[changelog]: changes-report.html
+[changelog]: changes.html

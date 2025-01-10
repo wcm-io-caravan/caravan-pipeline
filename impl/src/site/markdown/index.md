@@ -10,4 +10,4 @@ JSON data pipeline implementation.
 * [Changelog][changelog]
 
 
-[changelog]: changes-report.html
+[changelog]: changes.html

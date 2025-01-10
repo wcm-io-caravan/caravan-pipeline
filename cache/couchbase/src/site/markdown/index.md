@@ -10,4 +10,4 @@ Pipeline caching adapter implementation for Couchbase using Couchbase SDK 2.
 * [Changelog][changelog]
 
 
-[changelog]: changes-report.html
+[changelog]: changes.html

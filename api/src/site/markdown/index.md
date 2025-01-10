@@ -12,4 +12,4 @@ JSON data pipeline with aggregation, slicing and caching.
 
 
 [apidocs]: apidocs/
-[changelog]: changes-report.html
+[changelog]: changes.html

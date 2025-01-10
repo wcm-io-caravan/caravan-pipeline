@@ -10,4 +10,4 @@ Pipeline caching adapter implementation for Guava Cache.
 * [Changelog][changelog]
 
 
-[changelog]: changes-report.html
+[changelog]: changes.html
